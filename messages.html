@@ -10,9 +10,9 @@
 <style>
   :root{
     --white:#ffffff;--ink:#14151a;--ink-soft:#4a4d55;--grey:#8a8d94;
-    --line:#ececec;--accent:#ff5a36;--accent-soft:#fff1ec;
-    --bubble-theirs:#f2f2f3;
-    --nav-w:230px;--list-w:360px;
+    --line:#efefef;--accent:#ff5a36;--accent-soft:#fff1ec;
+    --bubble-theirs:#f0f0f0;
+    --nav-w:230px;--list-w:380px;
     --font-display:'Space Grotesk', sans-serif;
     --font-serif:'Newsreader', serif;
     --font-mono:'JetBrains Mono', monospace;
@@ -26,7 +26,7 @@
 
   .app{display:flex;max-width:1200px;margin:0 auto;height:100vh;}
 
-  /* ---------- sidebar (unchanged app nav, simplified) ---------- */
+  /* ---------- sidebar ---------- */
   .sidebar{display:none;width:var(--nav-w);flex-shrink:0;padding:28px 16px;flex-direction:column;height:100vh;border-right:1px solid var(--line);}
   .sidebar .wordmark{font-family:var(--font-display);font-weight:700;font-size:22px;padding:0 8px;margin-bottom:32px;}
   .sidebar .wordmark .dot{color:var(--accent);}
@@ -45,60 +45,74 @@
   .sidebar-signout{font-family:var(--font-mono);font-size:10px;color:var(--grey);padding:6px 10px;text-align:left;}
   @media (min-width:900px){ .sidebar{display:flex;} }
 
-  /* ---------- inbox list ---------- */
+  /* ---------- inbox list (IG-style) ---------- */
   .list-pane{width:100%;border-right:1px solid var(--line);display:flex;flex-direction:column;height:100vh;background:var(--white);}
   @media (min-width:700px){ .list-pane{width:var(--list-w);flex-shrink:0;} }
 
-  .list-head{padding:18px 20px 12px;border-bottom:1px solid var(--line);flex-shrink:0;}
-  .list-head h1{font-family:var(--font-display);font-weight:700;font-size:20px;margin-bottom:12px;}
+  .list-head{padding:20px 20px 14px;flex-shrink:0;}
+  .list-head h1{font-family:var(--font-display);font-weight:700;font-size:21px;margin-bottom:14px;letter-spacing:-.01em;}
   .search-box{position:relative;}
-  .search-box svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--grey);}
-  .search-box input{width:100%;border:none;border-radius:99px;padding:9px 14px 9px 34px;font-size:13.5px;font-family:var(--font-serif);outline:none;background:#f2f2f3;}
+  .search-box svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--grey);}
+  .search-box input{width:100%;border:none;border-radius:99px;padding:10px 14px 10px 36px;font-size:13.5px;font-family:var(--font-serif);outline:none;background:#f2f2f3;}
   .search-box input:focus{background:#ebebeb;}
 
-  .conv-list{flex:1;overflow-y:auto;padding:6px 8px;}
-  .conv-row{display:flex;align-items:center;gap:12px;padding:9px 10px;cursor:pointer;border-radius:14px;}
+  .conv-list{flex:1;overflow-y:auto;padding:4px 8px 8px;}
+  .conv-row{display:flex;align-items:center;gap:13px;padding:10px 10px;cursor:pointer;border-radius:14px;transition:background .12s ease;}
   .conv-row:hover{background:#f7f7f8;}
   .conv-row.active{background:var(--accent-soft);}
-  .conv-row .avatar{width:50px;height:50px;font-size:17px;}
+  .conv-row .avatar{width:54px;height:54px;font-size:18px;}
   .conv-row .meta{flex:1;min-width:0;}
   .conv-row .top-line{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
   .conv-row .name{font-family:var(--font-display);font-weight:600;font-size:14.5px;}
   .conv-row .time{font-family:var(--font-mono);font-size:10px;color:var(--grey);flex-shrink:0;}
   .conv-row .preview{font-family:var(--font-serif);font-size:13px;color:var(--grey);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;}
+  .conv-row .preview.unread{color:var(--ink);font-weight:600;}
 
   .empty-note{padding:50px 24px;text-align:center;font-family:var(--font-mono);font-size:11.5px;color:var(--grey);line-height:1.6;}
   .empty-note .big{font-family:var(--font-display);font-size:14px;color:var(--ink);font-weight:600;margin-bottom:6px;display:block;}
 
-  /* ---------- thread ---------- */
-  .thread-pane{flex:1;display:none;flex-direction:column;height:100vh;min-width:0;}
+  /* ---------- thread (IG-style) ---------- */
+  .thread-pane{flex:1;display:none;flex-direction:column;height:100vh;min-width:0;background:var(--white);}
   .thread-pane.show{display:flex;}
   @media (min-width:700px){ .thread-pane{display:flex;} }
 
-  .thread-head{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line);flex-shrink:0;}
-  .thread-back{display:flex;padding:2px;}
+  .thread-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);flex-shrink:0;}
+  .thread-back{display:flex;padding:4px;margin-left:-4px;}
   @media (min-width:700px){ .thread-back{display:none;} }
-  .thread-back svg{width:20px;height:20px;stroke:var(--ink);}
-  .thread-head .avatar{width:38px;height:38px;font-size:13px;}
+  .thread-back svg{width:22px;height:22px;stroke:var(--ink);}
+  .thread-head .avatar{width:34px;height:34px;font-size:12px;}
+  .thread-head .who-col{display:flex;flex-direction:column;line-height:1.25;}
   .thread-head .name{font-family:var(--font-display);font-weight:600;font-size:14.5px;}
+  .thread-head .status{font-family:var(--font-mono);font-size:10px;color:var(--grey);}
 
-  .thread-body{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:2px;}
-  .bubble-wrap{display:flex;flex-direction:column;max-width:70%;margin-bottom:6px;}
+  .thread-body{flex:1;overflow-y:auto;padding:18px 18px 8px;display:flex;flex-direction:column;}
+  .bubble-wrap{display:flex;flex-direction:column;max-width:65%;margin-bottom:3px;}
   .bubble-wrap.mine{align-self:flex-end;align-items:flex-end;}
   .bubble-wrap.theirs{align-self:flex-start;align-items:flex-start;}
-  .bubble{padding:10px 14px;border-radius:18px;font-family:var(--font-serif);font-size:14.5px;line-height:1.4;word-wrap:break-word;}
-  .bubble.mine{background:var(--ink);color:#fff;border-bottom-right-radius:5px;}
-  .bubble.theirs{background:var(--bubble-theirs);color:var(--ink);border-bottom-left-radius:5px;}
-  .day-divider{align-self:center;font-family:var(--font-mono);font-size:10px;color:var(--grey);background:#f2f2f3;padding:4px 12px;border-radius:99px;margin:12px 0;}
+  .bubble{padding:10px 15px;border-radius:20px;font-family:var(--font-serif);font-size:14.5px;line-height:1.4;word-wrap:break-word;}
+  .bubble.mine{background:linear-gradient(135deg, var(--accent), #ff7a52);color:#fff;}
+  .bubble.theirs{background:var(--bubble-theirs);color:var(--ink);}
+  /* IG-style tight grouping: consecutive bubbles from the same side sit close, corner softens */
+  .bubble-wrap + .bubble-wrap.mine .bubble.mine,
+  .bubble-wrap + .bubble-wrap.theirs .bubble.theirs{ margin-top:2px; }
 
-  .thread-form{display:flex;align-items:center;gap:10px;padding:14px 20px;border-top:1px solid var(--line);flex-shrink:0;}
-  .thread-form input{flex:1;border:none;border-radius:99px;padding:11px 16px;font-family:var(--font-serif);font-size:14.5px;outline:none;background:#f2f2f3;}
-  .thread-form button{width:38px;height:38px;border-radius:50%;background:var(--accent);flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-  .thread-form button svg{width:16px;height:16px;stroke:#fff;}
-  .thread-form button:disabled{opacity:.4;}
+  .day-divider{align-self:center;font-family:var(--font-mono);font-size:10px;color:var(--grey);padding:16px 0 10px;}
+  .seen-note{align-self:flex-end;font-family:var(--font-mono);font-size:10px;color:var(--grey);margin:6px 4px 10px;}
+
+  .thread-form{display:flex;align-items:center;gap:10px;padding:12px 16px 18px;flex-shrink:0;}
+  .composer{flex:1;display:flex;align-items:center;border:1.5px solid var(--line-strong,#e0e0e0);border-radius:99px;padding:6px 8px 6px 18px;transition:border-color .15s ease;}
+  .composer:focus-within{border-color:#ccc;}
+  .thread-form input{flex:1;border:none;font-family:var(--font-serif);font-size:14.5px;outline:none;background:transparent;padding:6px 0;}
+  .send-btn{width:34px;height:34px;border-radius:50%;background:var(--accent);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:transform .1s ease, opacity .15s ease;}
+  .send-btn:active{transform:scale(.92);}
+  .send-btn svg{width:15px;height:15px;stroke:#fff;}
+  .send-btn:disabled{opacity:.35;}
+  .send-btn.hide{display:none;}
 
   .thread-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:12px;color:var(--grey);gap:10px;}
-  .thread-empty .big{font-family:var(--font-display);font-size:15px;color:var(--ink);font-weight:600;}
+  .thread-empty .big-avatar{width:88px;height:88px;border-radius:50%;background:#f2f2f3;display:flex;align-items:center;justify-content:center;margin-bottom:6px;}
+  .thread-empty .big-avatar svg{width:40px;height:40px;stroke:var(--grey);}
+  .thread-empty .big{font-family:var(--font-display);font-size:17px;color:var(--ink);font-weight:700;}
 </style>
 </head>
 <body>
@@ -107,11 +121,7 @@
   <aside class="sidebar">
     <div class="wordmark">waater<span class="dot">.</span></div>
     <ul class="nav-list">
-      
       <li><a href="/" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</a></li>
-
-  
-      
       <li><a href="/create" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Create</a></li>
       <li><a href="/messages" class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Messages</a></li>
       <li><a href="/profile" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>Profile</a></li>
@@ -134,6 +144,7 @@
 
   <div class="thread-pane" id="threadPane">
     <div class="thread-empty" id="threadEmpty">
+      <div class="big-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
       <span class="big">Your messages</span>
       Pick a friend to start chatting.
     </div>
@@ -159,6 +170,9 @@
     if (sameDay(d, yest)) return 'Yesterday';
     return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
   }
+  function clockTime(iso){
+    return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  }
 
   const SUPABASE_URL = 'https://yacrwbpvcqurxsqpmron.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_Any50PwhIupj5rZbez1W4Q_dIx-VRIs';
@@ -168,6 +182,7 @@
   let activeConversationId = null;
   let activeChannel = null;
   let inboxByUserId = {}; // otherUserId -> { user, conversationId, lastMessage }
+  let sentMessageIds = new Set(); // guards against double-rendering our own message when realtime echoes it back
 
   function requireAuth(){
     if (currentUser) return true;
@@ -197,9 +212,6 @@
     });
   }
 
-  // Fetch every accepted friend of the current user. Queried in two simple
-  // passes (as requester, then as addressee) instead of relying on named
-  // foreign-key hints, which silently fail if the constraint name changes.
   async function loadFriends(){
     const [{ data: asRequester, error: e1 }, { data: asAddressee, error: e2 }] = await Promise.all([
       supabaseClient.from('friendships').select('addressee_id').eq('requester_id', currentUser.id).eq('status', 'accepted'),
@@ -273,8 +285,9 @@
       const avatarHtml = r.user.avatar_url ? `<img src="${escapeHtml(r.user.avatar_url)}" alt="">` : initials(name);
       const preview = r.lastMessage ? escapeHtml(r.lastMessage.body) : 'Say hi 👋';
       const time = r.lastMessage ? timeAgo(r.lastMessage.created_at) : '';
+      const isActive = r.conversationId && r.conversationId === activeConversationId;
       return `
-        <div class="conv-row" data-user-id="${r.user.id}" data-name="${name.toLowerCase()}">
+        <div class="conv-row ${isActive ? 'active' : ''}" data-user-id="${r.user.id}" data-name="${name.toLowerCase()}">
           <div class="avatar">${avatarHtml}</div>
           <div class="meta">
             <div class="top-line"><span class="name">${name}</span><span class="time">${time}</span></div>
@@ -312,7 +325,7 @@
     const dayHtml = showDay ? `<div class="day-divider">${dayLabel(msg.created_at)}</div>` : '';
     return `
       ${dayHtml}
-      <div class="bubble-wrap ${mine ? 'mine' : 'theirs'}">
+      <div class="bubble-wrap ${mine ? 'mine' : 'theirs'}" data-msg-id="${msg.id || ''}">
         <div class="bubble ${mine ? 'mine' : 'theirs'}">${escapeHtml(msg.body)}</div>
       </div>
     `;
@@ -333,7 +346,6 @@
     if (existing) return existing;
 
     const { data: newConv, error } = await supabaseClient.from('conversations').insert({ creator_id: currentUser.id }).select().single();
-
     if (error){ console.error('Failed to create conversation:', error); return null; }
 
     const { error: partErr } = await supabaseClient.from('conversation_participants').insert([
@@ -368,12 +380,17 @@
       <div class="thread-head">
         <button class="thread-back" id="threadBackBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
         <div class="avatar">${avatarHtml}</div>
-        <a href="/profile?u=${encodeURIComponent(uname)}" class="name">${name}</a>
+        <div class="who-col">
+          <a href="/profile?u=${encodeURIComponent(uname)}" class="name">${name}</a>
+          <span class="status">Active recently</span>
+        </div>
       </div>
       <div class="thread-body" id="threadBody"><div class="empty-note">Loading…</div></div>
       <form class="thread-form" id="threadForm">
-        <input type="text" id="threadInput" placeholder="Message..." maxlength="1000" autocomplete="off">
-        <button type="submit" id="threadSendBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
+        <div class="composer">
+          <input type="text" id="threadInput" placeholder="Message..." maxlength="1000" autocomplete="off">
+        </div>
+        <button type="submit" class="send-btn" id="threadSendBtn" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
       </form>
     `;
 
@@ -392,18 +409,57 @@
 
     let lastRenderedDay = msgs && msgs.length ? dayLabel(msgs[msgs.length - 1].created_at) : null;
 
+    // Enable/disable send button based on whether there's text typed
+    const threadInput = document.getElementById('threadInput');
+    const sendBtn = document.getElementById('threadSendBtn');
+    threadInput.addEventListener('input', () => {
+      sendBtn.disabled = threadInput.value.trim().length === 0;
+    });
+    threadInput.focus();
+
+    // ---- THE FIX: draw our own message immediately (optimistic UI),
+    // instead of only waiting for the realtime channel to echo it back.
+    // Realtime is now used ONLY to receive messages from the other person.
     document.getElementById('threadForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const input = document.getElementById('threadInput');
-      const body = input.value.trim();
+      const body = threadInput.value.trim();
       if (!body) return;
-      input.value = '';
-      const { error: sendErr } = await supabaseClient.from('dm_messages').insert({
+
+      threadInput.value = '';
+      sendBtn.disabled = true;
+
+      // optimistic render right away
+      const tempId = `temp-${Date.now()}`;
+      const optimisticMsg = { id: tempId, sender_id: currentUser.id, body, created_at: new Date().toISOString() };
+      const day = dayLabel(optimisticMsg.created_at);
+      const showDay = day !== lastRenderedDay;
+      lastRenderedDay = day;
+      const emptyNote = threadBody.querySelector('.empty-note');
+      if (emptyNote) emptyNote.remove();
+      threadBody.insertAdjacentHTML('beforeend', renderBubble(optimisticMsg, showDay));
+      threadBody.scrollTop = threadBody.scrollHeight;
+
+      const { data: saved, error: sendErr } = await supabaseClient.from('dm_messages').insert({
         conversation_id: conversationId,
         sender_id: currentUser.id,
         body,
-      });
-      if (sendErr) console.error('Failed to send message:', sendErr);
+      }).select().single();
+
+      if (sendErr) {
+        console.error('Failed to send message:', sendErr);
+        const failedEl = threadBody.querySelector(`[data-msg-id="${tempId}"]`);
+        if (failedEl) failedEl.style.opacity = '0.4';
+        return;
+      }
+
+      // swap temp id for the real DB id and remember it so the realtime
+      // echo (if it arrives) doesn't get rendered a second time
+      sentMessageIds.add(saved.id);
+      const tempEl = threadBody.querySelector(`[data-msg-id="${tempId}"]`);
+      if (tempEl) tempEl.dataset.msgId = saved.id;
+
+      if (inboxByUserId[otherUserId]) inboxByUserId[otherUserId].lastMessage = saved;
+      renderInbox();
     });
 
     if (activeChannel) supabaseClient.removeChannel(activeChannel);
@@ -412,14 +468,20 @@
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'dm_messages', filter: `conversation_id=eq.${conversationId}`,
       }, (payload) => {
+        // skip messages we already drew optimistically
+        if (payload.new.sender_id === currentUser.id || sentMessageIds.has(payload.new.id)) return;
+
         const body2 = document.getElementById('threadBody');
         if (!body2) return;
+        const emptyNote2 = body2.querySelector('.empty-note');
+        if (emptyNote2) emptyNote2.remove();
         const day = dayLabel(payload.new.created_at);
         const showDay = day !== lastRenderedDay;
         lastRenderedDay = day;
         body2.insertAdjacentHTML('beforeend', renderBubble(payload.new, showDay));
         body2.scrollTop = body2.scrollHeight;
         if (inboxByUserId[otherUserId]) inboxByUserId[otherUserId].lastMessage = payload.new;
+        renderInbox();
       })
       .subscribe();
 
