@@ -10,9 +10,9 @@
 <style>
   :root{
     --white:#ffffff;--ink:#14151a;--ink-soft:#4a4d55;--grey:#8a8d94;
-    --line:#ececec;--line-strong:#e0e0e0;--accent:#ff5a36;--accent-2:#ffb199;--accent-soft:#fff1ec;
+    --line:#ececec;--accent:#ff5a36;--accent-soft:#fff1ec;
     --bubble-theirs:#f2f2f3;
-    --nav-w:248px;--list-w:360px;
+    --nav-w:230px;--list-w:360px;
     --font-display:'Space Grotesk', sans-serif;
     --font-serif:'Newsreader', serif;
     --font-mono:'JetBrains Mono', monospace;
@@ -23,204 +23,82 @@
   a{color:inherit;text-decoration:none;}
   button{font-family:inherit;border:none;background:none;cursor:pointer;}
   input{font-family:inherit;}
-  ::selection{background:var(--accent-soft);color:var(--accent);}
 
-  .app{display:flex;max-width:1320px;margin:0 auto;height:100vh;}
+  .app{display:flex;max-width:1200px;margin:0 auto;height:100vh;}
 
-  /* ---------- sidebar ---------- */
-  .sidebar{
-    display:none;width:var(--nav-w);flex-shrink:0;padding:28px 18px;
-    flex-direction:column;height:100vh;border-right:1px solid var(--line);
-  }
-  .sidebar .wordmark{font-family:var(--font-display);font-weight:700;font-size:24px;padding:0 10px;margin-bottom:36px;display:flex;gap:2px;}
+  /* ---------- sidebar (unchanged app nav, simplified) ---------- */
+  .sidebar{display:none;width:var(--nav-w);flex-shrink:0;padding:28px 16px;flex-direction:column;height:100vh;border-right:1px solid var(--line);}
+  .sidebar .wordmark{font-family:var(--font-display);font-weight:700;font-size:22px;padding:0 8px;margin-bottom:32px;}
   .sidebar .wordmark .dot{color:var(--accent);}
-  .nav-list{list-style:none;display:flex;flex-direction:column;gap:4px;}
-  .nav-item{
-    display:flex;align-items:center;gap:14px;padding:12px 12px;border-radius:12px;
-    font-family:var(--font-display);font-size:15.5px;font-weight:500;color:var(--ink-soft);
-    transition:background .15s ease,color .15s ease;
-  }
-  .nav-item svg{width:22px;height:22px;flex-shrink:0;}
+  .nav-list{list-style:none;display:flex;flex-direction:column;gap:2px;}
+  .nav-item{display:flex;align-items:center;gap:14px;padding:11px 10px;border-radius:12px;font-family:var(--font-display);font-size:15px;font-weight:500;color:var(--ink-soft);}
+  .nav-item svg{width:21px;height:21px;flex-shrink:0;}
   .nav-item:hover{background:#f7f7f8;color:var(--ink);}
   .nav-item.active{color:var(--ink);}
   .nav-item.active svg{stroke:var(--accent);}
-  .nav-create{margin-top:14px;background:var(--ink);color:#fff!important;justify-content:center;font-weight:600;padding:13px 12px;}
-  .nav-create:hover{background:#000;}
-  .nav-create svg{stroke:#fff;}
-  .sidebar-signin{
-    margin-top:auto;display:block;text-align:center;background:var(--ink);color:#fff!important;
-    font-family:var(--font-display);font-weight:600;font-size:13.5px;padding:12px;border-radius:12px;
-  }
-  .sidebar-profile{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);}
-  .avatar{
-    width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent-2),var(--accent));
-    flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;
-    font-family:var(--font-display);font-weight:700;font-size:14px;overflow:hidden;
-  }
+  .sidebar-signin,.sidebar-profile{margin-top:auto;}
+  .sidebar-signin{display:block;text-align:center;background:var(--ink);color:#fff!important;font-family:var(--font-display);font-weight:600;font-size:13px;padding:11px;border-radius:12px;}
+  .sidebar-profile{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;}
+  .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffb199,var(--accent));flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-display);font-weight:700;font-size:13px;overflow:hidden;}
   .avatar img{width:100%;height:100%;object-fit:cover;}
-  .sidebar-profile .who{display:flex;flex-direction:column;line-height:1.2;flex:1;min-width:0;}
-  .sidebar-profile .who span:first-child{font-family:var(--font-display);font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .sidebar-signout{font-family:var(--font-mono);font-size:10px;color:var(--grey);padding:4px 6px;}
-
+  .sidebar-profile .who{font-family:var(--font-display);font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sidebar-signout{font-family:var(--font-mono);font-size:10px;color:var(--grey);padding:6px 10px;text-align:left;}
   @media (min-width:900px){ .sidebar{display:flex;} }
 
-  /* ---------- conversation list ---------- */
-  .list-pane{
-    width:100%;border-right:1px solid var(--line);
-    display:flex;flex-direction:column;height:100vh;background:var(--white);
-  }
+  /* ---------- inbox list ---------- */
+  .list-pane{width:100%;border-right:1px solid var(--line);display:flex;flex-direction:column;height:100vh;background:var(--white);}
   @media (min-width:700px){ .list-pane{width:var(--list-w);flex-shrink:0;} }
 
-  .list-head{
-    padding:20px 20px 14px;border-bottom:1px solid var(--line);flex-shrink:0;
-  }
-  .list-head-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-  .list-head h1{font-family:var(--font-display);font-weight:700;font-size:21px;letter-spacing:-.01em;}
-  .new-dm-btn{
-    width:34px;height:34px;border-radius:50%;background:var(--ink);
-    display:flex;align-items:center;justify-content:center;transition:transform .12s ease,background .15s ease;
-  }
-  .new-dm-btn:hover{background:#000;transform:scale(1.06);}
-  .new-dm-btn svg{width:16px;height:16px;stroke:#fff;}
-
+  .list-head{padding:18px 20px 12px;border-bottom:1px solid var(--line);flex-shrink:0;}
+  .list-head h1{font-family:var(--font-display);font-weight:700;font-size:20px;margin-bottom:12px;}
   .search-box{position:relative;}
-  .search-box svg{
-    position:absolute;left:13px;top:50%;transform:translateY(-50%);
-    width:14px;height:14px;stroke:var(--grey);pointer-events:none;
-  }
-  .search-box input{
-    width:100%;border:1px solid var(--line-strong);border-radius:99px;
-    padding:9px 14px 9px 34px;font-size:13.5px;font-family:var(--font-serif);outline:none;
-    background:#f7f7f8;transition:background .15s ease,border-color .15s ease;
-  }
-  .search-box input:focus{background:#fff;border-color:var(--accent);}
+  .search-box svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--grey);}
+  .search-box input{width:100%;border:none;border-radius:99px;padding:9px 14px 9px 34px;font-size:13.5px;font-family:var(--font-serif);outline:none;background:#f2f2f3;}
+  .search-box input:focus{background:#ebebeb;}
 
   .conv-list{flex:1;overflow-y:auto;padding:6px 8px;}
-  .conv-row{
-    display:flex;align-items:center;gap:12px;padding:10px 12px;cursor:pointer;
-    border-radius:14px;transition:background .12s ease;
-  }
+  .conv-row{display:flex;align-items:center;gap:12px;padding:9px 10px;cursor:pointer;border-radius:14px;}
   .conv-row:hover{background:#f7f7f8;}
   .conv-row.active{background:var(--accent-soft);}
-  .conv-row .avatar{width:48px;height:48px;font-size:16px;}
+  .conv-row .avatar{width:50px;height:50px;font-size:17px;}
   .conv-row .meta{flex:1;min-width:0;}
   .conv-row .top-line{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
   .conv-row .name{font-family:var(--font-display);font-weight:600;font-size:14.5px;}
   .conv-row .time{font-family:var(--font-mono);font-size:10px;color:var(--grey);flex-shrink:0;}
-  .conv-row .preview{
-    font-family:var(--font-serif);font-size:13px;color:var(--ink-soft);
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;
-  }
-  .conv-row.active .preview{color:var(--ink-soft);}
+  .conv-row .preview{font-family:var(--font-serif);font-size:13px;color:var(--grey);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;}
 
   .empty-note{padding:50px 24px;text-align:center;font-family:var(--font-mono);font-size:11.5px;color:var(--grey);line-height:1.6;}
   .empty-note .big{font-family:var(--font-display);font-size:14px;color:var(--ink);font-weight:600;margin-bottom:6px;display:block;}
-  .empty-icon{
-    width:52px;height:52px;border-radius:50%;background:var(--accent-soft);
-    display:flex;align-items:center;justify-content:center;margin:0 auto 14px;
-  }
-  .empty-icon svg{width:22px;height:22px;stroke:var(--accent);}
 
-  /* ---------- thread pane ---------- */
-  .thread-pane{
-    flex:1;display:none;flex-direction:column;height:100vh;min-width:0;
-    background:linear-gradient(180deg,#fff, #fdfaf8 100%);
-  }
+  /* ---------- thread ---------- */
+  .thread-pane{flex:1;display:none;flex-direction:column;height:100vh;min-width:0;}
   .thread-pane.show{display:flex;}
   @media (min-width:700px){ .thread-pane{display:flex;} }
 
-  .thread-head{
-    display:flex;align-items:center;gap:12px;padding:16px 22px;
-    border-bottom:1px solid var(--line);flex-shrink:0;background:rgba(255,255,255,.9);backdrop-filter:blur(8px);
-  }
+  .thread-head{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line);flex-shrink:0;}
   .thread-back{display:flex;padding:2px;}
   @media (min-width:700px){ .thread-back{display:none;} }
   .thread-back svg{width:20px;height:20px;stroke:var(--ink);}
-  .thread-head .avatar{width:40px;height:40px;font-size:14px;}
-  .thread-head-meta{display:flex;flex-direction:column;line-height:1.25;}
-  .thread-head .name{font-family:var(--font-display);font-weight:600;font-size:15px;}
-  .thread-head-link{font-family:var(--font-mono);font-size:10.5px;color:var(--grey);}
-  .thread-head-link:hover{color:var(--accent);}
+  .thread-head .avatar{width:38px;height:38px;font-size:13px;}
+  .thread-head .name{font-family:var(--font-display);font-weight:600;font-size:14.5px;}
 
-  .thread-body{
-    flex:1;overflow-y:auto;padding:24px 22px;
-    display:flex;flex-direction:column;gap:3px;
-  }
-  .bubble-wrap{display:flex;flex-direction:column;max-width:70%;margin-bottom:8px;}
+  .thread-body{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:2px;}
+  .bubble-wrap{display:flex;flex-direction:column;max-width:70%;margin-bottom:6px;}
   .bubble-wrap.mine{align-self:flex-end;align-items:flex-end;}
   .bubble-wrap.theirs{align-self:flex-start;align-items:flex-start;}
-  .bubble{
-    padding:11px 15px;border-radius:20px;
-    font-family:var(--font-serif);font-size:14.5px;line-height:1.45;
-    word-wrap:break-word;
-  }
-  .bubble.mine{
-    background:linear-gradient(135deg,var(--ink),#26282f);color:#fff;border-bottom-right-radius:6px;
-  }
-  .bubble.theirs{
-    background:var(--bubble-theirs);color:var(--ink);border-bottom-left-radius:6px;
-  }
-  .bubble-time{font-family:var(--font-mono);font-size:9px;color:var(--grey);margin-top:4px;padding:0 4px;}
+  .bubble{padding:10px 14px;border-radius:18px;font-family:var(--font-serif);font-size:14.5px;line-height:1.4;word-wrap:break-word;}
+  .bubble.mine{background:var(--ink);color:#fff;border-bottom-right-radius:5px;}
+  .bubble.theirs{background:var(--bubble-theirs);color:var(--ink);border-bottom-left-radius:5px;}
+  .day-divider{align-self:center;font-family:var(--font-mono);font-size:10px;color:var(--grey);background:#f2f2f3;padding:4px 12px;border-radius:99px;margin:12px 0;}
 
-  .day-divider{
-    align-self:center;font-family:var(--font-mono);font-size:10px;color:var(--grey);
-    background:#f2f2f3;padding:4px 12px;border-radius:99px;margin:14px 0;
-  }
+  .thread-form{display:flex;align-items:center;gap:10px;padding:14px 20px;border-top:1px solid var(--line);flex-shrink:0;}
+  .thread-form input{flex:1;border:none;border-radius:99px;padding:11px 16px;font-family:var(--font-serif);font-size:14.5px;outline:none;background:#f2f2f3;}
+  .thread-form button{width:38px;height:38px;border-radius:50%;background:var(--accent);flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  .thread-form button svg{width:16px;height:16px;stroke:#fff;}
+  .thread-form button:disabled{opacity:.4;}
 
-  .thread-form{
-    display:flex;align-items:center;gap:10px;padding:16px 22px;
-    border-top:1px solid var(--line);flex-shrink:0;background:#fff;
-  }
-  .thread-form input{
-    flex:1;border:1px solid var(--line-strong);border-radius:99px;
-    padding:12px 18px;font-family:var(--font-serif);font-size:14.5px;outline:none;
-    transition:border-color .15s ease,background .15s ease;background:#f7f7f8;
-  }
-  .thread-form input:focus{border-color:var(--accent);background:#fff;}
-  .thread-form button{
-    width:42px;height:42px;border-radius:50%;background:var(--ink);flex-shrink:0;
-    display:flex;align-items:center;justify-content:center;transition:background .15s ease,transform .1s ease;
-  }
-  .thread-form button:hover{background:#000;}
-  .thread-form button:active{transform:scale(.93);}
-  .thread-form button svg{width:17px;height:17px;stroke:#fff;}
-  .thread-form button:disabled{opacity:.4;cursor:default;}
-
-  .thread-empty{
-    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    font-family:var(--font-mono);font-size:12px;color:var(--grey);gap:14px;padding:20px;text-align:center;
-  }
-  .thread-empty-icon{
-    width:68px;height:68px;border-radius:50%;
-    background:linear-gradient(135deg,var(--accent-soft),#fff);
-    border:1px solid var(--line);
-    display:flex;align-items:center;justify-content:center;
-  }
-  .thread-empty-icon svg{width:28px;height:28px;stroke:var(--accent);}
+  .thread-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:12px;color:var(--grey);gap:10px;}
   .thread-empty .big{font-family:var(--font-display);font-size:15px;color:var(--ink);font-weight:600;}
-
-  /* ---------- new DM modal ---------- */
-  .modal-overlay{
-    position:fixed;inset:0;background:rgba(10,10,12,.55);
-    display:none;align-items:center;justify-content:center;z-index:100;
-  }
-  .modal-overlay.show{display:flex;}
-  .modal-panel{
-    background:#fff;width:100%;max-width:400px;border-radius:22px;
-    max-height:72vh;display:flex;flex-direction:column;padding:20px 20px 16px;margin:20px;
-    box-shadow:0 24px 60px rgba(0,0,0,.18);
-  }
-  .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-  .modal-head h3{font-family:var(--font-display);font-size:16px;font-weight:700;}
-  .modal-close{width:30px;height:30px;border-radius:50%;background:#f2f2f3;display:flex;align-items:center;justify-content:center;transition:background .15s ease;}
-  .modal-close:hover{background:#e6e6e6;}
-  .modal-close svg{width:14px;height:14px;stroke:var(--ink);}
-  .friend-pick-row{
-    display:flex;align-items:center;gap:12px;padding:11px 6px;cursor:pointer;border-radius:12px;transition:background .12s ease;
-  }
-  .friend-pick-row:hover{background:#f7f7f8;}
-  .friend-pick-row .avatar{width:42px;height:42px;font-size:15px;}
-  .friend-pick-row .name{font-family:var(--font-display);font-weight:600;font-size:14.5px;}
 </style>
 </head>
 <body>
@@ -229,64 +107,32 @@
   <aside class="sidebar">
     <div class="wordmark">waater<span class="dot">.</span></div>
     <ul class="nav-list">
-      <li><a href="/" class="nav-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
-        Home</a></li>
-      <li><a href="/explore" class="nav-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-        Explore</a></li>
-      <li><a href="/create" class="nav-item nav-create">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
-        Create</a></li>
-      <li><a href="/messages" class="nav-item active">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-        Messages</a></li>
-      <li><a href="/profile" class="nav-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-        Profile</a></li>
+      <li><a href="/" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</a></li>
+      <li><a href="/explore" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Explore</a></li>
+      <li><a href="/create" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Create</a></li>
+      <li><a href="/messages" class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Messages</a></li>
+      <li><a href="/profile" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>Profile</a></li>
     </ul>
     <div id="sidebarAuthArea"><a href="/auth" class="sidebar-signin">Sign in</a></div>
   </aside>
 
   <div class="list-pane" id="listPane">
     <div class="list-head">
-      <div class="list-head-top">
-        <h1>Messages</h1>
-        <button class="new-dm-btn" id="newDmBtn" title="New message">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
-        </button>
-      </div>
+      <h1>Messages</h1>
       <div class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-        <input type="text" id="convSearch" placeholder="Search conversations">
+        <input type="text" id="convSearch" placeholder="Search">
       </div>
     </div>
     <div class="conv-list" id="convList">
-      <div class="empty-note">Loading conversations…</div>
+      <div class="empty-note">Loading…</div>
     </div>
   </div>
 
   <div class="thread-pane" id="threadPane">
     <div class="thread-empty" id="threadEmpty">
-      <div class="thread-empty-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-      </div>
       <span class="big">Your messages</span>
-      Pick a conversation, or start a new one.
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="newDmModal">
-  <div class="modal-panel">
-    <div class="modal-head">
-      <h3>New message</h3>
-      <button class="modal-close" id="newDmClose">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button>
-    </div>
-    <div id="friendPickList" style="overflow-y:auto;">
-      <div class="empty-note">Loading friends…</div>
+      Pick a friend to start chatting.
     </div>
   </div>
 </div>
@@ -318,7 +164,7 @@
   let currentUser = null;
   let activeConversationId = null;
   let activeChannel = null;
-  let conversationsById = {};
+  let inboxByUserId = {}; // otherUserId -> { user, conversationId, lastMessage }
 
   function requireAuth(){
     if (currentUser) return true;
@@ -338,7 +184,7 @@
     area.innerHTML = `
       <a href="/profile" class="sidebar-profile">
         <div class="avatar">${avatarHtml}</div>
-        <div class="who"><span>${escapeHtml(name)}</span></div>
+        <div class="who">${escapeHtml(name)}</div>
       </a>
       <button class="sidebar-signout" id="signOutBtn">Sign out</button>
     `;
@@ -348,27 +194,84 @@
     });
   }
 
-  function renderConvRows(rows){
+  // Fetch every accepted friend of the current user. Queried in two simple
+  // passes (as requester, then as addressee) instead of relying on named
+  // foreign-key hints, which silently fail if the constraint name changes.
+  async function loadFriends(){
+    const [{ data: asRequester, error: e1 }, { data: asAddressee, error: e2 }] = await Promise.all([
+      supabaseClient.from('friendships').select('addressee_id').eq('requester_id', currentUser.id).eq('status', 'accepted'),
+      supabaseClient.from('friendships').select('requester_id').eq('addressee_id', currentUser.id).eq('status', 'accepted'),
+    ]);
+    if (e1) console.error('loadFriends (requester side) failed:', e1);
+    if (e2) console.error('loadFriends (addressee side) failed:', e2);
+
+    const friendIds = [
+      ...(asRequester || []).map(r => r.addressee_id),
+      ...(asAddressee || []).map(r => r.requester_id),
+    ];
+    if (friendIds.length === 0) return [];
+
+    const { data: profiles, error: e3 } = await supabaseClient
+      .from('profiles').select('id, username, avatar_url').in('id', friendIds);
+    if (e3) console.error('loadFriends (profiles) failed:', e3);
+    return profiles || [];
+  }
+
+  async function loadExistingConversations(){
+    const { data: myRows, error } = await supabaseClient
+      .from('conversation_participants').select('conversation_id').eq('user_id', currentUser.id);
+    if (error) console.error('loadExistingConversations failed:', error);
+
+    const convIds = (myRows || []).map(r => r.conversation_id);
+    if (convIds.length === 0) return {};
+
+    const { data: otherParticipants } = await supabaseClient
+      .from('conversation_participants')
+      .select('conversation_id, user_id, profiles(id, username, avatar_url)')
+      .in('conversation_id', convIds)
+      .neq('user_id', currentUser.id);
+
+    const { data: lastMessages } = await supabaseClient
+      .from('dm_messages').select('*').in('conversation_id', convIds).order('created_at', { ascending: false });
+
+    const lastByConv = {};
+    (lastMessages || []).forEach(m => { if (!lastByConv[m.conversation_id]) lastByConv[m.conversation_id] = m; });
+
+    const byUserId = {};
+    (otherParticipants || []).forEach(p => {
+      if (!p.profiles) return;
+      byUserId[p.profiles.id] = {
+        conversationId: p.conversation_id,
+        user: p.profiles,
+        lastMessage: lastByConv[p.conversation_id] || null,
+      };
+    });
+    return byUserId;
+  }
+
+  function renderInbox(){
     const convListEl = document.getElementById('convList');
+    const rows = Object.values(inboxByUserId).sort((a, b) => {
+      const at = a.lastMessage?.created_at || '';
+      const bt = b.lastMessage?.created_at || '';
+      if (at && bt) return new Date(bt) - new Date(at);
+      if (at) return -1;
+      if (bt) return 1;
+      return (a.user.username || '').localeCompare(b.user.username || '');
+    });
+
     if (rows.length === 0){
-      convListEl.innerHTML = `
-        <div class="empty-note">
-          <div class="empty-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-          </div>
-          <span class="big">No conversations yet</span>
-          Tap the + to message a friend.
-        </div>`;
+      convListEl.innerHTML = `<div class="empty-note"><span class="big">No friends yet</span>Add friends and they'll show up here to message.</div>`;
       return;
     }
-    convListEl.innerHTML = rows.map(c => {
-      const name = escapeHtml(c.otherUser?.username || 'Someone');
-      const avatarUrl = c.otherUser?.avatar_url;
-      const avatarHtml = avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="">` : initials(name);
-      const preview = c.lastMessage ? escapeHtml(c.lastMessage.body) : 'Say hi 👋';
-      const time = c.lastMessage ? timeAgo(c.lastMessage.created_at) : '';
+
+    convListEl.innerHTML = rows.map(r => {
+      const name = escapeHtml(r.user.username || 'Someone');
+      const avatarHtml = r.user.avatar_url ? `<img src="${escapeHtml(r.user.avatar_url)}" alt="">` : initials(name);
+      const preview = r.lastMessage ? escapeHtml(r.lastMessage.body) : 'Say hi 👋';
+      const time = r.lastMessage ? timeAgo(r.lastMessage.created_at) : '';
       return `
-        <div class="conv-row" data-conv-id="${c.id}" data-name="${name.toLowerCase()}">
+        <div class="conv-row" data-user-id="${r.user.id}" data-name="${name.toLowerCase()}">
           <div class="avatar">${avatarHtml}</div>
           <div class="meta">
             <div class="top-line"><span class="name">${name}</span><span class="time">${time}</span></div>
@@ -379,58 +282,19 @@
     }).join('');
 
     document.querySelectorAll('.conv-row').forEach(row => {
-      row.addEventListener('click', () => openConversation(row.dataset.convId));
+      row.addEventListener('click', () => openConversationWithUser(row.dataset.userId));
     });
   }
 
-  async function loadConversations(){
-    const convListEl = document.getElementById('convList');
+  async function refreshInbox(){
     if (!requireAuth()) return;
+    const [friends, existing] = await Promise.all([loadFriends(), loadExistingConversations()]);
 
-    const { data: myRows } = await supabaseClient
-      .from('conversation_participants')
-      .select('conversation_id')
-      .eq('user_id', currentUser.id);
-
-    const convIds = (myRows || []).map(r => r.conversation_id);
-    if (convIds.length === 0){
-      renderConvRows([]);
-      return;
-    }
-
-    const { data: otherParticipants } = await supabaseClient
-      .from('conversation_participants')
-      .select('conversation_id, profiles(id, username, avatar_url)')
-      .in('conversation_id', convIds)
-      .neq('user_id', currentUser.id);
-
-    const { data: lastMessages } = await supabaseClient
-      .from('dm_messages')
-      .select('*')
-      .in('conversation_id', convIds)
-      .order('created_at', { ascending: false });
-
-    const lastByConv = {};
-    (lastMessages || []).forEach(m => {
-      if (!lastByConv[m.conversation_id]) lastByConv[m.conversation_id] = m;
+    inboxByUserId = { ...existing };
+    friends.forEach(f => {
+      if (!inboxByUserId[f.id]) inboxByUserId[f.id] = { conversationId: null, user: f, lastMessage: null };
     });
-
-    conversationsById = {};
-    (otherParticipants || []).forEach(p => {
-      conversationsById[p.conversation_id] = {
-        id: p.conversation_id,
-        otherUser: p.profiles,
-        lastMessage: lastByConv[p.conversation_id] || null,
-      };
-    });
-
-    const rows = Object.values(conversationsById).sort((a, b) => {
-      const at = a.lastMessage?.created_at || 0;
-      const bt = b.lastMessage?.created_at || 0;
-      return new Date(bt) - new Date(at);
-    });
-
-    renderConvRows(rows);
+    renderInbox();
   }
 
   document.getElementById('convSearch').addEventListener('input', (e) => {
@@ -447,7 +311,6 @@
       ${dayHtml}
       <div class="bubble-wrap ${mine ? 'mine' : 'theirs'}">
         <div class="bubble ${mine ? 'mine' : 'theirs'}">${escapeHtml(msg.body)}</div>
-        <div class="bubble-time">${new Date(msg.created_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</div>
       </div>
     `;
   }
@@ -462,54 +325,65 @@
     }).join('');
   }
 
-  async function openConversation(conversationId){
+  async function findOrCreateConversation(otherUserId){
+    const existing = inboxByUserId[otherUserId]?.conversationId;
+    if (existing) return existing;
+
+    const { data: newConv, error } = await supabaseClient.from('conversations').insert({}).select().single();
+    if (error){ console.error('Failed to create conversation:', error); return null; }
+
+    const { error: partErr } = await supabaseClient.from('conversation_participants').insert([
+      { conversation_id: newConv.id, user_id: currentUser.id },
+      { conversation_id: newConv.id, user_id: otherUserId },
+    ]);
+    if (partErr) console.error('Failed to add participants:', partErr);
+
+    if (inboxByUserId[otherUserId]) inboxByUserId[otherUserId].conversationId = newConv.id;
+    return newConv.id;
+  }
+
+  async function openConversationWithUser(otherUserId){
     if (!requireAuth()) return;
+    const entry = inboxByUserId[otherUserId];
+    if (!entry) return;
+
+    const conversationId = await findOrCreateConversation(otherUserId);
+    if (!conversationId) return;
     activeConversationId = conversationId;
 
-    document.querySelectorAll('.conv-row').forEach(r => r.classList.toggle('active', r.dataset.convId === conversationId));
-
+    document.querySelectorAll('.conv-row').forEach(r => r.classList.toggle('active', r.dataset.userId === otherUserId));
     document.getElementById('listPane').classList.remove('show');
     const threadPane = document.getElementById('threadPane');
     threadPane.classList.add('show');
 
-    const conv = conversationsById[conversationId];
-    const name = escapeHtml(conv?.otherUser?.username || 'Someone');
-    const uname = conv?.otherUser?.username || '';
-    const avatarUrl = conv?.otherUser?.avatar_url;
-    const avatarHtml = avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="">` : initials(name);
+    const name = escapeHtml(entry.user.username || 'Someone');
+    const uname = entry.user.username || '';
+    const avatarHtml = entry.user.avatar_url ? `<img src="${escapeHtml(entry.user.avatar_url)}" alt="">` : initials(name);
 
     threadPane.innerHTML = `
       <div class="thread-head">
-        <button class="thread-back" id="threadBackBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        </button>
+        <button class="thread-back" id="threadBackBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
         <div class="avatar">${avatarHtml}</div>
-        <div class="thread-head-meta">
-          <span class="name">${name}</span>
-          <a href="/profile?u=${encodeURIComponent(uname)}" class="thread-head-link">View profile</a>
-        </div>
+        <a href="/profile?u=${encodeURIComponent(uname)}" class="name">${name}</a>
       </div>
-      <div class="thread-body" id="threadBody"><div class="empty-note">Loading messages…</div></div>
+      <div class="thread-body" id="threadBody"><div class="empty-note">Loading…</div></div>
       <form class="thread-form" id="threadForm">
         <input type="text" id="threadInput" placeholder="Message..." maxlength="1000" autocomplete="off">
-        <button type="submit" id="threadSendBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-        </button>
+        <button type="submit" id="threadSendBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
       </form>
     `;
 
-    document.getElementById('threadBackBtn').addEventListener('click', closeThreadOnMobile);
+    document.getElementById('threadBackBtn').addEventListener('click', () => {
+      document.getElementById('listPane').classList.add('show');
+      document.getElementById('threadPane').classList.remove('show');
+    });
 
-    const { data: msgs } = await supabaseClient
-      .from('dm_messages')
-      .select('*')
-      .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: true });
+    const { data: msgs, error: msgErr } = await supabaseClient
+      .from('dm_messages').select('*').eq('conversation_id', conversationId).order('created_at', { ascending: true });
+    if (msgErr) console.error('Failed to load messages:', msgErr);
 
     const threadBody = document.getElementById('threadBody');
-    threadBody.innerHTML = (msgs && msgs.length)
-      ? renderThreadMessages(msgs)
-      : `<div class="empty-note">Say hi 👋 — this is the start of your conversation.</div>`;
+    threadBody.innerHTML = (msgs && msgs.length) ? renderThreadMessages(msgs) : `<div class="empty-note">Say hi 👋 — this is the start of your conversation.</div>`;
     threadBody.scrollTop = threadBody.scrollHeight;
 
     let lastRenderedDay = msgs && msgs.length ? dayLabel(msgs[msgs.length - 1].created_at) : null;
@@ -520,23 +394,19 @@
       const body = input.value.trim();
       if (!body) return;
       input.value = '';
-      try {
-        await supabaseClient.from('dm_messages').insert({
-          conversation_id: conversationId,
-          sender_id: currentUser.id,
-          body,
-        });
-      } catch (err) {
-        console.error('Failed to send message:', err);
-      }
+      const { error: sendErr } = await supabaseClient.from('dm_messages').insert({
+        conversation_id: conversationId,
+        sender_id: currentUser.id,
+        body,
+      });
+      if (sendErr) console.error('Failed to send message:', sendErr);
     });
 
     if (activeChannel) supabaseClient.removeChannel(activeChannel);
     activeChannel = supabaseClient
       .channel(`conv-${conversationId}`)
       .on('postgres_changes', {
-        event: 'INSERT', schema: 'public', table: 'dm_messages',
-        filter: `conversation_id=eq.${conversationId}`,
+        event: 'INSERT', schema: 'public', table: 'dm_messages', filter: `conversation_id=eq.${conversationId}`,
       }, (payload) => {
         const body2 = document.getElementById('threadBody');
         if (!body2) return;
@@ -545,112 +415,16 @@
         lastRenderedDay = day;
         body2.insertAdjacentHTML('beforeend', renderBubble(payload.new, showDay));
         body2.scrollTop = body2.scrollHeight;
+        if (inboxByUserId[otherUserId]) inboxByUserId[otherUserId].lastMessage = payload.new;
       })
       .subscribe();
 
-    loadConversations();
+    renderInbox();
   }
-
-  function closeThreadOnMobile(){
-    document.getElementById('listPane').classList.add('show');
-    document.getElementById('threadPane').classList.remove('show');
-  }
-
-  async function openNewDmModal(){
-    if (!requireAuth()) return;
-    document.getElementById('newDmModal').classList.add('show');
-    const listEl = document.getElementById('friendPickList');
-    listEl.innerHTML = `<div class="empty-note">Loading friends…</div>`;
-
-    const { data: friendships } = await supabaseClient
-
-      .from('friendships')
-
-      .select('requester_id, addressee_id, requester:profiles!friendships_requester_id_fkey(id,username,avatar_url), addressee:profiles!friendships_addressee_id_fkey(id,username,avatar_url)')
-
-      .eq('status', 'accepted')
-
-      .or(`requester_id.eq.${currentUser.id},addressee_id.eq.${currentUser.id}`);
-
-    const friends = (friendships || []).map(f => {
-
-      const other = f.requester_id === currentUser.id ? f.addressee : f.requester;
-      return other;
-
-    }).filter(Boolean);
-    
-
-
-
-    if (friends.length === 0){
-      listEl.innerHTML = `<div class="empty-note">Add some friends first — then they'll show up here.</div>`;
-      return;
-    }
-
-    listEl.innerHTML = friends.map(f => {
-      const name = escapeHtml(f.username || 'Someone');
-      const avatarHtml = f.avatar_url ? `<img src="${escapeHtml(f.avatar_url)}" alt="">` : initials(name);
-      return `
-        <div class="friend-pick-row" data-user-id="${f.id}">
-          <div class="avatar">${avatarHtml}</div>
-          <span class="name">${name}</span>
-        </div>
-      `;
-    }).join('');
-
-    document.querySelectorAll('.friend-pick-row').forEach(row => {
-      row.addEventListener('click', () => startConversationWith(row.dataset.userId));
-    });
-  }
-
-  async function findOrCreateConversation(otherUserId){
-    const { data: mine } = await supabaseClient
-      .from('conversation_participants').select('conversation_id').eq('user_id', currentUser.id);
-    const { data: theirs } = await supabaseClient
-      .from('conversation_participants').select('conversation_id').eq('user_id', otherUserId);
-
-    const mineIds = new Set((mine || []).map(r => r.conversation_id));
-    const shared = (theirs || []).map(r => r.conversation_id).find(id => mineIds.has(id));
-
-    if (shared) return shared;
-
-    const { data: newConv, error } = await supabaseClient
-      .from('conversations').insert({}).select().single();
-    if (error){ console.error('Failed to create conversation:', error); return null; }
-
-    await supabaseClient.from('conversation_participants').insert([
-      { conversation_id: newConv.id, user_id: currentUser.id },
-      { conversation_id: newConv.id, user_id: otherUserId },
-    ]);
-    return newConv.id;
-  }
-
-  async function startConversationWith(otherUserId){
-    const conversationId = await findOrCreateConversation(otherUserId);
-    if (!conversationId) return;
-    document.getElementById('newDmModal').classList.remove('show');
-    await loadConversations();
-    openConversation(conversationId);
-  }
-
-  async function openConversationWithUser(otherUserId){
-    const conversationId = await findOrCreateConversation(otherUserId);
-    if (!conversationId) return;
-    await loadConversations();
-    openConversation(conversationId);
-  }
-
-  document.getElementById('newDmBtn').addEventListener('click', openNewDmModal);
-  document.getElementById('newDmClose').addEventListener('click', () => {
-    document.getElementById('newDmModal').classList.remove('show');
-  });
-  document.getElementById('newDmModal').addEventListener('click', (e) => {
-    if (e.target.id === 'newDmModal') document.getElementById('newDmModal').classList.remove('show');
-  });
 
   async function init(){
     await renderSidebar();
-    await loadConversations();
+    await refreshInbox();
 
     const params = new URLSearchParams(window.location.search);
     const withUserId = params.get('with');
