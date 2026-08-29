@@ -133,13 +133,26 @@
     border-radius:12px;
     border:1px solid var(--line);
   }
+
   .avatar{
+
     width:36px;height:36px;border-radius:50%;
     background:linear-gradient(135deg,#ffd8c9,var(--accent));
+
     flex-shrink:0;
+
     display:flex;align-items:center;justify-content:center;
+
     color:#fff;font-family:var(--font-display);font-weight:700;font-size:14px;
+
+    overflow:hidden;
+
   }
+
+  .avatar img{width:100%;height:100%;object-fit:cover;}
+
+
+
   .sidebar-profile .who{display:flex;flex-direction:column;line-height:1.2;flex:1;min-width:0;}
   .sidebar-profile .who span:first-child{font-family:var(--font-display);font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .sidebar-profile .who span:last-child{font-family:var(--font-mono);font-size:11px;color:var(--grey);}
@@ -652,23 +665,40 @@
     }
 
     const { data: profile } = await supabaseClient
+
       .from('profiles')
-      .select('username')
+      .select('username, avatar_url')
+
       .eq('id', currentUser.id)
       .maybeSingle();
 
     currentUsername = profile?.username || currentUser.email || 'You';
 
+    const avatarHtml = profile?.avatar_url
+
+      ? `<img src="${escapeHtml(profile.avatar_url)}" alt="">`
+
+      : initials(currentUsername);
+
+
+
     area.innerHTML = `
+
       <a href="/profile" class="sidebar-profile">
-        <div class="avatar">${initials(currentUsername)}</div>
+
+        <div class="avatar">${avatarHtml}</div>
+
         <div class="who">
+
           <span>${escapeHtml(currentUsername)}</span>
+
           <span id="sidebarStreak">day —</span>
         </div>
+
       </a>
       <button class="sidebar-signout" id="signOutBtn">Sign out</button>
     `;
+
     document.getElementById('signOutBtn').addEventListener('click', async () => {
       await supabaseClient.auth.signOut();
       window.location.reload();
@@ -679,13 +709,26 @@
   let likedPostIds = new Set();
 
   function renderPost(post, index) {
+
     const [g1, g2] = GRADIENTS[index % GRADIENTS.length];
+
     const name = escapeHtml(post.profiles?.username || 'Someone');
+    const avatarUrl = post.profiles?.avatar_url;
+
+    const avatarHtml = avatarUrl
+
+      ? `<img src="${escapeHtml(avatarUrl)}" alt="">`
+
+      : initials(name);
+      
+
     const caption = escapeHtml(post.caption || '');
     const mediaUrl = post.media_url || '';
     const mediaType = post.media_type || 'text';
+
     const likeCount = post.likes?.[0]?.count ?? 0;
-    const commentCount = post.comments?.[0]?.count ?? 0;
+    const commentCount = post.comments?.[0]?.count ?? 0
+    ;
     const isLiked = likedPostIds.has(post.id);
 
     let mediaHtml = '';
@@ -700,8 +743,11 @@
 
     return `
       <article class="post" data-post-id="${post.id}">
+
         <div class="post-meta">
-          <div class="avatar">${initials(name)}</div>
+
+          <div class="avatar">${avatarHtml}</div>
+
           <span class="name">${name}</span>
         </div>
         <div class="clip clip-clickable" style="--g1:${g1};--g2:${g2};">
@@ -758,9 +804,12 @@
     }
 
     try {
+
       const { data: posts, error } = await supabaseClient
+
         .from('posts')
-        .select('*, profiles(username), likes(count), comments(count)')
+        .select('*, profiles(username , avatar_url), likes(count), comments(count)')
+
         .order('created_at', { ascending: false });
 
       if (error) throw error;
