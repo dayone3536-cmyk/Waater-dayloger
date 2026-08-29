@@ -55,6 +55,13 @@
   .list-pane{width:100%;border-right:1px solid var(--line);display:flex;flex-direction:column;height:100vh;background:var(--white);}
   @media (min-width:700px){ .list-pane{width:var(--list-w);flex-shrink:0;} }
 
+  /* FIX: on mobile, hide the list pane while a thread is open — previously nothing
+     ever hid it, so list + thread rendered side-by-side and squeezed the thread
+     into an unusably narrow sliver. */
+  @media (max-width:699px){
+    .list-pane.thread-open{ display:none; }
+  }
+
   .list-head{padding:20px 20px 14px;flex-shrink:0;position:relative;}
   .list-head::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,var(--line) 20%,var(--line) 80%,transparent);}
   .list-head h1{font-family:var(--font-display);font-weight:700;font-size:21px;margin-bottom:14px;letter-spacing:-.01em;}
@@ -505,7 +512,10 @@
     if (entry) entry.unread = false;
 
     document.querySelectorAll('.conv-row').forEach(r => r.classList.toggle('active', r.dataset.userId === otherUserId));
-    document.getElementById('listPane').classList.remove('show');
+    // FIX: was classList.remove('show') — that class was never used to control
+    // .list-pane's visibility, so the list stayed on screen next to the thread
+    // on mobile. 'thread-open' is the class the CSS above actually checks.
+    document.getElementById('listPane').classList.add('thread-open');
     const threadPane = document.getElementById('threadPane');
     threadPane.classList.add('show');
 
@@ -536,7 +546,9 @@
     `;
 
     document.getElementById('threadBackBtn').addEventListener('click', () => {
-      document.getElementById('listPane').classList.add('show');
+      // FIX: was classList.add('show') on a class the list-pane never checked.
+      // Remove 'thread-open' instead, which is what actually brings it back.
+      document.getElementById('listPane').classList.remove('thread-open');
       document.getElementById('threadPane').classList.remove('show');
     });
 
