@@ -42,6 +42,14 @@ app.post('/api/posts', (req, res) => {
 app.get('/api/users', (req, res) => res.json(users));
 app.get('/api/users/me', (req, res) => res.json(req.user));
 
+
+app.get('/ping', (req, res) => {
+
+  res.status(200).send('pong');
+  
+});
+
+
 app.get('/api/inbox', (req, res) => res.json(messages));
 
 // health check
