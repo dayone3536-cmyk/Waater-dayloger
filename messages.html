@@ -522,11 +522,51 @@
     if (e.target.id === 'newDmModal') document.getElementById('newDmModal').classList.remove('show');
   });
 
-  async function init(){
-    await renderSidebar();
+  async function openConversationWithUser(otherUserId){
+    const { data: mine } = await supabaseClient
+      .from('conversation_participants').select('conversation_id').eq('user_id', currentUser.id);
+    const { data: theirs } = await supabaseClient
+      .from('conversation_participants').select('conversation_id').eq('user_id', otherUserId);
+
+    const mineIds = new Set((mine || []).map(r => r.conversation_id));
+    const shared = (theirs || []).map(r => r.conversation_id).find(id => mineIds.has(id));
+
+    let conversationId = shared;
+    if (!conversationId){
+      const { data: newConv, error } = await supabaseClient
+        .from('conversations').insert({}).select().single();
+      if (error){ console.error('Failed to create conversation:', error); return; }
+      conversationId = newConv.id;
+      await supabaseClient.from('conversation_participants').insert([
+        { conversation_id: conversationId, user_id: currentUser.id },
+        { conversation_id: conversationId, user_id: otherUserId },
+      ]);
+    }
+
     await loadConversations();
+    openConversation(conversationId);
   }
-  init();
+
+async function init(){
+  await renderSidebar();
+  await loadConversations();
+
+  const params = new URLSearchParams(window.location.search);
+  const withUserId = params.get('with');
+  
+  if (withUserId && currentUser){
+    openConversationWithUser(withUserId);
+  }
+
+}
+
+init();
+
+
+
+
+
+
 </script>
 
 </body>
