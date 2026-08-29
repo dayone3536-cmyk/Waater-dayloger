@@ -10,8 +10,9 @@
 <style>
   :root{
     --white:#ffffff;--ink:#14151a;--ink-soft:#4a4d55;--grey:#8a8d94;
-    --line:#ececec;--line-strong:#e0e0e0;--accent:#ff5a36;--accent-soft:#fff1ec;
-    --nav-w:248px;--list-w:340px;
+    --line:#ececec;--line-strong:#e0e0e0;--accent:#ff5a36;--accent-2:#ffb199;--accent-soft:#fff1ec;
+    --bubble-theirs:#f2f2f3;
+    --nav-w:248px;--list-w:360px;
     --font-display:'Space Grotesk', sans-serif;
     --font-serif:'Newsreader', serif;
     --font-mono:'JetBrains Mono', monospace;
@@ -21,8 +22,12 @@
   body{background:var(--white);color:var(--ink);font-family:var(--font-serif);-webkit-font-smoothing:antialiased;overflow:hidden;}
   a{color:inherit;text-decoration:none;}
   button{font-family:inherit;border:none;background:none;cursor:pointer;}
+  input{font-family:inherit;}
+  ::selection{background:var(--accent-soft);color:var(--accent);}
 
-  .app{display:flex;max-width:1280px;margin:0 auto;height:100vh;}
+  .app{display:flex;max-width:1320px;margin:0 auto;height:100vh;}
+
+  /* ---------- sidebar ---------- */
   .sidebar{
     display:none;width:var(--nav-w);flex-shrink:0;padding:28px 18px;
     flex-direction:column;height:100vh;border-right:1px solid var(--line);
@@ -33,12 +38,14 @@
   .nav-item{
     display:flex;align-items:center;gap:14px;padding:12px 12px;border-radius:12px;
     font-family:var(--font-display);font-size:15.5px;font-weight:500;color:var(--ink-soft);
+    transition:background .15s ease,color .15s ease;
   }
   .nav-item svg{width:22px;height:22px;flex-shrink:0;}
   .nav-item:hover{background:#f7f7f8;color:var(--ink);}
   .nav-item.active{color:var(--ink);}
   .nav-item.active svg{stroke:var(--accent);}
   .nav-create{margin-top:14px;background:var(--ink);color:#fff!important;justify-content:center;font-weight:600;padding:13px 12px;}
+  .nav-create:hover{background:#000;}
   .nav-create svg{stroke:#fff;}
   .sidebar-signin{
     margin-top:auto;display:block;text-align:center;background:var(--ink);color:#fff!important;
@@ -46,7 +53,7 @@
   }
   .sidebar-profile{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);}
   .avatar{
-    width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd8c9,var(--accent));
+    width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent-2),var(--accent));
     flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;
     font-family:var(--font-display);font-weight:700;font-size:14px;overflow:hidden;
   }
@@ -57,122 +64,163 @@
 
   @media (min-width:900px){ .sidebar{display:flex;} }
 
-  /* ---- conversation list ---- */
+  /* ---------- conversation list ---------- */
   .list-pane{
-    width:100%;
-    border-right:1px solid var(--line);
-    display:flex;flex-direction:column;height:100vh;
+    width:100%;border-right:1px solid var(--line);
+    display:flex;flex-direction:column;height:100vh;background:var(--white);
   }
   @media (min-width:700px){ .list-pane{width:var(--list-w);flex-shrink:0;} }
 
   .list-head{
-    display:flex;align-items:center;justify-content:space-between;
-    padding:18px 20px;border-bottom:1px solid var(--line);
+    padding:20px 20px 14px;border-bottom:1px solid var(--line);flex-shrink:0;
   }
-  .list-head h1{font-family:var(--font-display);font-weight:700;font-size:18px;}
+  .list-head-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .list-head h1{font-family:var(--font-display);font-weight:700;font-size:21px;letter-spacing:-.01em;}
   .new-dm-btn{
-    width:32px;height:32px;border-radius:50%;background:var(--ink);
-    display:flex;align-items:center;justify-content:center;
+    width:34px;height:34px;border-radius:50%;background:var(--ink);
+    display:flex;align-items:center;justify-content:center;transition:transform .12s ease,background .15s ease;
   }
-  .new-dm-btn svg{width:15px;height:15px;stroke:#fff;}
+  .new-dm-btn:hover{background:#000;transform:scale(1.06);}
+  .new-dm-btn svg{width:16px;height:16px;stroke:#fff;}
 
-  .conv-list{flex:1;overflow-y:auto;}
+  .search-box{position:relative;}
+  .search-box svg{
+    position:absolute;left:13px;top:50%;transform:translateY(-50%);
+    width:14px;height:14px;stroke:var(--grey);pointer-events:none;
+  }
+  .search-box input{
+    width:100%;border:1px solid var(--line-strong);border-radius:99px;
+    padding:9px 14px 9px 34px;font-size:13.5px;font-family:var(--font-serif);outline:none;
+    background:#f7f7f8;transition:background .15s ease,border-color .15s ease;
+  }
+  .search-box input:focus{background:#fff;border-color:var(--accent);}
+
+  .conv-list{flex:1;overflow-y:auto;padding:6px 8px;}
   .conv-row{
-    display:flex;align-items:center;gap:12px;padding:12px 20px;cursor:pointer;
-    border-bottom:1px solid var(--line);transition:background .1s ease;
+    display:flex;align-items:center;gap:12px;padding:10px 12px;cursor:pointer;
+    border-radius:14px;transition:background .12s ease;
   }
   .conv-row:hover{background:#f7f7f8;}
   .conv-row.active{background:var(--accent-soft);}
-  .conv-row .avatar{width:44px;height:44px;font-size:15px;}
+  .conv-row .avatar{width:48px;height:48px;font-size:16px;}
   .conv-row .meta{flex:1;min-width:0;}
-  .conv-row .top-line{display:flex;justify-content:space-between;gap:8px;}
-  .conv-row .name{font-family:var(--font-display);font-weight:600;font-size:14px;}
+  .conv-row .top-line{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+  .conv-row .name{font-family:var(--font-display);font-weight:600;font-size:14.5px;}
   .conv-row .time{font-family:var(--font-mono);font-size:10px;color:var(--grey);flex-shrink:0;}
   .conv-row .preview{
     font-family:var(--font-serif);font-size:13px;color:var(--ink-soft);
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;
   }
-  .conv-row .preview.unread{color:var(--ink);font-weight:600;}
+  .conv-row.active .preview{color:var(--ink-soft);}
 
-  .empty-note{padding:40px 20px;text-align:center;font-family:var(--font-mono);font-size:11.5px;color:var(--grey);}
+  .empty-note{padding:50px 24px;text-align:center;font-family:var(--font-mono);font-size:11.5px;color:var(--grey);line-height:1.6;}
+  .empty-note .big{font-family:var(--font-display);font-size:14px;color:var(--ink);font-weight:600;margin-bottom:6px;display:block;}
+  .empty-icon{
+    width:52px;height:52px;border-radius:50%;background:var(--accent-soft);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 14px;
+  }
+  .empty-icon svg{width:22px;height:22px;stroke:var(--accent);}
 
-  /* ---- thread pane ---- */
+  /* ---------- thread pane ---------- */
   .thread-pane{
     flex:1;display:none;flex-direction:column;height:100vh;min-width:0;
+    background:linear-gradient(180deg,#fff, #fdfaf8 100%);
   }
   .thread-pane.show{display:flex;}
   @media (min-width:700px){ .thread-pane{display:flex;} }
 
   .thread-head{
-    display:flex;align-items:center;gap:12px;padding:14px 20px;
-    border-bottom:1px solid var(--line);flex-shrink:0;
+    display:flex;align-items:center;gap:12px;padding:16px 22px;
+    border-bottom:1px solid var(--line);flex-shrink:0;background:rgba(255,255,255,.9);backdrop-filter:blur(8px);
   }
-  .thread-back{display:flex;}
+  .thread-back{display:flex;padding:2px;}
   @media (min-width:700px){ .thread-back{display:none;} }
   .thread-back svg{width:20px;height:20px;stroke:var(--ink);}
-  .thread-head .avatar{width:36px;height:36px;font-size:13px;}
-  .thread-head .name{font-family:var(--font-display);font-weight:600;font-size:14.5px;}
+  .thread-head .avatar{width:40px;height:40px;font-size:14px;}
+  .thread-head-meta{display:flex;flex-direction:column;line-height:1.25;}
+  .thread-head .name{font-family:var(--font-display);font-weight:600;font-size:15px;}
+  .thread-head-link{font-family:var(--font-mono);font-size:10.5px;color:var(--grey);}
+  .thread-head-link:hover{color:var(--accent);}
 
   .thread-body{
-    flex:1;overflow-y:auto;padding:20px;
-    display:flex;flex-direction:column;gap:10px;
+    flex:1;overflow-y:auto;padding:24px 22px;
+    display:flex;flex-direction:column;gap:3px;
   }
+  .bubble-wrap{display:flex;flex-direction:column;max-width:70%;margin-bottom:8px;}
+  .bubble-wrap.mine{align-self:flex-end;align-items:flex-end;}
+  .bubble-wrap.theirs{align-self:flex-start;align-items:flex-start;}
   .bubble{
-    max-width:72%;padding:10px 14px;border-radius:18px;
-    font-family:var(--font-serif);font-size:14.5px;line-height:1.4;
+    padding:11px 15px;border-radius:20px;
+    font-family:var(--font-serif);font-size:14.5px;line-height:1.45;
+    word-wrap:break-word;
   }
   .bubble.mine{
-    align-self:flex-end;background:var(--ink);color:#fff;border-bottom-right-radius:4px;
+    background:linear-gradient(135deg,var(--ink),#26282f);color:#fff;border-bottom-right-radius:6px;
   }
   .bubble.theirs{
-    align-self:flex-start;background:#f2f2f3;color:var(--ink);border-bottom-left-radius:4px;
+    background:var(--bubble-theirs);color:var(--ink);border-bottom-left-radius:6px;
   }
-  .bubble-time{
-    font-family:var(--font-mono);font-size:9.5px;color:var(--grey);margin-top:3px;
+  .bubble-time{font-family:var(--font-mono);font-size:9px;color:var(--grey);margin-top:4px;padding:0 4px;}
+
+  .day-divider{
+    align-self:center;font-family:var(--font-mono);font-size:10px;color:var(--grey);
+    background:#f2f2f3;padding:4px 12px;border-radius:99px;margin:14px 0;
   }
-  .bubble-wrap{display:flex;flex-direction:column;}
-  .bubble-wrap.mine{align-items:flex-end;}
-  .bubble-wrap.theirs{align-items:flex-start;}
 
   .thread-form{
-    display:flex;gap:10px;padding:14px 20px;border-top:1px solid var(--line);flex-shrink:0;
+    display:flex;align-items:center;gap:10px;padding:16px 22px;
+    border-top:1px solid var(--line);flex-shrink:0;background:#fff;
   }
   .thread-form input{
     flex:1;border:1px solid var(--line-strong);border-radius:99px;
-    padding:11px 16px;font-family:var(--font-serif);font-size:14px;outline:none;
+    padding:12px 18px;font-family:var(--font-serif);font-size:14.5px;outline:none;
+    transition:border-color .15s ease,background .15s ease;background:#f7f7f8;
   }
-  .thread-form input:focus{border-color:var(--accent);}
+  .thread-form input:focus{border-color:var(--accent);background:#fff;}
   .thread-form button{
-    background:var(--ink);color:#fff;font-family:var(--font-display);
-    font-weight:600;font-size:13px;padding:0 18px;border-radius:99px;
+    width:42px;height:42px;border-radius:50%;background:var(--ink);flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;transition:background .15s ease,transform .1s ease;
   }
-  .thread-form button:disabled{opacity:.5;}
+  .thread-form button:hover{background:#000;}
+  .thread-form button:active{transform:scale(.93);}
+  .thread-form button svg{width:17px;height:17px;stroke:#fff;}
+  .thread-form button:disabled{opacity:.4;cursor:default;}
 
   .thread-empty{
-    flex:1;display:flex;align-items:center;justify-content:center;
-    font-family:var(--font-mono);font-size:12px;color:var(--grey);
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-family:var(--font-mono);font-size:12px;color:var(--grey);gap:14px;padding:20px;text-align:center;
   }
+  .thread-empty-icon{
+    width:68px;height:68px;border-radius:50%;
+    background:linear-gradient(135deg,var(--accent-soft),#fff);
+    border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .thread-empty-icon svg{width:28px;height:28px;stroke:var(--accent);}
+  .thread-empty .big{font-family:var(--font-display);font-size:15px;color:var(--ink);font-weight:600;}
 
-  /* ---- new DM modal ---- */
+  /* ---------- new DM modal ---------- */
   .modal-overlay{
-    position:fixed;inset:0;background:rgba(10,10,12,.5);
+    position:fixed;inset:0;background:rgba(10,10,12,.55);
     display:none;align-items:center;justify-content:center;z-index:100;
   }
   .modal-overlay.show{display:flex;}
   .modal-panel{
-    background:#fff;width:100%;max-width:400px;border-radius:20px;
-    max-height:70vh;display:flex;flex-direction:column;padding:18px 20px 20px;margin:20px;
+    background:#fff;width:100%;max-width:400px;border-radius:22px;
+    max-height:72vh;display:flex;flex-direction:column;padding:20px 20px 16px;margin:20px;
+    box-shadow:0 24px 60px rgba(0,0,0,.18);
   }
-  .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
-  .modal-head h3{font-family:var(--font-display);font-size:14.5px;font-weight:600;}
-  .modal-close{width:28px;height:28px;border-radius:50%;background:#f2f2f3;display:flex;align-items:center;justify-content:center;}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .modal-head h3{font-family:var(--font-display);font-size:16px;font-weight:700;}
+  .modal-close{width:30px;height:30px;border-radius:50%;background:#f2f2f3;display:flex;align-items:center;justify-content:center;transition:background .15s ease;}
+  .modal-close:hover{background:#e6e6e6;}
   .modal-close svg{width:14px;height:14px;stroke:var(--ink);}
   .friend-pick-row{
-    display:flex;align-items:center;gap:12px;padding:10px 4px;cursor:pointer;border-radius:10px;
+    display:flex;align-items:center;gap:12px;padding:11px 6px;cursor:pointer;border-radius:12px;transition:background .12s ease;
   }
   .friend-pick-row:hover{background:#f7f7f8;}
-  .friend-pick-row .avatar{width:38px;height:38px;font-size:14px;}
-  .friend-pick-row .name{font-family:var(--font-display);font-weight:600;font-size:14px;}
+  .friend-pick-row .avatar{width:42px;height:42px;font-size:15px;}
+  .friend-pick-row .name{font-family:var(--font-display);font-weight:600;font-size:14.5px;}
 </style>
 </head>
 <body>
@@ -202,10 +250,16 @@
 
   <div class="list-pane" id="listPane">
     <div class="list-head">
-      <h1>Messages</h1>
-      <button class="new-dm-btn" id="newDmBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
-      </button>
+      <div class="list-head-top">
+        <h1>Messages</h1>
+        <button class="new-dm-btn" id="newDmBtn" title="New message">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="convSearch" placeholder="Search conversations">
+      </div>
     </div>
     <div class="conv-list" id="convList">
       <div class="empty-note">Loading conversations…</div>
@@ -213,7 +267,13 @@
   </div>
 
   <div class="thread-pane" id="threadPane">
-    <div class="thread-empty" id="threadEmpty">Pick a conversation, or start a new one.</div>
+    <div class="thread-empty" id="threadEmpty">
+      <div class="thread-empty-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      </div>
+      <span class="big">Your messages</span>
+      Pick a conversation, or start a new one.
+    </div>
   </div>
 </div>
 
@@ -240,6 +300,15 @@
     if (diff < 3600) return `${Math.floor(diff/60)}m`;
     if (diff < 86400) return `${Math.floor(diff/3600)}h`;
     return `${Math.floor(diff/86400)}d`;
+  }
+  function dayLabel(iso){
+    const d = new Date(iso);
+    const today = new Date();
+    const yest = new Date(); yest.setDate(today.getDate() - 1);
+    const sameDay = (a,b) => a.toDateString() === b.toDateString();
+    if (sameDay(d, today)) return 'Today';
+    if (sameDay(d, yest)) return 'Yesterday';
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
   }
 
   const SUPABASE_URL = 'https://yacrwbpvcqurxsqpmron.supabase.co';
@@ -279,7 +348,41 @@
     });
   }
 
-  // ---- find the other participant + last message for each conversation ----
+  function renderConvRows(rows){
+    const convListEl = document.getElementById('convList');
+    if (rows.length === 0){
+      convListEl.innerHTML = `
+        <div class="empty-note">
+          <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          </div>
+          <span class="big">No conversations yet</span>
+          Tap the + to message a friend.
+        </div>`;
+      return;
+    }
+    convListEl.innerHTML = rows.map(c => {
+      const name = escapeHtml(c.otherUser?.username || 'Someone');
+      const avatarUrl = c.otherUser?.avatar_url;
+      const avatarHtml = avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="">` : initials(name);
+      const preview = c.lastMessage ? escapeHtml(c.lastMessage.body) : 'Say hi 👋';
+      const time = c.lastMessage ? timeAgo(c.lastMessage.created_at) : '';
+      return `
+        <div class="conv-row" data-conv-id="${c.id}" data-name="${name.toLowerCase()}">
+          <div class="avatar">${avatarHtml}</div>
+          <div class="meta">
+            <div class="top-line"><span class="name">${name}</span><span class="time">${time}</span></div>
+            <div class="preview">${preview}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    document.querySelectorAll('.conv-row').forEach(row => {
+      row.addEventListener('click', () => openConversation(row.dataset.convId));
+    });
+  }
+
   async function loadConversations(){
     const convListEl = document.getElementById('convList');
     if (!requireAuth()) return;
@@ -291,7 +394,7 @@
 
     const convIds = (myRows || []).map(r => r.conversation_id);
     if (convIds.length === 0){
-      convListEl.innerHTML = `<div class="empty-note">No conversations yet. Tap + to message a friend.</div>`;
+      renderConvRows([]);
       return;
     }
 
@@ -327,41 +430,36 @@
       return new Date(bt) - new Date(at);
     });
 
-    if (rows.length === 0){
-      convListEl.innerHTML = `<div class="empty-note">No conversations yet.</div>`;
-      return;
-    }
-
-    convListEl.innerHTML = rows.map(c => {
-      const name = escapeHtml(c.otherUser?.username || 'Someone');
-      const avatarUrl = c.otherUser?.avatar_url;
-      const avatarHtml = avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="">` : initials(name);
-      const preview = c.lastMessage ? escapeHtml(c.lastMessage.body) : 'Say hi 👋';
-      const time = c.lastMessage ? timeAgo(c.lastMessage.created_at) : '';
-      return `
-        <div class="conv-row" data-conv-id="${c.id}">
-          <div class="avatar">${avatarHtml}</div>
-          <div class="meta">
-            <div class="top-line"><span class="name">${name}</span><span class="time">${time}</span></div>
-            <div class="preview">${preview}</div>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    document.querySelectorAll('.conv-row').forEach(row => {
-      row.addEventListener('click', () => openConversation(row.dataset.convId));
-    });
+    renderConvRows(rows);
   }
 
-  function renderBubble(msg){
+  document.getElementById('convSearch').addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    document.querySelectorAll('.conv-row').forEach(row => {
+      row.style.display = row.dataset.name.includes(q) ? '' : 'none';
+    });
+  });
+
+  function renderBubble(msg, showDay){
     const mine = msg.sender_id === currentUser.id;
+    const dayHtml = showDay ? `<div class="day-divider">${dayLabel(msg.created_at)}</div>` : '';
     return `
+      ${dayHtml}
       <div class="bubble-wrap ${mine ? 'mine' : 'theirs'}">
         <div class="bubble ${mine ? 'mine' : 'theirs'}">${escapeHtml(msg.body)}</div>
-        <div class="bubble-time">${timeAgo(msg.created_at)}</div>
+        <div class="bubble-time">${new Date(msg.created_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</div>
       </div>
     `;
+  }
+
+  function renderThreadMessages(msgs){
+    let lastDay = null;
+    return msgs.map(m => {
+      const day = dayLabel(m.created_at);
+      const showDay = day !== lastDay;
+      lastDay = day;
+      return renderBubble(m, showDay);
+    }).join('');
   }
 
   async function openConversation(conversationId){
@@ -376,6 +474,7 @@
 
     const conv = conversationsById[conversationId];
     const name = escapeHtml(conv?.otherUser?.username || 'Someone');
+    const uname = conv?.otherUser?.username || '';
     const avatarUrl = conv?.otherUser?.avatar_url;
     const avatarHtml = avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="">` : initials(name);
 
@@ -385,12 +484,17 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         </button>
         <div class="avatar">${avatarHtml}</div>
-        <span class="name">${name}</span>
+        <div class="thread-head-meta">
+          <span class="name">${name}</span>
+          <a href="/profile?u=${encodeURIComponent(uname)}" class="thread-head-link">View profile</a>
+        </div>
       </div>
       <div class="thread-body" id="threadBody"><div class="empty-note">Loading messages…</div></div>
       <form class="thread-form" id="threadForm">
-        <input type="text" id="threadInput" placeholder="Message..." maxlength="1000">
-        <button type="submit">Send</button>
+        <input type="text" id="threadInput" placeholder="Message..." maxlength="1000" autocomplete="off">
+        <button type="submit" id="threadSendBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        </button>
       </form>
     `;
 
@@ -404,9 +508,11 @@
 
     const threadBody = document.getElementById('threadBody');
     threadBody.innerHTML = (msgs && msgs.length)
-      ? msgs.map(renderBubble).join('')
-      : `<div class="empty-note">Say hi 👋</div>`;
+      ? renderThreadMessages(msgs)
+      : `<div class="empty-note">Say hi 👋 — this is the start of your conversation.</div>`;
     threadBody.scrollTop = threadBody.scrollHeight;
+
+    let lastRenderedDay = msgs && msgs.length ? dayLabel(msgs[msgs.length - 1].created_at) : null;
 
     document.getElementById('threadForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -425,7 +531,6 @@
       }
     });
 
-    // ---- realtime: new messages in this conversation appear live ----
     if (activeChannel) supabaseClient.removeChannel(activeChannel);
     activeChannel = supabaseClient
       .channel(`conv-${conversationId}`)
@@ -435,10 +540,15 @@
       }, (payload) => {
         const body2 = document.getElementById('threadBody');
         if (!body2) return;
-        body2.insertAdjacentHTML('beforeend', renderBubble(payload.new));
+        const day = dayLabel(payload.new.created_at);
+        const showDay = day !== lastRenderedDay;
+        lastRenderedDay = day;
+        body2.insertAdjacentHTML('beforeend', renderBubble(payload.new, showDay));
         body2.scrollTop = body2.scrollHeight;
       })
       .subscribe();
+
+    loadConversations();
   }
 
   function closeThreadOnMobile(){
@@ -446,7 +556,6 @@
     document.getElementById('threadPane').classList.remove('show');
   }
 
-  // ---- new DM modal: pick from accepted friends ----
   async function openNewDmModal(){
     if (!requireAuth()) return;
     document.getElementById('newDmModal').classList.add('show');
@@ -454,17 +563,24 @@
     listEl.innerHTML = `<div class="empty-note">Loading friends…</div>`;
 
     const { data: friendships } = await supabaseClient
+
       .from('friendships')
-      .select('requester_id, addressee_id, profiles!friendships_requester_id_fkey(id,username,avatar_url), profiles!friendships_addressee_id_fkey(id,username,avatar_url)')
+
+      .select('requester_id, addressee_id, requester:profiles!friendships_requester_id_fkey(id,username,avatar_url), addressee:profiles!friendships_addressee_id_fkey(id,username,avatar_url)')
+
       .eq('status', 'accepted')
+
       .or(`requester_id.eq.${currentUser.id},addressee_id.eq.${currentUser.id}`);
 
     const friends = (friendships || []).map(f => {
-      const other = f.requester_id === currentUser.id
-        ? f['profiles!friendships_addressee_id_fkey']
-        : f['profiles!friendships_requester_id_fkey'];
+
+      const other = f.requester_id === currentUser.id ? f.addressee : f.requester;
       return other;
+
     }).filter(Boolean);
+    
+
+
 
     if (friends.length === 0){
       listEl.innerHTML = `<div class="empty-note">Add some friends first — then they'll show up here.</div>`;
@@ -487,8 +603,7 @@
     });
   }
 
-  async function startConversationWith(otherUserId){
-    // check for an existing 1:1 conversation first
+  async function findOrCreateConversation(otherUserId){
     const { data: mine } = await supabaseClient
       .from('conversation_participants').select('conversation_id').eq('user_id', currentUser.id);
     const { data: theirs } = await supabaseClient
@@ -497,19 +612,30 @@
     const mineIds = new Set((mine || []).map(r => r.conversation_id));
     const shared = (theirs || []).map(r => r.conversation_id).find(id => mineIds.has(id));
 
-    let conversationId = shared;
-    if (!conversationId){
-      const { data: newConv, error } = await supabaseClient
-        .from('conversations').insert({}).select().single();
-      if (error){ console.error('Failed to create conversation:', error); return; }
-      conversationId = newConv.id;
-      await supabaseClient.from('conversation_participants').insert([
-        { conversation_id: conversationId, user_id: currentUser.id },
-        { conversation_id: conversationId, user_id: otherUserId },
-      ]);
-    }
+    if (shared) return shared;
 
+    const { data: newConv, error } = await supabaseClient
+      .from('conversations').insert({}).select().single();
+    if (error){ console.error('Failed to create conversation:', error); return null; }
+
+    await supabaseClient.from('conversation_participants').insert([
+      { conversation_id: newConv.id, user_id: currentUser.id },
+      { conversation_id: newConv.id, user_id: otherUserId },
+    ]);
+    return newConv.id;
+  }
+
+  async function startConversationWith(otherUserId){
+    const conversationId = await findOrCreateConversation(otherUserId);
+    if (!conversationId) return;
     document.getElementById('newDmModal').classList.remove('show');
+    await loadConversations();
+    openConversation(conversationId);
+  }
+
+  async function openConversationWithUser(otherUserId){
+    const conversationId = await findOrCreateConversation(otherUserId);
+    if (!conversationId) return;
     await loadConversations();
     openConversation(conversationId);
   }
@@ -522,51 +648,17 @@
     if (e.target.id === 'newDmModal') document.getElementById('newDmModal').classList.remove('show');
   });
 
-  async function openConversationWithUser(otherUserId){
-    const { data: mine } = await supabaseClient
-      .from('conversation_participants').select('conversation_id').eq('user_id', currentUser.id);
-    const { data: theirs } = await supabaseClient
-      .from('conversation_participants').select('conversation_id').eq('user_id', otherUserId);
-
-    const mineIds = new Set((mine || []).map(r => r.conversation_id));
-    const shared = (theirs || []).map(r => r.conversation_id).find(id => mineIds.has(id));
-
-    let conversationId = shared;
-    if (!conversationId){
-      const { data: newConv, error } = await supabaseClient
-        .from('conversations').insert({}).select().single();
-      if (error){ console.error('Failed to create conversation:', error); return; }
-      conversationId = newConv.id;
-      await supabaseClient.from('conversation_participants').insert([
-        { conversation_id: conversationId, user_id: currentUser.id },
-        { conversation_id: conversationId, user_id: otherUserId },
-      ]);
-    }
-
+  async function init(){
+    await renderSidebar();
     await loadConversations();
-    openConversation(conversationId);
+
+    const params = new URLSearchParams(window.location.search);
+    const withUserId = params.get('with');
+    if (withUserId && currentUser){
+      openConversationWithUser(withUserId);
+    }
   }
-
-async function init(){
-  await renderSidebar();
-  await loadConversations();
-
-  const params = new URLSearchParams(window.location.search);
-  const withUserId = params.get('with');
-  
-  if (withUserId && currentUser){
-    openConversationWithUser(withUserId);
-  }
-
-}
-
-init();
-
-
-
-
-
-
+  init();
 </script>
 
 </body>
