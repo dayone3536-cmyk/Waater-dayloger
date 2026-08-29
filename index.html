@@ -137,10 +137,30 @@
     width:36px;height:36px;border-radius:50%;
     background:linear-gradient(135deg,#ffd8c9,var(--accent));
     flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-family:var(--font-display);font-weight:700;font-size:14px;
   }
-  .sidebar-profile .who{display:flex;flex-direction:column;line-height:1.2;}
-  .sidebar-profile .who span:first-child{font-family:var(--font-display);font-size:13.5px;font-weight:600;}
+  .sidebar-profile .who{display:flex;flex-direction:column;line-height:1.2;flex:1;min-width:0;}
+  .sidebar-profile .who span:first-child{font-family:var(--font-display);font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .sidebar-profile .who span:last-child{font-family:var(--font-mono);font-size:11px;color:var(--grey);}
+  .sidebar-signout{
+    font-family:var(--font-mono);font-size:10px;color:var(--grey);
+    padding:4px 6px;border-radius:6px;flex-shrink:0;
+  }
+  .sidebar-signout:hover{color:var(--accent);}
+  .sidebar-signin{
+    margin-top:auto;
+    display:block;
+    text-align:center;
+    background:var(--ink);
+    color:#fff!important;
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:13.5px;
+    padding:12px;
+    border-radius:12px;
+  }
+  .sidebar-signin:hover{background:#000;}
 
   /* ---------- feed ---------- */
   .feed-head{
@@ -184,7 +204,7 @@
     gap:10px;
     margin-bottom:12px;
   }
-  .post-meta .avatar{width:34px;height:34px;}
+  .post-meta .avatar{width:34px;height:34px;font-size:12px;}
   .post-meta .name{font-family:var(--font-display);font-weight:600;font-size:14px;}
   .post-meta .day-tag{
     font-family:var(--font-mono);
@@ -487,13 +507,7 @@
         Profile</a></li>
     </ul>
 
-    <a href="/profile" class="sidebar-profile">
-      <div class="avatar"></div>
-      <div class="who">
-        <span>You</span>
-        <span id="sidebarStreak">day —</span>
-      </div>
-    </a>
+    <div id="sidebarAuthArea"><a href="/auth" class="sidebar-signin">Sign in</a></div>
   </aside>
 
   <!-- Main column -->
@@ -591,8 +605,12 @@
     return div.innerHTML;
   }
 
+  function initials(name) {
+    return (name || '?').trim().slice(0, 1).toUpperCase();
+  }
+
   // ============================================================
-  // SUPABASE CONFIG — same project as create.html.
+  // SUPABASE CONFIG — same project as create.html / auth.html.
   // The anon/publishable key is safe to expose in client-side code;
   // it can only do what your Row Level Security policies allow.
   // ============================================================
@@ -609,22 +627,60 @@
     console.warn('Supabase is not configured yet in index.html.', err);
   }
 
-  function getGuestId() {
-    let id = localStorage.getItem('waaterGuestId');
-    if (!id) {
-      id = 'guest-' + Math.random().toString(36).slice(2, 10);
-      localStorage.setItem('waaterGuestId', id);
-    }
-    return id;
+  // ---- auth state ----
+  let currentUser = null;      // Supabase auth user, or null if signed out
+  let currentUsername = null;  // from profiles table
+
+  // Anything that requires being signed in (like, comment, post) calls this
+  // first. If there's no session, it sends the user to /auth and remembers
+  // where to bring them back to.
+  function requireAuth() {
+    if (currentUser) return true;
+    window.location.href = `/auth?next=${encodeURIComponent(window.location.pathname)}`;
+    return false;
   }
-  const guestId = getGuestId();
+
+  async function loadAuthState() {
+    const { data } = await supabaseClient.auth.getSession();
+    currentUser = data.session ? data.session.user : null;
+
+    const area = document.getElementById('sidebarAuthArea');
+
+    if (!currentUser) {
+      area.innerHTML = `<a href="/auth" class="sidebar-signin">Sign in</a>`;
+      return;
+    }
+
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('username')
+      .eq('id', currentUser.id)
+      .maybeSingle();
+
+    currentUsername = profile?.username || currentUser.email || 'You';
+
+    area.innerHTML = `
+      <a href="/profile" class="sidebar-profile">
+        <div class="avatar">${initials(currentUsername)}</div>
+        <div class="who">
+          <span>${escapeHtml(currentUsername)}</span>
+          <span id="sidebarStreak">day —</span>
+        </div>
+      </a>
+      <button class="sidebar-signout" id="signOutBtn">Sign out</button>
+    `;
+    document.getElementById('signOutBtn').addEventListener('click', async () => {
+      await supabaseClient.auth.signOut();
+      window.location.reload();
+    });
+  }
 
   let postsById = {};
   let likedPostIds = new Set();
 
   function renderPost(post, index) {
     const [g1, g2] = GRADIENTS[index % GRADIENTS.length];
-    const name = escapeHtml(post.user_id || 'Someone');
+    const name = escapeHtml(post.profiles?.username || 'Someone');
     const caption = escapeHtml(post.caption || '');
     const mediaUrl = post.media_url || '';
     const mediaType = post.media_type || 'text';
@@ -645,7 +701,7 @@
     return `
       <article class="post" data-post-id="${post.id}">
         <div class="post-meta">
-          <div class="avatar"></div>
+          <div class="avatar">${initials(name)}</div>
           <span class="name">${name}</span>
         </div>
         <div class="clip clip-clickable" style="--g1:${g1};--g2:${g2};">
@@ -678,6 +734,7 @@
     document.querySelectorAll('.like-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (!requireAuth()) return;
         toggleLike(btn.dataset.postId, btn);
       });
     });
@@ -685,6 +742,7 @@
     document.querySelectorAll('.comment-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (!requireAuth()) return;
         openComments(btn.dataset.postId);
       });
     });
@@ -702,7 +760,7 @@
     try {
       const { data: posts, error } = await supabaseClient
         .from('posts')
-        .select('*, likes(count), comments(count)')
+        .select('*, profiles(username), likes(count), comments(count)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -715,11 +773,15 @@
       postsById = {};
       posts.forEach(p => { postsById[p.id] = p; });
 
-      const { data: myLikes } = await supabaseClient
-        .from('likes')
-        .select('post_id')
-        .eq('user_id', guestId);
-      likedPostIds = new Set((myLikes || []).map(l => l.post_id));
+      if (currentUser) {
+        const { data: myLikes } = await supabaseClient
+          .from('likes')
+          .select('post_id')
+          .eq('user_id', currentUser.id);
+        likedPostIds = new Set((myLikes || []).map(l => l.post_id));
+      } else {
+        likedPostIds = new Set();
+      }
 
       feedEl.innerHTML = posts.map((post, i) => renderPost(post, i)).join('');
       attachPostHandlers();
@@ -760,7 +822,7 @@
 
   // ---- likes ----
   async function toggleLike(postId, btn) {
-    if (!supabaseConfigured || btn.disabled) return;
+    if (!supabaseConfigured || btn.disabled || !currentUser) return;
     const countEl = btn.querySelector('.like-count');
     const svg = btn.querySelector('svg');
     const isLiked = likedPostIds.has(postId);
@@ -768,14 +830,14 @@
     btn.disabled = true;
     try {
       if (isLiked) {
-        const { error } = await supabaseClient.from('likes').delete().match({ post_id: postId, user_id: guestId });
+        const { error } = await supabaseClient.from('likes').delete().match({ post_id: postId, user_id: currentUser.id });
         if (error) throw error;
         likedPostIds.delete(postId);
         btn.classList.remove('liked');
         svg.setAttribute('fill', 'none');
         countEl.textContent = Math.max(0, parseInt(countEl.textContent, 10) - 1);
       } else {
-        const { error } = await supabaseClient.from('likes').insert({ post_id: postId, user_id: guestId });
+        const { error } = await supabaseClient.from('likes').insert({ post_id: postId, user_id: currentUser.id });
         if (error) throw error;
         likedPostIds.add(postId);
         btn.classList.add('liked');
@@ -798,7 +860,7 @@
     }
     list.innerHTML = comments.map(c => `
       <div class="comment-item">
-        <span class="comment-name">${escapeHtml(c.user_id || 'Someone')}</span>
+        <span class="comment-name">${escapeHtml(c.profiles?.username || 'Someone')}</span>
         <span class="comment-body">${escapeHtml(c.body || '')}</span>
       </div>
     `).join('');
@@ -813,7 +875,7 @@
     try {
       const { data: comments, error } = await supabaseClient
         .from('comments')
-        .select('*')
+        .select('*, profiles(username)')
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
       if (error) throw error;
@@ -835,6 +897,8 @@
 
   document.getElementById('commentForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (!requireAuth()) return;
+
     const modal = document.getElementById('commentModal');
     const postId = modal.dataset.postId;
     const input = document.getElementById('commentInput');
@@ -842,13 +906,13 @@
     if (!body || !postId) return;
 
     try {
-      const { error } = await supabaseClient.from('comments').insert({ post_id: postId, user_id: guestId, body });
+      const { error } = await supabaseClient.from('comments').insert({ post_id: postId, user_id: currentUser.id, body });
       if (error) throw error;
       input.value = '';
 
       const { data: comments } = await supabaseClient
         .from('comments')
-        .select('*')
+        .select('*, profiles(username)')
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
       renderComments(comments);
@@ -868,17 +932,22 @@
       const streak = user.streak ?? user.streakDays ?? null;
       if (streak != null) {
         document.getElementById('topStreak').textContent = streak;
-        document.getElementById('sidebarStreak').textContent = `day ${streak}`;
+        const sidebarStreakEl = document.getElementById('sidebarStreak');
+        if (sidebarStreakEl) sidebarStreakEl.textContent = `day ${streak}`;
       }
     } catch (err) {
       console.error('Failed to load streak:', err);
     }
   }
 
-  loadFeed();
-  loadStreak();
+  async function init() {
+    if (supabaseConfigured) await loadAuthState();
+    loadFeed();
+    loadStreak();
+  }
+
+  init();
 </script>
 
 </body>
 </html>
-

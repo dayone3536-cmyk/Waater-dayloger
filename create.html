@@ -73,9 +73,12 @@
     margin-top:auto;display:flex;align-items:center;gap:10px;
     padding:10px 12px;border-radius:12px;border:1px solid var(--line);
   }
-  .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd8c9,var(--accent));flex-shrink:0;}
-  .sidebar-profile .who{display:flex;flex-direction:column;line-height:1.2;}
-  .sidebar-profile .who span:first-child{font-family:var(--font-display);font-size:13.5px;font-weight:600;}
+  .avatar{
+    width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd8c9,var(--accent));flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-display);font-weight:700;font-size:14px;
+  }
+  .sidebar-profile .who{display:flex;flex-direction:column;line-height:1.2;min-width:0;}
+  .sidebar-profile .who span:first-child{font-family:var(--font-display);font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .sidebar-profile .who span:last-child{font-family:var(--font-mono);font-size:11px;color:var(--grey);}
 
   /* ---------- create page ---------- */
@@ -84,6 +87,21 @@
   .create-head p{font-family:var(--font-mono);font-size:11.5px;color:var(--grey);margin-top:4px;}
 
   .create-body{padding:20px 22px 40px;}
+
+  .signin-gate{
+    padding:60px 22px;
+    text-align:center;
+  }
+  .signin-gate p{
+    font-family:var(--font-serif);font-style:italic;font-size:15px;
+    color:var(--ink-soft);margin-bottom:18px;
+  }
+  .signin-gate a{
+    display:inline-block;
+    background:var(--ink);color:#fff;font-family:var(--font-display);
+    font-weight:600;font-size:13.5px;padding:12px 24px;border-radius:99px;
+  }
+  .signin-gate a:hover{background:#000;}
 
   /* dropzone / uploader, styled like the .clip card on index */
   .uploader{
@@ -230,10 +248,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
         Profile</a></li>
     </ul>
-    <a href="/profile" class="sidebar-profile">
-      <div class="avatar"></div>
-      <div class="who"><span>You</span><span>day —</span></div>
-    </a>
+    <div id="sidebarAuthArea"></div>
   </aside>
 
   <main class="main">
@@ -246,34 +261,8 @@
       <p id="createDate"></p>
     </div>
 
-    <div class="create-body">
-      <form id="createForm">
-        <div class="uploader" id="uploader">
-          <input type="file" id="fileInput" accept="image/*,video/*">
-          <div class="uploader-empty" id="uploaderEmpty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>
-            <span class="big">Tap to add a photo or video</span>
-            <span class="small">or drag a file here</span>
-          </div>
-          <div class="uploader-preview" id="uploaderPreview" style="display:none;"></div>
-        </div>
-
-        <div class="caption-field">
-          <label for="captionInput">CAPTION</label>
-          <textarea id="captionInput" maxlength="280" placeholder="What happened today..."></textarea>
-          <div class="char-count"><span id="charCount">0</span>/280</div>
-        </div>
-
-        <div class="upload-progress" id="uploadProgress"><div class="bar" id="uploadBar"></div></div>
-        <div class="status-msg" id="statusMsg"></div>
-
-        <div class="create-actions">
-          <button type="submit" class="post-btn" id="postBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-            Post to your day
-          </button>
-        </div>
-      </form>
+    <div class="create-body" id="createBody">
+      <div class="feed-status" style="font-family:var(--font-mono);font-size:12px;color:var(--grey);padding:40px 0;text-align:center;" id="createLoading">Checking your session…</div>
     </div>
   </main>
 </div>
@@ -308,31 +297,14 @@
     new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
 
   // ============================================================
-  // SUPABASE CONFIG — fill these in with your project's values.
+  // SUPABASE CONFIG — same project as index.html / auth.html.
   // The anon key is safe to expose in client-side code; it can
   // only do what your Row Level Security policies allow.
   // Never put your service_role key in a file like this one.
   // ============================================================
-
   const SUPABASE_URL = 'https://yacrwbpvcqurxsqpmron.supabase.co';
-  
   const SUPABASE_ANON_KEY = 'sb_publishable_Any50PwhIupj5rZbez1W4Q_dIx-VRIs';
 
-  // A simple stand-in for real auth: a random id saved in this browser,
-  // reused across visits, so posts/likes/comments can be attributed to "someone".
-  function getGuestId() {
-    let id = localStorage.getItem('waaterGuestId');
-    if (!id) {
-      id = 'guest-' + Math.random().toString(36).slice(2, 10);
-      localStorage.setItem('waaterGuestId', id);
-    }
-    return id;
-  }
-  const guestId = getGuestId();
-
-  // Named supabaseClient (not "supabase") — the CDN script above already
-  // defines a global called "supabase", so reusing that name here throws
-  // "Identifier 'supabase' has already been declared" and kills the whole script.
   let supabaseClient = null;
   let supabaseConfigured = false;
   try {
@@ -343,165 +315,290 @@
     console.warn('Supabase is not configured yet — fill in SUPABASE_URL / SUPABASE_ANON_KEY in create.html.', err);
   }
 
-  const uploader = document.getElementById('uploader');
-  const fileInput = document.getElementById('fileInput');
-  const uploaderEmpty = document.getElementById('uploaderEmpty');
-  const uploaderPreview = document.getElementById('uploaderPreview');
-  const captionInput = document.getElementById('captionInput');
-  const charCount = document.getElementById('charCount');
-  const statusMsg = document.getElementById('statusMsg');
-  const postBtn = document.getElementById('postBtn');
-  const uploadProgress = document.getElementById('uploadProgress');
-  const uploadBar = document.getElementById('uploadBar');
+  function initials(name) {
+    return (name || '?').trim().slice(0, 1).toUpperCase();
+  }
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str ?? '';
+    return div.innerHTML;
+  }
 
+  let currentUser = null;
+  let currentUsername = null;
   let selectedFile = null;
 
-  uploader.addEventListener('click', () => fileInput.click());
+  // ---- gate the whole page behind sign-in ----
+  async function checkAuthAndRender() {
+    const createBody = document.getElementById('createBody');
 
-  ['dragover', 'dragenter'].forEach(evt =>
-    uploader.addEventListener(evt, e => {
-      e.preventDefault();
-      uploader.classList.add('dragover');
-    })
-  );
-  ['dragleave', 'drop'].forEach(evt =>
-    uploader.addEventListener(evt, e => {
-      e.preventDefault();
-      uploader.classList.remove('dragover');
-    })
-  );
-  uploader.addEventListener('drop', e => {
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  });
-
-  fileInput.addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (file) handleFile(file);
-  });
-
-  function handleFile(file) {
-    const isImage = file.type.startsWith('image/');
-    const isVideo = file.type.startsWith('video/');
-    if (!isImage && !isVideo) {
-      showStatus('Please choose a photo or video file.', 'error');
+    if (!supabaseConfigured) {
+      createBody.innerHTML = '<div class="feed-status" style="padding:40px 0;text-align:center;font-family:var(--font-mono);font-size:12px;color:var(--grey);">Supabase is not configured yet.</div>';
       return;
     }
 
-    selectedFile = file;
-    const url = URL.createObjectURL(file);
+    const { data } = await supabaseClient.auth.getSession();
+    currentUser = data.session ? data.session.user : null;
 
-    uploaderEmpty.style.display = 'none';
-    uploaderPreview.style.display = 'block';
-    uploader.classList.add('has-media');
-    uploaderPreview.innerHTML = `
-      <button type="button" class="uploader-clear" id="clearBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button>
-      <span class="uploader-filetag">${isVideo ? 'video' : 'photo'}</span>
-      ${isVideo
-        ? `<video src="${url}" muted loop autoplay playsinline></video>`
-        : `<img src="${url}" alt="">`
-      }
+    if (!currentUser) {
+      createBody.innerHTML = `
+        <div class="signin-gate">
+          <p>Sign in to log today.</p>
+          <a href="/auth?next=${encodeURIComponent('/create')}">Sign in</a>
+        </div>
+      `;
+      return;
+    }
+
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('username')
+      .eq('id', currentUser.id)
+      .maybeSingle();
+
+    if (!profile || !profile.username) {
+      // Auth exists but they never finished the username step.
+      window.location.href = `/auth?next=${encodeURIComponent('/create')}`;
+      return;
+    }
+
+    currentUsername = profile.username;
+
+    document.getElementById('sidebarAuthArea').innerHTML = `
+      <a href="/profile" class="sidebar-profile">
+        <div class="avatar">${initials(currentUsername)}</div>
+        <div class="who">
+          <span>${escapeHtml(currentUsername)}</span>
+          <span>day —</span>
+        </div>
+      </a>
     `;
 
-    document.getElementById('clearBtn').addEventListener('click', e => {
-      e.stopPropagation();
-      clearFile();
+    renderForm();
+  }
+
+  function renderForm() {
+    const createBody = document.getElementById('createBody');
+    createBody.innerHTML = `
+      <form id="createForm">
+        <div class="uploader" id="uploader">
+          <input type="file" id="fileInput" accept="image/*,video/*">
+          <div class="uploader-empty" id="uploaderEmpty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>
+            <span class="big">Tap to add a photo or video</span>
+            <span class="small">or drag a file here</span>
+          </div>
+          <div class="uploader-preview" id="uploaderPreview" style="display:none;"></div>
+        </div>
+
+        <div class="caption-field">
+          <label for="captionInput">CAPTION</label>
+          <textarea id="captionInput" maxlength="280" placeholder="What happened today..."></textarea>
+          <div class="char-count"><span id="charCount">0</span>/280</div>
+        </div>
+
+        <div class="upload-progress" id="uploadProgress"><div class="bar" id="uploadBar"></div></div>
+        <div class="status-msg" id="statusMsg"></div>
+
+        <div class="create-actions">
+          <button type="submit" class="post-btn" id="postBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+            Post to your day
+          </button>
+        </div>
+      </form>
+    `;
+
+    const uploader = document.getElementById('uploader');
+    const fileInput = document.getElementById('fileInput');
+    const uploaderEmpty = document.getElementById('uploaderEmpty');
+    const uploaderPreview = document.getElementById('uploaderPreview');
+    const captionInput = document.getElementById('captionInput');
+    const charCount = document.getElementById('charCount');
+    const statusMsg = document.getElementById('statusMsg');
+    const postBtn = document.getElementById('postBtn');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const uploadBar = document.getElementById('uploadBar');
+
+    uploader.addEventListener('click', () => fileInput.click());
+
+    ['dragover', 'dragenter'].forEach(evt =>
+      uploader.addEventListener(evt, e => {
+        e.preventDefault();
+        uploader.classList.add('dragover');
+      })
+    );
+    ['dragleave', 'drop'].forEach(evt =>
+      uploader.addEventListener(evt, e => {
+        e.preventDefault();
+        uploader.classList.remove('dragover');
+      })
+    );
+    uploader.addEventListener('drop', e => {
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    });
+
+    fileInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (file) handleFile(file);
+    });
+
+    function handleFile(file) {
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+      if (!isImage && !isVideo) {
+        showStatus('Please choose a photo or video file.', 'error');
+        return;
+      }
+
+      selectedFile = file;
+      const url = URL.createObjectURL(file);
+
+      uploaderEmpty.style.display = 'none';
+      uploaderPreview.style.display = 'block';
+      uploader.classList.add('has-media');
+      uploaderPreview.innerHTML = `
+        <button type="button" class="uploader-clear" id="clearBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+        <span class="uploader-filetag">${isVideo ? 'video' : 'photo'}</span>
+        ${isVideo
+          ? `<video src="${url}" muted loop autoplay playsinline></video>`
+          : `<img src="${url}" alt="">`
+        }
+      `;
+
+      document.getElementById('clearBtn').addEventListener('click', e => {
+        e.stopPropagation();
+        clearFile();
+      });
+    }
+
+    function clearFile() {
+      selectedFile = null;
+      fileInput.value = '';
+      uploaderEmpty.style.display = 'flex';
+      uploaderPreview.style.display = 'none';
+      uploaderPreview.innerHTML = '';
+      uploader.classList.remove('has-media');
+    }
+
+    captionInput.addEventListener('input', () => {
+      charCount.textContent = captionInput.value.length;
+    });
+
+    function showStatus(msg, type) {
+      statusMsg.textContent = msg;
+      statusMsg.className = `status-msg show ${type}`;
+    }
+
+    document.getElementById('createForm').addEventListener('submit', async e => {
+      e.preventDefault();
+
+      if (!currentUser) {
+        window.location.href = `/auth?next=${encodeURIComponent('/create')}`;
+        return;
+      }
+
+      const caption = captionInput.value.trim();
+      if (!selectedFile && !caption) {
+        showStatus('Add a photo/video or write something first.', 'error');
+        return;
+      }
+
+      postBtn.disabled = true;
+      postBtn.textContent = 'Posting...';
+      statusMsg.className = 'status-msg';
+
+      try {
+        let mediaUrl = null;
+        let mediaType = 'text';
+
+        if (selectedFile) {
+          mediaType = selectedFile.type.startsWith('video/') ? 'video' : 'photo';
+          const ext = selectedFile.name.split('.').pop();
+          const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+          uploadProgress.classList.add('show');
+          uploadBar.style.width = '30%';
+
+          const { error: uploadError } = await supabaseClient.storage
+            .from('post-media')
+            .upload(path, selectedFile, { cacheControl: '3600', upsert: false });
+
+          if (uploadError) throw uploadError;
+
+          uploadBar.style.width = '80%';
+
+          const { data: publicUrlData } = supabaseClient.storage
+            .from('post-media')
+            .getPublicUrl(path);
+
+          mediaUrl = publicUrlData.publicUrl;
+          uploadBar.style.width = '100%';
+        }
+
+        // user_id is now the real authenticated user id, not a guest id —
+        // RLS (see supabase-setup.sql) only allows inserting rows where
+        // user_id matches auth.uid(), so this must be currentUser.id.
+        const { error: insertError } = await supabaseClient
+          .from('posts')
+          .insert({
+            user_id: currentUser.id,
+            caption,
+            media_url: mediaUrl,
+            media_type: mediaType
+          });
+
+        if (insertError) throw insertError;
+
+        showStatus('Posted! Taking you home...', 'success');
+        setTimeout(() => { window.location.href = '/'; }, 700);
+
+      } catch (err) {
+        console.error(err);
+        showStatus(err.message || 'Something went wrong. Try again.', 'error');
+        postBtn.disabled = false;
+        postBtn.textContent = 'Post to your day';
+        uploadProgress.classList.remove('show');
+        uploadBar.style.width = '0%';
+      }
     });
   }
 
-  function clearFile() {
-    selectedFile = null;
-    fileInput.value = '';
-    uploaderEmpty.style.display = 'flex';
-    uploaderPreview.style.display = 'none';
-    uploaderPreview.innerHTML = '';
-    uploader.classList.remove('has-media');
-  }
-
-  captionInput.addEventListener('input', () => {
-    charCount.textContent = captionInput.value.length;
-  });
-
-  function showStatus(msg, type) {
-    statusMsg.textContent = msg;
-    statusMsg.className = `status-msg show ${type}`;
-  }
-
-  document.getElementById('createForm').addEventListener('submit', async e => {
-    e.preventDefault();
-
-    const caption = captionInput.value.trim();
-    if (!selectedFile && !caption) {
-      showStatus('Add a photo/video or write something first.', 'error');
-      return;
-    }
-
-    postBtn.disabled = true;
-    postBtn.textContent = 'Posting...';
-    statusMsg.className = 'status-msg';
-
-    try {
-      let mediaUrl = null;
-      let mediaType = 'text';
-
-      if (selectedFile && !supabaseConfigured) {
-        throw new Error('Supabase isn\'t configured yet — add SUPABASE_URL and SUPABASE_ANON_KEY in create.html.');
-      }
-
-      if (selectedFile) {
-        mediaType = selectedFile.type.startsWith('video/') ? 'video' : 'photo';
-        const ext = selectedFile.name.split('.').pop();
-        const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-
-        uploadProgress.classList.add('show');
-        uploadBar.style.width = '30%';
-
-        const { error: uploadError } = await supabaseClient.storage
-          .from('post-media')
-          .upload(path, selectedFile, { cacheControl: '3600', upsert: false });
-
-        if (uploadError) throw uploadError;
-
-        uploadBar.style.width = '80%';
-
-        const { data: publicUrlData } = supabaseClient.storage
-          .from('post-media')
-          .getPublicUrl(path);
-
-        mediaUrl = publicUrlData.publicUrl;
-        uploadBar.style.width = '100%';
-      }
-
-      if (!supabaseConfigured) {
-        throw new Error('Supabase isn\'t configured yet — add SUPABASE_URL and SUPABASE_ANON_KEY in create.html.');
-      }
-
-      const { error: insertError } = await supabaseClient
-        .from('posts')
-        .insert({
-          user_id: guestId,
-          caption,
-          media_url: mediaUrl,
-          media_type: mediaType
-        });
-
-      if (insertError) throw insertError;
-
-      showStatus('Posted! Taking you home...', 'success');
-      setTimeout(() => { window.location.href = '/'; }, 700);
-
-    } catch (err) {
-      console.error(err);
-      showStatus(err.message || 'Something went wrong. Try again.', 'error');
-      postBtn.disabled = false;
-      postBtn.textContent = 'Post to your day';
-      uploadProgress.classList.remove('show');
-      uploadBar.style.width = '0%';
-    }
-  });
+  checkAuthAndRender();
 </script>
 
 </body>
 </html>
+
+
+
+
+
+<!-- USE IT FOR FIREBASEEE  -->
+
+<!-- // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBDzX0dWc0fW_WcKWVe4HeSp6650d6CbIs",
+  authDomain: "waater-daylog.firebaseapp.com",
+  projectId: "waater-daylog",
+  storageBucket: "waater-daylog.firebasestorage.app",
+  messagingSenderId: "46201467170",
+  appId: "1:46201467170:web:0ba8f2d987182b565a757b",
+  measurementId: "G-0M1XH55C4N"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+
+-->

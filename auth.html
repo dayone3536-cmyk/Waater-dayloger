@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign in — Waater</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --white:#ffffff;
+    --ink:#14151a;
+    --ink-soft:#4a4d55;
+    --grey:#8a8d94;
+    --line:#ececec;
+    --line-strong:#e0e0e0;
+    --accent:#ff5a36;
+    --accent-soft:#fff1ec;
+    --danger:#e0433f;
+    --font-display:'Space Grotesk', sans-serif;
+    --font-serif:'Newsreader', serif;
+    --font-mono:'JetBrains Mono', monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    background:var(--white);
+    color:var(--ink);
+    font-family:var(--font-serif);
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    padding:24px;
+  }
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;border:none;background:none;cursor:pointer;}
+  ::selection{background:var(--accent-soft);color:var(--accent);}
+
+  .card{
+    width:100%;
+    max-width:380px;
+  }
+  .wordmark{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:26px;
+    letter-spacing:-0.02em;
+    display:flex;
+    align-items:baseline;
+    gap:2px;
+    justify-content:center;
+    margin-bottom:6px;
+  }
+  .wordmark .dot{color:var(--accent);}
+  .tagline{
+    text-align:center;
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    color:var(--grey);
+    margin-bottom:32px;
+  }
+
+  .tabs{
+    display:flex;
+    border:1px solid var(--line-strong);
+    border-radius:12px;
+    padding:4px;
+    margin-bottom:22px;
+  }
+  .tab-btn{
+    flex:1;
+    padding:9px 0;
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:13px;
+    color:var(--grey);
+    border-radius:9px;
+    transition:background .15s ease, color .15s ease;
+  }
+  .tab-btn.active{background:var(--ink);color:#fff;}
+
+  .field{margin-bottom:14px;}
+  .field label{
+    display:block;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:.02em;
+    color:var(--grey);
+    margin-bottom:6px;
+  }
+  .field input{
+    width:100%;
+    border:1px solid var(--line-strong);
+    border-radius:10px;
+    padding:12px 14px;
+    font-family:var(--font-serif);
+    font-size:15px;
+    color:var(--ink);
+    outline:none;
+    transition:border-color .15s ease;
+  }
+  .field input:focus{border-color:var(--accent);}
+
+  .primary-btn{
+    width:100%;
+    background:var(--ink);
+    color:#fff;
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:14.5px;
+    padding:14px;
+    border-radius:10px;
+    margin-top:6px;
+    transition:background .15s ease, opacity .15s ease;
+  }
+  .primary-btn:hover{background:#000;}
+  .primary-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+  .divider{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin:22px 0;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    color:var(--grey);
+  }
+  .divider::before,
+  .divider::after{
+    content:'';
+    flex:1;
+    height:1px;
+    background:var(--line-strong);
+  }
+
+  .google-btn{
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    border:1px solid var(--line-strong);
+    border-radius:10px;
+    padding:12px;
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:13.5px;
+    color:var(--ink);
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .google-btn:hover{border-color:var(--ink);background:#f7f7f8;}
+  .google-btn svg{width:18px;height:18px;}
+
+  .status-msg{
+    margin-top:14px;
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    padding:10px 12px;
+    border-radius:8px;
+    display:none;
+  }
+  .status-msg.show{display:block;}
+  .status-msg.error{background:#fdeceb;color:var(--danger);}
+  .status-msg.success{background:var(--accent-soft);color:#c24020;}
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .hint{
+    text-align:center;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    color:var(--grey);
+    margin-top:18px;
+    line-height:1.6;
+  }
+
+  .username-note{
+    font-family:var(--font-serif);
+    font-style:italic;
+    font-size:14.5px;
+    color:var(--ink-soft);
+    text-align:center;
+    margin-bottom:20px;
+    line-height:1.5;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="wordmark">waater<span class="dot">.</span></div>
+  <p class="tagline">your day, one clip at a time</p>
+
+  <!-- STEP 1: sign in / sign up -->
+  <div class="panel active" id="authPanel">
+    <div class="tabs">
+      <button type="button" class="tab-btn active" id="tabSignIn">Sign in</button>
+      <button type="button" class="tab-btn" id="tabSignUp">Create account</button>
+    </div>
+
+    <!-- Sign in form -->
+    <form id="signInForm">
+      <div class="field">
+        <label for="siEmail">EMAIL</label>
+        <input type="email" id="siEmail" required autocomplete="email">
+      </div>
+      <div class="field">
+        <label for="siPassword">PASSWORD</label>
+        <input type="password" id="siPassword" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="primary-btn" id="siBtn">Sign in</button>
+    </form>
+
+    <!-- Sign up form -->
+    <form id="signUpForm" style="display:none;">
+      <div class="field">
+        <label for="suUsername">USERNAME</label>
+        <input type="text" id="suUsername" required minlength="3" maxlength="24" pattern="[a-zA-Z0-9_]+" title="Letters, numbers, and underscores only">
+      </div>
+      <div class="field">
+        <label for="suEmail">EMAIL</label>
+        <input type="email" id="suEmail" required autocomplete="email">
+      </div>
+      <div class="field">
+        <label for="suPassword">PASSWORD</label>
+        <input type="password" id="suPassword" required minlength="6" autocomplete="new-password">
+      </div>
+      <button type="submit" class="primary-btn" id="suBtn">Create account</button>
+    </form>
+
+    <div class="divider">or</div>
+
+    <button type="button" class="google-btn" id="googleBtn">
+      <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.5 29.5 3.5 24 3.5 12.7 3.5 3.5 12.7 3.5 24S12.7 44.5 24 44.5 44.5 35.3 44.5 24c0-1.2-.1-2.4-.3-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.5 5.5 29.5 3.5 24 3.5c-7.6 0-14.1 4.3-17.7 10.5z"/><path fill="#4CAF50" d="M24 44.5c5.4 0 10.3-1.8 14-4.9l-6.5-5.5c-2 1.4-4.6 2.3-7.5 2.3-5.3 0-9.7-3.1-11.3-7.5l-6.6 5.1C9.8 40.1 16.4 44.5 24 44.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.7l6.5 5.5C40.9 36.5 44.5 30.9 44.5 24c0-1.2-.1-2.4-.3-3.5z"/></svg>
+      Continue with Google
+    </button>
+
+    <div class="status-msg" id="authStatus"></div>
+    <p class="hint">By continuing you agree to log your day, one clip at a time.</p>
+  </div>
+
+  <!-- STEP 2: pick a username (Google sign-ins land here) -->
+  <div class="panel" id="usernamePanel">
+    <p class="username-note">Almost there — pick a username so people know whose day this is.</p>
+    <form id="usernameForm">
+      <div class="field">
+        <label for="pickUsername">USERNAME</label>
+        <input type="text" id="pickUsername" required minlength="3" maxlength="24" pattern="[a-zA-Z0-9_]+" title="Letters, numbers, and underscores only">
+      </div>
+      <button type="submit" class="primary-btn" id="pickBtn">Continue</button>
+    </form>
+    <div class="status-msg" id="usernameStatus"></div>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  // Same Supabase project as index.html / create.html.
+  // ============================================================
+  const SUPABASE_URL = 'https://yacrwbpvcqurxsqpmron.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_Any50PwhIupj5rZbez1W4Q_dIx-VRIs';
+
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const authPanel = document.getElementById('authPanel');
+  const usernamePanel = document.getElementById('usernamePanel');
+
+  function showStatus(el, msg, type) {
+    el.textContent = msg;
+    el.className = `status-msg show ${type}`;
+  }
+
+  // Where to send the user once they're fully signed in (auth + username set).
+  // If they were bounced here from a like/comment/rate click, that page can
+  // pass ?next=/whatever and we'll honor it.
+  function nextUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('next') || '/';
+  }
+
+  // ---- tab switching ----
+  const tabSignIn = document.getElementById('tabSignIn');
+  const tabSignUp = document.getElementById('tabSignUp');
+  const signInForm = document.getElementById('signInForm');
+  const signUpForm = document.getElementById('signUpForm');
+
+  tabSignIn.addEventListener('click', () => {
+    tabSignIn.classList.add('active');
+    tabSignUp.classList.remove('active');
+    signInForm.style.display = 'block';
+    signUpForm.style.display = 'none';
+  });
+  tabSignUp.addEventListener('click', () => {
+    tabSignUp.classList.add('active');
+    tabSignIn.classList.remove('active');
+    signUpForm.style.display = 'block';
+    signInForm.style.display = 'none';
+  });
+
+  // ---- check for an existing profile / finish the flow ----
+  async function routeAfterAuth(user) {
+    const { data: profile, error } = await supabaseClient
+      .from('profiles')
+      .select('username')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Failed to load profile:', error);
+      return;
+    }
+
+    if (profile && profile.username) {
+      window.location.href = nextUrl();
+    } else {
+      authPanel.classList.remove('active');
+      usernamePanel.classList.add('active');
+    }
+  }
+
+  // On load, if there's already a session, skip straight to routing.
+  supabaseClient.auth.getSession().then(({ data }) => {
+    if (data.session) routeAfterAuth(data.session.user);
+  });
+
+  // ---- sign in ----
+  signInForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('siBtn');
+    const statusEl = document.getElementById('authStatus');
+    btn.disabled = true;
+    statusEl.className = 'status-msg';
+
+    const email = document.getElementById('siEmail').value.trim();
+    const password = document.getElementById('siPassword').value;
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    btn.disabled = false;
+
+    if (error) {
+      showStatus(statusEl, error.message, 'error');
+      return;
+    }
+    routeAfterAuth(data.user);
+  });
+
+  // ---- sign up ----
+  signUpForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('suBtn');
+    const statusEl = document.getElementById('authStatus');
+    btn.disabled = true;
+    statusEl.className = 'status-msg';
+
+    const username = document.getElementById('suUsername').value.trim();
+    const email = document.getElementById('suEmail').value.trim();
+    const password = document.getElementById('suPassword').value;
+
+    // Username goes in as user metadata; the on_auth_user_created trigger
+    // (see the SQL you were given) copies it into the profiles table.
+    const { data, error } = await supabaseClient.auth.signUp({
+      email,
+      password,
+      options: { data: { username } }
+    });
+    btn.disabled = false;
+
+    if (error) {
+      showStatus(statusEl, error.message, 'error');
+      return;
+    }
+
+    // If "Confirm email" is enabled in your Supabase Auth settings,
+    // there's no session yet — the user needs to click the emailed link first.
+    if (!data.session) {
+      showStatus(statusEl, 'Check your email to confirm your account, then sign in.', 'success');
+      tabSignIn.click();
+      return;
+    }
+
+    routeAfterAuth(data.user);
+  });
+
+  // ---- Google OAuth ----
+  document.getElementById('googleBtn').addEventListener('click', async () => {
+    const redirectTo = `${window.location.origin}/auth${window.location.search ? window.location.search : ''}`;
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo }
+    });
+    if (error) {
+      showStatus(document.getElementById('authStatus'), error.message, 'error');
+    }
+  });
+
+  // ---- username step (for Google sign-ins with no username yet) ----
+  document.getElementById('usernameForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('pickBtn');
+    const statusEl = document.getElementById('usernameStatus');
+    btn.disabled = true;
+    statusEl.className = 'status-msg';
+
+    const username = document.getElementById('pickUsername').value.trim();
+    const { data: { user } } = await supabaseClient.auth.getUser();
+
+    if (!user) {
+      showStatus(statusEl, 'Session expired — please sign in again.', 'error');
+      btn.disabled = false;
+      return;
+    }
+
+    const { error } = await supabaseClient
+      .from('profiles')
+      .upsert({ id: user.id, username });
+
+    btn.disabled = false;
+
+    if (error) {
+      // Most likely a duplicate username (unique constraint).
+      const msg = error.message.includes('duplicate') ? 'That username is taken.' : error.message;
+      showStatus(statusEl, msg, 'error');
+      return;
+    }
+
+    window.location.href = nextUrl();
+  });
+</script>
+
+</body>
+</html>
