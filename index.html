@@ -151,6 +151,9 @@
 
   .avatar img{width:100%;height:100%;object-fit:cover;}
 
+  .avatar-link{display:block;}
+
+
 
 
   .sidebar-profile .who{display:flex;flex-direction:column;line-height:1.2;flex:1;min-width:0;}
@@ -757,9 +760,14 @@
 
         <div class="post-meta">
 
-          <div class="avatar">${avatarHtml}</div>
+          <a href="/profile?u=${encodeURIComponent(post.profiles?.username || '')}" class="avatar-link" onclick="event.stopPropagation()">
 
-          <span class="name">${name}</span>
+            <div class="avatar">${avatarHtml}</div>
+
+          </a>
+
+          <a href="/profile?u=${encodeURIComponent(post.profiles?.username || '')}" class="name" onclick="event.stopPropagation()">${name}</a>
+          
         </div>
 
         ${caption ? `<div class="caption-top">${caption}</div>` : ''}
@@ -801,7 +809,7 @@
 
         window.location.href = `/post?id=${postId}`;
 
-        
+
       });
     });
 
