@@ -332,7 +332,8 @@
     const existing = inboxByUserId[otherUserId]?.conversationId;
     if (existing) return existing;
 
-    const { data: newConv, error } = await supabaseClient.from('conversations').insert({}).select().single();
+    const { data: newConv, error } = await supabaseClient.from('conversations').insert({ creator_id: currentUser.id }).select().single();
+
     if (error){ console.error('Failed to create conversation:', error); return null; }
 
     const { error: partErr } = await supabaseClient.from('conversation_participants').insert([
