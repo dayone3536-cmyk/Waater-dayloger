@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post — Waater</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --white:#ffffff;--ink:#14151a;--ink-soft:#4a4d55;--grey:#8a8d94;
+    --line:#ececec;--line-strong:#e0e0e0;--accent:#ff5a36;--accent-soft:#fff1ec;
+    --nav-w:248px;
+    --font-display:'Space Grotesk', sans-serif;
+    --font-serif:'Newsreader', serif;
+    --font-mono:'JetBrains Mono', monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{background:var(--white);color:var(--ink);font-family:var(--font-serif);-webkit-font-smoothing:antialiased;padding-bottom:78px;}
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;border:none;background:none;cursor:pointer;}
+
+  .app{display:flex;max-width:1180px;margin:0 auto;}
+  .main{flex:1;min-width:0;border-left:1px solid var(--line);border-right:1px solid var(--line);}
+
+  .topbar{
+    display:flex;align-items:center;gap:14px;
+    padding:18px 20px 14px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);z-index:20;
+  }
+  .back-btn{
+    width:34px;height:34px;border-radius:50%;background:#f2f2f3;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .back-btn svg{width:16px;height:16px;stroke:var(--ink);}
+  .topbar .title{font-family:var(--font-display);font-weight:600;font-size:15px;}
+
+  .sidebar{
+    display:none;width:var(--nav-w);flex-shrink:0;padding:28px 18px;
+    flex-direction:column;height:100vh;position:sticky;top:0;
+  }
+  .sidebar .wordmark{font-family:var(--font-display);font-weight:700;font-size:24px;padding:0 10px;margin-bottom:36px;display:flex;gap:2px;}
+  .sidebar .wordmark .dot{color:var(--accent);}
+  .nav-list{list-style:none;display:flex;flex-direction:column;gap:4px;}
+  .nav-item{
+    display:flex;align-items:center;gap:14px;padding:12px 12px;border-radius:12px;
+    font-family:var(--font-display);font-size:15.5px;font-weight:500;color:var(--ink-soft);
+  }
+  .nav-item svg{width:22px;height:22px;flex-shrink:0;}
+  .nav-item:hover{background:#f7f7f8;color:var(--ink);}
+  .nav-create{margin-top:14px;background:var(--ink);color:#fff!important;justify-content:center;font-weight:600;padding:13px 12px;}
+  .nav-create svg{stroke:#fff;}
+  .sidebar-signin{
+    margin-top:auto;display:block;text-align:center;background:var(--ink);color:#fff!important;
+    font-family:var(--font-display);font-weight:600;font-size:13.5px;padding:12px;border-radius:12px;
+  }
+  .sidebar-profile{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);}
+  .avatar{
+    width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd8c9,var(--accent));
+    flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;
+    font-family:var(--font-display);font-weight:700;font-size:14px;overflow:hidden;
+  }
+  .avatar img{width:100%;height:100%;object-fit:cover;}
+  .sidebar-profile .who{display:flex;flex-direction:column;line-height:1.2;flex:1;min-width:0;}
+  .sidebar-profile .who span:first-child{font-family:var(--font-display);font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sidebar-signout{font-family:var(--font-mono);font-size:10px;color:var(--grey);padding:4px 6px;}
+
+  @media (min-width:900px){ body{padding-bottom:0;} .topbar{display:none;} .sidebar{display:flex;} }
+
+  .bottom-nav{
+    position:fixed;bottom:0;left:0;right:0;height:64px;
+    background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-top:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-around;z-index:30;
+  }
+  .tab{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--grey);font-family:var(--font-mono);font-size:9.5px;padding:6px 10px;}
+  .tab svg{width:22px;height:22px;stroke:var(--grey);}
+  @media (min-width:900px){ .bottom-nav{display:none;} }
+
+  .status-state{padding:60px 22px;text-align:center;font-family:var(--font-mono);font-size:12px;color:var(--grey);}
+
+  .post-detail{padding:20px 22px;}
+  .post-meta{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .post-meta .avatar{width:34px;height:34px;font-size:12px;}
+  .post-meta .name{font-family:var(--font-display);font-weight:600;font-size:14px;}
+  .post-meta .name a{hover:underline;}
+
+  .caption-top{font-family:var(--font-serif);font-size:15px;font-style:italic;line-height:1.4;color:var(--ink);margin-bottom:12px;}
+
+  .clip{
+    position:relative;width:100%;max-width:420px;margin:0 auto;
+    aspect-ratio:9/13;max-height:600px;border-radius:16px;overflow:hidden;
+    background:linear-gradient(160deg,#ffe3d6,#ff9d76);
+  }
+  .clip img,.clip video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+
+  .post-actions{display:flex;align-items:center;gap:22px;margin-top:16px;}
+  .post-actions button{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:12px;color:var(--ink-soft);}
+  .post-actions svg{width:19px;height:19px;stroke:var(--ink-soft);}
+  .post-actions button.liked{color:var(--accent);}
+  .post-actions button.liked svg{stroke:var(--accent);fill:var(--accent);}
+  .post-actions button:disabled{opacity:.5;}
+
+  .comments-section{padding:8px 22px 40px;border-top:1px solid var(--line);margin-top:20px;}
+  .comments-title{font-family:var(--font-display);font-weight:600;font-size:13px;padding:16px 0 10px;}
+  .comment-item{padding:12px 0;border-bottom:1px solid var(--line);display:flex;gap:10px;}
+  .comment-item .avatar{width:30px;height:30px;font-size:11px;}
+  .comment-item .body-wrap{flex:1;min-width:0;}
+  .comment-item .comment-name{font-family:var(--font-display);font-weight:600;font-size:12.5px;display:block;margin-bottom:2px;}
+  .comment-item .comment-body{font-family:var(--font-serif);font-size:14px;color:var(--ink-soft);}
+
+  .comment-form{
+    display:flex;gap:10px;padding:14px 22px;
+    position:sticky;bottom:64px;background:var(--white);border-top:1px solid var(--line);
+  }
+  @media (min-width:900px){ .comment-form{bottom:0;} }
+  .comment-form input{
+    flex:1;border:1px solid var(--line-strong);border-radius:99px;
+    padding:11px 16px;font-family:var(--font-serif);font-size:14px;outline:none;
+  }
+  .comment-form input:focus{border-color:var(--accent);}
+  .comment-form button{background:var(--ink);color:#fff;font-family:var(--font-display);font-weight:600;font-size:13px;padding:0 18px;border-radius:99px;}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="wordmark">waater<span class="dot">.</span></div>
+    <ul class="nav-list">
+      <li><a href="/" class="nav-item">Home</a></li>
+      <li><a href="/explore" class="nav-item">Explore</a></li>
+      <li><a href="/create" class="nav-item nav-create">Create</a></li>
+      <li><a href="/inbox" class="nav-item">Inbox</a></li>
+      <li><a href="/profile" class="nav-item">Profile</a></li>
+    </ul>
+    <div id="sidebarAuthArea"><a href="/auth" class="sidebar-signin">Sign in</a></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <a href="/" class="back-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </a>
+      <span class="title">Post</span>
+    </div>
+
+    <div id="pageBody">
+      <div class="status-state" id="pageLoading">Loading post…</div>
+    </div>
+  </main>
+</div>
+
+<nav class="bottom-nav">
+  <a href="/" class="tab">home</a>
+  <a href="/explore" class="tab">explore</a>
+  <a href="/create" class="tab">create</a>
+  <a href="/inbox" class="tab">inbox</a>
+  <a href="/profile" class="tab">profile</a>
+</nav>
+
+<script>
+  function escapeHtml(str){ const d=document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
+  function initials(name){ return (name || '?').trim().slice(0,1).toUpperCase(); }
+
+  const SUPABASE_URL = 'https://yacrwbpvcqurxsqpmron.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_Any50PwhIupj5rZbez1W4Q_dIx-VRIs';
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let currentUser = null;
+  let post = null;
+  let isLiked = false;
+
+  function requireAuth(){
+    if (currentUser) return true;
+    window.location.href = `/auth?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+    return false;
+  }
+
+  async function renderSidebar(){
+    const { data } = await supabaseClient.auth.getSession();
+    currentUser = data.session ? data.session.user : null;
+    const area = document.getElementById('sidebarAuthArea');
+    if (!currentUser){ area.innerHTML = `<a href="/auth" class="sidebar-signin">Sign in</a>`; return; }
+
+    const { data: me } = await supabaseClient.from('profiles').select('username, avatar_url').eq('id', currentUser.id).maybeSingle();
+    const name = me?.username || currentUser.email || 'You';
+    const avatarHtml = me?.avatar_url ? `<img src="${escapeHtml(me.avatar_url)}" alt="">` : initials(name);
+    area.innerHTML = `
+      <a href="/profile" class="sidebar-profile">
+        <div class="avatar">${avatarHtml}</div>
+        <div class="who"><span>${escapeHtml(name)}</span></div>
+      </a>
+      <button class="sidebar-signout" id="signOutBtn">Sign out</button>
+    `;
+    document.getElementById('signOutBtn').addEventListener('click', async () => {
+      await supabaseClient.auth.signOut();
+      window.location.reload();
+    });
+  }
+
+  function renderComment(c){
+    const name = escapeHtml(c.profiles?.username || 'Someone');
+    const avatarUrl = c.profiles?.avatar_url;
+    const avatarHtml = avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="">` : initials(name);
+    return `
+      <div class="comment-item">
+        <div class="avatar">${avatarHtml}</div>
+        <div class="body-wrap">
+          <span class="comment-name">${name}</span>
+          <span class="comment-body">${escapeHtml(c.body || '')}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  async function loadComments(postId){
+    const { data } = await supabaseClient
+      .from('comments')
+      .select('*, profiles(username, avatar_url)')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true });
+    const list = data || [];
+    document.getElementById('commentsList').innerHTML = list.length
+      ? list.map(renderComment).join('')
+      : `<div class="status-state">No comments yet — be the first.</div>`;
+    document.getElementById('commentsCount').textContent = list.length;
+  }
+
+  async function toggleLike(btn){
+    if (!requireAuth() || btn.disabled) return;
+    btn.disabled = true;
+    const countEl = btn.querySelector('.like-count');
+    const svg = btn.querySelector('svg');
+    try {
+      if (isLiked){
+        await supabaseClient.from('likes').delete().match({ post_id: post.id, user_id: currentUser.id });
+        isLiked = false;
+        btn.classList.remove('liked'); svg.setAttribute('fill','none');
+        countEl.textContent = Math.max(0, parseInt(countEl.textContent,10) - 1);
+      } else {
+        await supabaseClient.from('likes').insert({ post_id: post.id, user_id: currentUser.id });
+        isLiked = true;
+        btn.classList.add('liked'); svg.setAttribute('fill','currentColor');
+        countEl.textContent = parseInt(countEl.textContent,10) + 1;
+      }
+    } catch (err) {
+      console.error('Like toggle failed:', err);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function renderPage(){
+    const params = new URLSearchParams(window.location.search);
+    const postId = params.get('id');
+    const body = document.getElementById('pageBody');
+
+    if (!postId){
+      body.innerHTML = `<div class="status-state">No post specified.</div>`;
+      return;
+    }
+
+    const { data: postData, error } = await supabaseClient
+      .from('posts')
+      .select('*, profiles(username, avatar_url), likes(count), comments(count)')
+      .eq('id', postId)
+      .maybeSingle();
+
+    if (error || !postData){
+      body.innerHTML = `<div class="status-state">Couldn't find that post.</div>`;
+      return;
+    }
+    post = postData;
+
+    if (currentUser){
+      const { data: myLike } = await supabaseClient
+        .from('likes').select('post_id').eq('post_id', post.id).eq('user_id', currentUser.id).maybeSingle();
+      isLiked = !!myLike;
+    }
+
+    const name = escapeHtml(post.profiles?.username || 'Someone');
+    const avatarUrl = post.profiles?.avatar_url;
+    const avatarHtml = avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="">` : initials(name);
+    const caption = escapeHtml(post.caption || '');
+    const likeCount = post.likes?.[0]?.count ?? 0;
+    const commentCount = post.comments?.[0]?.count ?? 0;
+
+    let mediaHtml = '';
+    if (post.media_type === 'video' && post.media_url){
+      mediaHtml = `<video src="${escapeHtml(post.media_url)}" controls playsinline></video>`;
+    } else if (post.media_type === 'photo' && post.media_url){
+      mediaHtml = `<img src="${escapeHtml(post.media_url)}" alt="">`;
+    }
+
+    body.innerHTML = `
+      <div class="post-detail">
+        <div class="post-meta">
+          <div class="avatar">${avatarHtml}</div>
+          <span class="name">${name}</span>
+        </div>
+        ${caption ? `<div class="caption-top">${caption}</div>` : ''}
+        <div class="clip">${mediaHtml}</div>
+        <div class="post-actions">
+          <button class="like-btn ${isLiked ? 'liked' : ''}" id="likeBtn">
+            <svg viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke-width="1.8"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 10-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 000-7.8z"/></svg>
+            <span class="like-count">${likeCount}</span>
+          </button>
+          <div>💬 <span id="commentsCount">${commentCount}</span> comments</div>
+        </div>
+      </div>
+
+      <div class="comments-section">
+        <div class="comments-title">Comments</div>
+        <div id="commentsList"><div class="status-state">Loading comments…</div></div>
+      </div>
+
+      <form class="comment-form" id="commentForm">
+        <input type="text" id="commentInput" placeholder="Add a comment..." maxlength="280">
+        <button type="submit">Post</button>
+      </form>
+    `;
+
+    document.getElementById('likeBtn').addEventListener('click', (e) => toggleLike(e.currentTarget));
+    document.getElementById('commentForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!requireAuth()) return;
+      const input = document.getElementById('commentInput');
+      const text = input.value.trim();
+      if (!text) return;
+      try {
+        await supabaseClient.from('comments').insert({ post_id: post.id, user_id: currentUser.id, body: text });
+        input.value = '';
+        await loadComments(post.id);
+      } catch (err) {
+        console.error('Failed to post comment:', err);
+      }
+    });
+
+    await loadComments(post.id);
+  }
+
+  async function init(){
+    await renderSidebar();
+    await renderPage();
+  }
+  init();
+</script>
+
+</body>
+</html>

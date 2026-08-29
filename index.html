@@ -262,6 +262,17 @@
     box-shadow:0 6px 20px rgba(0,0,0,.12);
     pointer-events:none;
   }
+
+  .caption-top{
+    font-family:var(--font-serif);
+    font-size:15px;
+    font-style:italic;
+    line-height:1.4;
+    color:var(--ink);
+    margin-bottom:12px;
+  }
+
+
   .clip .play svg{width:18px;height:18px;fill:var(--ink);margin-left:2px;}
   .clip .duration{
     position:absolute;top:12px;right:12px;
@@ -750,30 +761,47 @@
 
           <span class="name">${name}</span>
         </div>
+
+        ${caption ? `<div class="caption-top">${caption}</div>` : ''}
+
+
         <div class="clip clip-clickable" style="--g1:${g1};--g2:${g2};">
           ${mediaHtml}
-          ${caption ? `<div class="caption">${caption}</div>` : ''}
+          
         </div>
+
+
         <div class="post-actions">
           <button class="like-btn ${isLiked ? 'liked' : ''}" data-post-id="${post.id}">
             <svg viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke-width="1.8"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 10-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 000-7.8z"/></svg>
             <span class="like-count">${likeCount}</span>
           </button>
+
           <button class="comment-btn" data-post-id="${post.id}">
+
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             <span class="comment-count">${commentCount}</span>
           </button>
-          <button><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7M16 6l-4-4-4 4M12 2v13"/></svg> share</button>
+          
+          <button class="share-btn" data-post-id="${post.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7M16 6l-4-4-4 4M12 2v13"/></svg> share</button>
+
+
         </div>
       </article>
     `;
   }
 
   function attachPostHandlers() {
+
     document.querySelectorAll('.clip-clickable').forEach(el => {
+
       el.addEventListener('click', () => {
+
         const postId = el.closest('.post').dataset.postId;
-        openLightbox(postsById[postId]);
+
+        window.location.href = `/post?id=${postId}`;
+
+        
       });
     });
 
@@ -792,6 +820,18 @@
         openComments(btn.dataset.postId);
       });
     });
+
+    document.querySelectorAll('.share-btn').forEach(btn => {
+
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sharePost(btn.dataset.postId);
+
+      });
+
+    });
+
+
   }
 
   async function loadFeed() {
@@ -899,6 +939,45 @@
       btn.disabled = false;
     }
   }
+
+  async function sharePost(postId) {
+
+    const post = postsById[postId];
+
+    const url = `${window.location.origin}/?post=${postId}`;
+
+    const title = post?.profiles?.username ? `${post.profiles.username} on Waater` : 'Waater';
+    const text = post?.caption || '';
+
+    if (navigator.share) {
+
+      try {
+
+        await navigator.share({ title, text, url });
+      } catch (err) {
+
+        // user cancelled the share sheet — not an error
+
+        if (err.name !== 'AbortError') console.error('Share failed:', err);
+
+      }
+    } else if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(url);
+        // simple feedback since there's no toast system yet
+        const btn = document.querySelector(`.share-btn[data-post-id="${postId}"]`);
+        if (btn) {
+          const original = btn.innerHTML;
+          btn.innerHTML = 'copied!';
+          setTimeout(() => { btn.innerHTML = original; }, 1500);
+        }
+      } catch (err) {
+        console.error('Clipboard copy failed:', err);
+      }
+    }
+  }
+
+
 
   // ---- comments ----
   function renderComments(comments) {

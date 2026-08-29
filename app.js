@@ -22,12 +22,24 @@ app.use((req, res, next) => {
 });
 
 // ---- static files -----------------------------------------
-app.use(express.static(__dirname)); // serves index.html, css, client js from project root
+app.use(express.static(__dirname));
 
 // ---- in-memory "database" --------------------------------------------------
 let posts = [];
 let users = [];
 let messages = [];
+
+// ---- page routes (grouped together, all before the SPA fallback) ----------
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get('/explore', (req, res) => res.sendFile(path.join(__dirname, 'explore.html')));
+app.get('/create', (req, res) => res.sendFile(path.join(__dirname, 'create.html')));
+app.get('/messages', (req, res) => res.sendFile(path.join(__dirname, 'messages.html')));
+app.get('/post', (req, res) => res.sendFile(path.join(__dirname, 'post.html')));
+app.get('/profile', (req, res) => res.sendFile(path.join(__dirname, 'profile.html')));
+app.get('/auth', (req, res) => res.sendFile(path.join(__dirname, 'auth.html')));
+
+// old bookmarks/links to /inbox still work
+app.get('/inbox', (req, res) => res.redirect(301, '/messages'));
 
 // ---- API routes ---------------------------------------------------------
 app.get('/api/posts', (req, res) => res.json(posts));
@@ -41,43 +53,10 @@ app.post('/api/posts', (req, res) => {
 
 app.get('/api/users', (req, res) => res.json(users));
 app.get('/api/users/me', (req, res) => res.json(req.user));
+app.get('/api/inbox', (req, res) => res.json(messages)); // kept as-is; DMs live in Supabase now, not this in-memory array
 
-
-app.get('/ping', (req, res) => {
-
-  res.status(200).send('pong');
-  
-});
-
-
-app.get('/api/inbox', (req, res) => res.json(messages));
-
-// health check
+app.get('/ping', (req, res) => res.status(200).send('pong'));
 app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
-
-// ---- page routes (must come BEFORE the SPA catch-all fallback) ------------
-app.get('/explore', (req, res) => {
-  res.sendFile(path.join(__dirname, 'explore.html'));
-});
-
-app.get('/create', (req, res) => {
-  res.sendFile(path.join(__dirname, 'create.html'));
-});
-
-app.get('/inbox', (req, res) => {
-  res.sendFile(path.join(__dirname, 'inbox.html'));
-});
-
-app.get('/profile', (req, res) => {
-  res.sendFile(path.join(__dirname, 'profile.html'));
-});
-
-
-
-app.get('/auth', (req, res) => {
-  res.sendFile(path.join(__dirname, 'auth.html'));
-});
-
 
 // ---- SPA fallback (catch anything else non-/api) ---------------------------
 app.get(/^(?!\/api).*/, (req, res) => {
