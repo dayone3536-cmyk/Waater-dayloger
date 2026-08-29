@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create — Waater</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --white:#ffffff;
+    --ink:#14151a;
+    --ink-soft:#4a4d55;
+    --grey:#8a8d94;
+    --line:#ececec;
+    --line-strong:#e0e0e0;
+    --accent:#ff5a36;
+    --accent-soft:#fff1ec;
+    --danger:#e0433f;
+    --nav-w:248px;
+    --font-display:'Space Grotesk', sans-serif;
+    --font-serif:'Newsreader', serif;
+    --font-mono:'JetBrains Mono', monospace;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    background:var(--white);
+    color:var(--ink);
+    font-family:var(--font-serif);
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:78px;
+  }
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;border:none;background:none;cursor:pointer;}
+  ::selection{background:var(--accent-soft);color:var(--accent);}
+
+  /* ---------- layout shell (shared with index) ---------- */
+  .app{display:flex;max-width:1180px;margin:0 auto;}
+  .main{flex:1;min-width:0;border-left:1px solid var(--line);border-right:1px solid var(--line);}
+
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 20px 14px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:rgba(255,255,255,.92);
+    backdrop-filter:blur(8px);z-index:20;
+  }
+  .wordmark{font-family:var(--font-display);font-weight:700;font-size:20px;letter-spacing:-0.02em;display:flex;align-items:baseline;gap:2px;}
+  .wordmark .dot{color:var(--accent);}
+
+  .sidebar{
+    display:none;width:var(--nav-w);flex-shrink:0;padding:28px 18px;
+    flex-direction:column;height:100vh;position:sticky;top:0;
+  }
+  .sidebar .wordmark{font-size:24px;padding:0 10px;margin-bottom:36px;}
+  .nav-list{list-style:none;display:flex;flex-direction:column;gap:4px;}
+  .nav-item{
+    display:flex;align-items:center;gap:14px;padding:12px 12px;border-radius:12px;
+    font-family:var(--font-display);font-size:15.5px;font-weight:500;
+    color:var(--ink-soft);transition:background .15s ease, color .15s ease;
+  }
+  .nav-item svg{width:22px;height:22px;flex-shrink:0;}
+  .nav-item:hover{background:#f7f7f8;color:var(--ink);}
+  .nav-item.active{color:var(--ink);}
+  .nav-item.active svg{stroke:var(--accent);}
+  .nav-create{margin-top:14px;background:var(--ink);color:var(--white)!important;justify-content:center;font-weight:600;padding:13px 12px;}
+  .nav-create:hover{background:#000;}
+  .nav-create svg{stroke:var(--white);}
+
+  .sidebar-profile{
+    margin-top:auto;display:flex;align-items:center;gap:10px;
+    padding:10px 12px;border-radius:12px;border:1px solid var(--line);
+  }
+  .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd8c9,var(--accent));flex-shrink:0;}
+  .sidebar-profile .who{display:flex;flex-direction:column;line-height:1.2;}
+  .sidebar-profile .who span:first-child{font-family:var(--font-display);font-size:13.5px;font-weight:600;}
+  .sidebar-profile .who span:last-child{font-family:var(--font-mono);font-size:11px;color:var(--grey);}
+
+  /* ---------- create page ---------- */
+  .create-head{padding:26px 22px 6px;}
+  .create-head h1{font-family:var(--font-display);font-weight:600;font-size:15px;letter-spacing:.01em;color:var(--ink);}
+  .create-head p{font-family:var(--font-mono);font-size:11.5px;color:var(--grey);margin-top:4px;}
+
+  .create-body{padding:20px 22px 40px;}
+
+  /* dropzone / uploader, styled like the .clip card on index */
+  .uploader{
+    position:relative;
+    width:100%;
+    aspect-ratio:9/13;
+    max-height:560px;
+    border-radius:16px;
+    overflow:hidden;
+    background:linear-gradient(160deg,#ffe3d6,#ffb199);
+    border:1.5px dashed var(--line-strong);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    transition:border-color .15s ease, transform .1s ease;
+  }
+  .uploader:hover{border-color:var(--accent);}
+  .uploader.dragover{border-color:var(--accent);transform:scale(0.995);}
+  .uploader.has-media{background:#0d0d0f;border-style:solid;border-color:var(--line);}
+
+  .uploader input[type="file"]{display:none;}
+
+  .uploader-empty{
+    display:flex;flex-direction:column;align-items:center;gap:10px;
+    color:#fff;text-align:center;padding:24px;
+  }
+  .uploader-empty svg{width:36px;height:36px;stroke:#fff;opacity:.9;}
+  .uploader-empty .big{font-family:var(--font-display);font-weight:600;font-size:15px;}
+  .uploader-empty .small{font-family:var(--font-mono);font-size:11px;opacity:.85;}
+
+  .uploader-preview{position:absolute;inset:0;width:100%;height:100%;}
+  .uploader-preview img,
+  .uploader-preview video{width:100%;height:100%;object-fit:cover;}
+
+  .uploader-clear{
+    position:absolute;top:12px;right:12px;
+    width:32px;height:32px;border-radius:50%;
+    background:rgba(0,0,0,.55);
+    display:flex;align-items:center;justify-content:center;
+    z-index:5;
+  }
+  .uploader-clear svg{width:16px;height:16px;stroke:#fff;}
+
+  .uploader-filetag{
+    position:absolute;top:12px;left:12px;
+    font-family:var(--font-mono);font-size:10.5px;color:#fff;
+    background:rgba(0,0,0,.45);padding:3px 8px;border-radius:6px;
+    z-index:5;
+  }
+
+  /* caption */
+  .caption-field{margin-top:20px;}
+  .caption-field label{
+    display:block;font-family:var(--font-mono);font-size:11px;
+    letter-spacing:.02em;color:var(--grey);margin-bottom:8px;
+  }
+  .caption-field textarea{
+    width:100%;min-height:96px;resize:vertical;
+    border:1px solid var(--line-strong);border-radius:12px;
+    padding:14px;font-family:var(--font-serif);font-style:italic;
+    font-size:15.5px;color:var(--ink);line-height:1.5;
+    outline:none;transition:border-color .15s ease;
+  }
+  .caption-field textarea:focus{border-color:var(--accent);}
+  .char-count{
+    text-align:right;font-family:var(--font-mono);font-size:10.5px;
+    color:var(--grey);margin-top:6px;
+  }
+
+  /* submit + status */
+  .create-actions{display:flex;align-items:center;gap:14px;margin-top:22px;}
+  .post-btn{
+    flex:1;background:var(--ink);color:#fff;font-family:var(--font-display);
+    font-weight:600;font-size:14.5px;padding:15px;border-radius:12px;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    transition:background .15s ease, opacity .15s ease;
+  }
+  .post-btn:hover{background:#000;}
+  .post-btn:disabled{opacity:.5;cursor:not-allowed;}
+  .post-btn svg{width:17px;height:17px;stroke:#fff;}
+
+  .status-msg{
+    margin-top:14px;font-family:var(--font-mono);font-size:11.5px;
+    padding:10px 12px;border-radius:8px;display:none;
+  }
+  .status-msg.show{display:block;}
+  .status-msg.error{background:#fdeceb;color:var(--danger);}
+  .status-msg.success{background:var(--accent-soft);color:#c24020;}
+
+  .upload-progress{
+    margin-top:10px;height:4px;border-radius:99px;background:var(--line);
+    overflow:hidden;display:none;
+  }
+  .upload-progress.show{display:block;}
+  .upload-progress .bar{height:100%;width:0%;background:var(--accent);transition:width .15s ease;}
+
+  /* ---------- bottom nav (mobile, shared) ---------- */
+  .bottom-nav{
+    position:fixed;bottom:0;left:0;right:0;height:64px;
+    background:rgba(255,255,255,.96);backdrop-filter:blur(10px);
+    border-top:1px solid var(--line);display:flex;align-items:center;
+    justify-content:space-around;z-index:30;
+  }
+  .tab{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--grey);font-family:var(--font-mono);font-size:9.5px;letter-spacing:.02em;padding:6px 10px;}
+  .tab svg{width:22px;height:22px;stroke:var(--grey);}
+  .tab.active{color:var(--ink);}
+  .tab.active svg{stroke:var(--ink);}
+  .tab-create{position:relative;top:-20px;}
+  .tab-create .ring{width:52px;height:52px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(255,90,54,.4);}
+  .tab-create svg{width:22px;height:22px;stroke:#fff;stroke-width:2.4;}
+  .tab-create span{display:none;}
+
+  @media (min-width:900px){
+    body{padding-bottom:0;}
+    .topbar{display:none;}
+    .bottom-nav{display:none;}
+    .sidebar{display:flex;}
+    .create-head{padding-top:32px;}
+    .create-body{padding-left:32px;padding-right:32px;max-width:460px;}
+    .uploader{max-width:380px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="wordmark">waater<span class="dot">.</span></div>
+    <ul class="nav-list">
+      <li><a href="/" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+        Home</a></li>
+      <li><a href="/explore" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        Explore</a></li>
+      <li><a href="/create" class="nav-item nav-create active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+        Create</a></li>
+      <li><a href="/inbox" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Inbox</a></li>
+      <li><a href="/profile" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+        Profile</a></li>
+    </ul>
+    <a href="/profile" class="sidebar-profile">
+      <div class="avatar"></div>
+      <div class="who"><span>You</span><span>day —</span></div>
+    </a>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="wordmark">waater<span class="dot">.</span></div>
+    </div>
+
+    <div class="create-head">
+      <h1>Log today</h1>
+      <p id="createDate"></p>
+    </div>
+
+    <div class="create-body">
+      <form id="createForm">
+        <div class="uploader" id="uploader">
+          <input type="file" id="fileInput" accept="image/*,video/*">
+          <div class="uploader-empty" id="uploaderEmpty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>
+            <span class="big">Tap to add a photo or video</span>
+            <span class="small">or drag a file here</span>
+          </div>
+          <div class="uploader-preview" id="uploaderPreview" style="display:none;"></div>
+        </div>
+
+        <div class="caption-field">
+          <label for="captionInput">CAPTION</label>
+          <textarea id="captionInput" maxlength="280" placeholder="What happened today..."></textarea>
+          <div class="char-count"><span id="charCount">0</span>/280</div>
+        </div>
+
+        <div class="upload-progress" id="uploadProgress"><div class="bar" id="uploadBar"></div></div>
+        <div class="status-msg" id="statusMsg"></div>
+
+        <div class="create-actions">
+          <button type="submit" class="post-btn" id="postBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+            Post to your day
+          </button>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>
+
+<nav class="bottom-nav">
+  <a href="/" class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+    home
+  </a>
+  <a href="/explore" class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    explore
+  </a>
+  <a href="/create" class="tab tab-create active">
+    <div class="ring">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>
+    </div>
+    <span>create</span>
+  </a>
+  <a href="/inbox" class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    inbox
+  </a>
+  <a href="/profile" class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+    profile
+  </a>
+</nav>
+
+<script>
+  document.getElementById('createDate').textContent =
+    new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+
+  // ============================================================
+  // SUPABASE CONFIG — fill these in with your project's values.
+  // The anon key is safe to expose in client-side code; it can
+  // only do what your Row Level Security policies allow.
+  // Never put your service_role key in a file like this one.
+  // ============================================================
+
+  const SUPABASE_URL = 'https://yacrwbpvcqurxsqpmron.supabase.co';
+  
+  const SUPABASE_ANON_KEY = 'sb_publishable_Any50PwhIupj5rZbez1W4Q_dIx-VRIs';
+
+  // A simple stand-in for real auth: a random id saved in this browser,
+  // reused across visits, so posts/likes/comments can be attributed to "someone".
+  function getGuestId() {
+    let id = localStorage.getItem('waaterGuestId');
+    if (!id) {
+      id = 'guest-' + Math.random().toString(36).slice(2, 10);
+      localStorage.setItem('waaterGuestId', id);
+    }
+    return id;
+  }
+  const guestId = getGuestId();
+
+  // Named supabaseClient (not "supabase") — the CDN script above already
+  // defines a global called "supabase", so reusing that name here throws
+  // "Identifier 'supabase' has already been declared" and kills the whole script.
+  let supabaseClient = null;
+  let supabaseConfigured = false;
+  try {
+    if (!SUPABASE_URL.startsWith('http')) throw new Error('Supabase URL not set');
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    supabaseConfigured = true;
+  } catch (err) {
+    console.warn('Supabase is not configured yet — fill in SUPABASE_URL / SUPABASE_ANON_KEY in create.html.', err);
+  }
+
+  const uploader = document.getElementById('uploader');
+  const fileInput = document.getElementById('fileInput');
+  const uploaderEmpty = document.getElementById('uploaderEmpty');
+  const uploaderPreview = document.getElementById('uploaderPreview');
+  const captionInput = document.getElementById('captionInput');
+  const charCount = document.getElementById('charCount');
+  const statusMsg = document.getElementById('statusMsg');
+  const postBtn = document.getElementById('postBtn');
+  const uploadProgress = document.getElementById('uploadProgress');
+  const uploadBar = document.getElementById('uploadBar');
+
+  let selectedFile = null;
+
+  uploader.addEventListener('click', () => fileInput.click());
+
+  ['dragover', 'dragenter'].forEach(evt =>
+    uploader.addEventListener(evt, e => {
+      e.preventDefault();
+      uploader.classList.add('dragover');
+    })
+  );
+  ['dragleave', 'drop'].forEach(evt =>
+    uploader.addEventListener(evt, e => {
+      e.preventDefault();
+      uploader.classList.remove('dragover');
+    })
+  );
+  uploader.addEventListener('drop', e => {
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  });
+
+  fileInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (file) handleFile(file);
+  });
+
+  function handleFile(file) {
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    if (!isImage && !isVideo) {
+      showStatus('Please choose a photo or video file.', 'error');
+      return;
+    }
+
+    selectedFile = file;
+    const url = URL.createObjectURL(file);
+
+    uploaderEmpty.style.display = 'none';
+    uploaderPreview.style.display = 'block';
+    uploader.classList.add('has-media');
+    uploaderPreview.innerHTML = `
+      <button type="button" class="uploader-clear" id="clearBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <span class="uploader-filetag">${isVideo ? 'video' : 'photo'}</span>
+      ${isVideo
+        ? `<video src="${url}" muted loop autoplay playsinline></video>`
+        : `<img src="${url}" alt="">`
+      }
+    `;
+
+    document.getElementById('clearBtn').addEventListener('click', e => {
+      e.stopPropagation();
+      clearFile();
+    });
+  }
+
+  function clearFile() {
+    selectedFile = null;
+    fileInput.value = '';
+    uploaderEmpty.style.display = 'flex';
+    uploaderPreview.style.display = 'none';
+    uploaderPreview.innerHTML = '';
+    uploader.classList.remove('has-media');
+  }
+
+  captionInput.addEventListener('input', () => {
+    charCount.textContent = captionInput.value.length;
+  });
+
+  function showStatus(msg, type) {
+    statusMsg.textContent = msg;
+    statusMsg.className = `status-msg show ${type}`;
+  }
+
+  document.getElementById('createForm').addEventListener('submit', async e => {
+    e.preventDefault();
+
+    const caption = captionInput.value.trim();
+    if (!selectedFile && !caption) {
+      showStatus('Add a photo/video or write something first.', 'error');
+      return;
+    }
+
+    postBtn.disabled = true;
+    postBtn.textContent = 'Posting...';
+    statusMsg.className = 'status-msg';
+
+    try {
+      let mediaUrl = null;
+      let mediaType = 'text';
+
+      if (selectedFile && !supabaseConfigured) {
+        throw new Error('Supabase isn\'t configured yet — add SUPABASE_URL and SUPABASE_ANON_KEY in create.html.');
+      }
+
+      if (selectedFile) {
+        mediaType = selectedFile.type.startsWith('video/') ? 'video' : 'photo';
+        const ext = selectedFile.name.split('.').pop();
+        const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+        uploadProgress.classList.add('show');
+        uploadBar.style.width = '30%';
+
+        const { error: uploadError } = await supabaseClient.storage
+          .from('post-media')
+          .upload(path, selectedFile, { cacheControl: '3600', upsert: false });
+
+        if (uploadError) throw uploadError;
+
+        uploadBar.style.width = '80%';
+
+        const { data: publicUrlData } = supabaseClient.storage
+          .from('post-media')
+          .getPublicUrl(path);
+
+        mediaUrl = publicUrlData.publicUrl;
+        uploadBar.style.width = '100%';
+      }
+
+      if (!supabaseConfigured) {
+        throw new Error('Supabase isn\'t configured yet — add SUPABASE_URL and SUPABASE_ANON_KEY in create.html.');
+      }
+
+      const { error: insertError } = await supabaseClient
+        .from('posts')
+        .insert({
+          user_id: guestId,
+          caption,
+          media_url: mediaUrl,
+          media_type: mediaType
+        });
+
+      if (insertError) throw insertError;
+
+      showStatus('Posted! Taking you home...', 'success');
+      setTimeout(() => { window.location.href = '/'; }, 700);
+
+    } catch (err) {
+      console.error(err);
+      showStatus(err.message || 'Something went wrong. Try again.', 'error');
+      postBtn.disabled = false;
+      postBtn.textContent = 'Post to your day';
+      uploadProgress.classList.remove('show');
+      uploadBar.style.width = '0%';
+    }
+  });
+</script>
+
+</body>
+</html>
