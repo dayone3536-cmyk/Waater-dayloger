@@ -10,8 +10,10 @@
 <style>
   :root{
     --white:#ffffff;--ink:#14151a;--ink-soft:#4a4d55;--grey:#8a8d94;
-    --line:#efefef;--accent:#ff5a36;--accent-soft:#fff1ec;
-    --bubble-theirs:#f0f0f0;
+    --line:#efefef;--accent:#ff5a36;--accent-soft:#fff1ec;--accent-glow:rgba(255,90,54,.22);
+    --bubble-theirs:#f0f0f0;--online:#2ecc71;
+    --shadow-bubble:0 2px 10px rgba(20,21,26,.07);
+    --shadow-float:0 10px 28px rgba(20,21,26,.09);
     --nav-w:230px;--list-w:380px;
     --font-display:'Space Grotesk', sans-serif;
     --font-serif:'Newsreader', serif;
@@ -31,88 +33,121 @@
   .sidebar .wordmark{font-family:var(--font-display);font-weight:700;font-size:22px;padding:0 8px;margin-bottom:32px;}
   .sidebar .wordmark .dot{color:var(--accent);}
   .nav-list{list-style:none;display:flex;flex-direction:column;gap:2px;}
-  .nav-item{display:flex;align-items:center;gap:14px;padding:11px 10px;border-radius:12px;font-family:var(--font-display);font-size:15px;font-weight:500;color:var(--ink-soft);}
-  .nav-item svg{width:21px;height:21px;flex-shrink:0;}
+  .nav-item{display:flex;align-items:center;gap:14px;padding:11px 10px;border-radius:12px;font-family:var(--font-display);font-size:15px;font-weight:500;color:var(--ink-soft);transition:background .15s ease, color .15s ease;}
+  .nav-item svg{width:21px;height:21px;flex-shrink:0;transition:stroke .15s ease;}
   .nav-item:hover{background:#f7f7f8;color:var(--ink);}
   .nav-item.active{color:var(--ink);}
   .nav-item.active svg{stroke:var(--accent);}
   .sidebar-signin,.sidebar-profile{margin-top:auto;}
   .sidebar-signin{display:block;text-align:center;background:var(--ink);color:#fff!important;font-family:var(--font-display);font-weight:600;font-size:13px;padding:11px;border-radius:12px;}
-  .sidebar-profile{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;}
+  .sidebar-profile{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;transition:background .15s ease;}
+  .sidebar-profile:hover{background:#f7f7f8;}
   .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffb199,var(--accent));flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-display);font-weight:700;font-size:13px;overflow:hidden;}
   .avatar img{width:100%;height:100%;object-fit:cover;}
+  .avatar-wrap{position:relative;flex-shrink:0;display:inline-flex;}
+  .status-dot{position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;background:var(--online);border:2.5px solid var(--white);opacity:0;transform:scale(.6);transition:opacity .2s ease, transform .2s ease;}
+  .status-dot.on{opacity:1;transform:scale(1);}
   .sidebar-profile .who{font-family:var(--font-display);font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .sidebar-signout{font-family:var(--font-mono);font-size:10px;color:var(--grey);padding:6px 10px;text-align:left;}
   @media (min-width:900px){ .sidebar{display:flex;} }
 
-  /* ---------- inbox list (IG-style) ---------- */
+  /* ---------- inbox list ---------- */
   .list-pane{width:100%;border-right:1px solid var(--line);display:flex;flex-direction:column;height:100vh;background:var(--white);}
   @media (min-width:700px){ .list-pane{width:var(--list-w);flex-shrink:0;} }
 
-  .list-head{padding:20px 20px 14px;flex-shrink:0;}
+  .list-head{padding:20px 20px 14px;flex-shrink:0;position:relative;}
+  .list-head::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,var(--line) 20%,var(--line) 80%,transparent);}
   .list-head h1{font-family:var(--font-display);font-weight:700;font-size:21px;margin-bottom:14px;letter-spacing:-.01em;}
   .search-box{position:relative;}
-  .search-box svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--grey);}
-  .search-box input{width:100%;border:none;border-radius:99px;padding:10px 14px 10px 36px;font-size:13.5px;font-family:var(--font-serif);outline:none;background:#f2f2f3;}
-  .search-box input:focus{background:#ebebeb;}
+  .search-box svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--grey);pointer-events:none;transition:stroke .15s ease;}
+  .search-box input{width:100%;border:1.5px solid transparent;border-radius:99px;padding:10px 14px 10px 36px;font-size:13.5px;font-family:var(--font-serif);outline:none;background:#f2f2f3;transition:background .15s ease, box-shadow .2s ease;}
+  .search-box input:focus{background:var(--white);box-shadow:0 0 0 3px var(--accent-glow);}
+  .search-box input:focus + svg,.search-box:focus-within svg{stroke:var(--accent);}
 
   .conv-list{flex:1;overflow-y:auto;padding:4px 8px 8px;}
-  .conv-row{display:flex;align-items:center;gap:13px;padding:10px 10px;cursor:pointer;border-radius:14px;transition:background .12s ease;}
+  .conv-row{display:flex;align-items:center;gap:13px;padding:10px 10px;cursor:pointer;border-radius:14px;transition:background .12s ease;position:relative;}
   .conv-row:hover{background:#f7f7f8;}
   .conv-row.active{background:var(--accent-soft);}
   .conv-row .avatar{width:54px;height:54px;font-size:18px;}
+  .conv-row .status-dot{width:13px;height:13px;}
   .conv-row .meta{flex:1;min-width:0;}
   .conv-row .top-line{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
   .conv-row .name{font-family:var(--font-display);font-weight:600;font-size:14.5px;}
   .conv-row .time{font-family:var(--font-mono);font-size:10px;color:var(--grey);flex-shrink:0;}
-  .conv-row .preview{font-family:var(--font-serif);font-size:13px;color:var(--grey);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;}
+  .conv-row .preview-line{display:flex;align-items:center;gap:6px;margin-top:2px;}
+  .conv-row .preview{font-family:var(--font-serif);font-size:13px;color:var(--grey);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;}
   .conv-row .preview.unread{color:var(--ink);font-weight:600;}
+  .conv-row .preview.typing{color:var(--accent);font-style:italic;}
+  .unread-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;}
 
   .empty-note{padding:50px 24px;text-align:center;font-family:var(--font-mono);font-size:11.5px;color:var(--grey);line-height:1.6;}
   .empty-note .big{font-family:var(--font-display);font-size:14px;color:var(--ink);font-weight:600;margin-bottom:6px;display:block;}
 
-  /* ---------- thread (IG-style) ---------- */
+  /* ---------- thread ---------- */
   .thread-pane{flex:1;display:none;flex-direction:column;height:100vh;min-width:0;background:var(--white);}
   .thread-pane.show{display:flex;}
   @media (min-width:700px){ .thread-pane{display:flex;} }
 
   .thread-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);flex-shrink:0;}
-  .thread-back{display:flex;padding:4px;margin-left:-4px;}
+  .thread-back{display:flex;padding:4px;margin-left:-4px;border-radius:8px;}
+  .thread-back:hover{background:#f7f7f8;}
   @media (min-width:700px){ .thread-back{display:none;} }
   .thread-back svg{width:22px;height:22px;stroke:var(--ink);}
   .thread-head .avatar{width:34px;height:34px;font-size:12px;}
+  .thread-head .status-dot{width:10px;height:10px;}
   .thread-head .who-col{display:flex;flex-direction:column;line-height:1.25;}
   .thread-head .name{font-family:var(--font-display);font-weight:600;font-size:14.5px;}
-  .thread-head .status{font-family:var(--font-mono);font-size:10px;color:var(--grey);}
+  .thread-head .name:hover{color:var(--accent);}
+  .thread-head .status{font-family:var(--font-mono);font-size:10px;color:var(--grey);transition:color .15s ease;}
+  .thread-head .status.on{color:var(--online);}
 
   .thread-body{flex:1;overflow-y:auto;padding:18px 18px 8px;display:flex;flex-direction:column;}
   .bubble-wrap{display:flex;flex-direction:column;max-width:65%;margin-bottom:3px;}
   .bubble-wrap.mine{align-self:flex-end;align-items:flex-end;}
   .bubble-wrap.theirs{align-self:flex-start;align-items:flex-start;}
-  .bubble{padding:10px 15px;border-radius:20px;font-family:var(--font-serif);font-size:14.5px;line-height:1.4;word-wrap:break-word;}
+  .bubble-row{display:flex;align-items:flex-end;gap:6px;}
+  .bubble{padding:10px 15px;border-radius:20px;font-family:var(--font-serif);font-size:14.5px;line-height:1.4;word-wrap:break-word;box-shadow:var(--shadow-bubble);cursor:default;}
   .bubble.mine{background:linear-gradient(135deg, var(--accent), #ff7a52);color:#fff;}
   .bubble.theirs{background:var(--bubble-theirs);color:var(--ink);}
-  /* IG-style tight grouping: consecutive bubbles from the same side sit close, corner softens */
   .bubble-wrap + .bubble-wrap.mine .bubble.mine,
   .bubble-wrap + .bubble-wrap.theirs .bubble.theirs{ margin-top:2px; }
+  .sent-check{width:12px;height:12px;flex-shrink:0;opacity:0;transform:scale(.5);transition:opacity .2s ease, transform .2s ease;}
+  .sent-check.show{opacity:.55;transform:scale(1);}
+  .sent-check svg{width:100%;height:100%;stroke:var(--grey);}
 
-  .day-divider{align-self:center;font-family:var(--font-mono);font-size:10px;color:var(--grey);padding:16px 0 10px;}
-  .seen-note{align-self:flex-end;font-family:var(--font-mono);font-size:10px;color:var(--grey);margin:6px 4px 10px;}
+  @keyframes bubbleIn{from{opacity:0;transform:translateY(6px) scale(.98);}to{opacity:1;transform:none;}}
+  .bubble-wrap.new{animation:bubbleIn .3s cubic-bezier(.2,.8,.2,1);}
+
+  .day-divider{align-self:center;font-family:var(--font-mono);font-size:10px;color:var(--grey);padding:16px 0 10px;letter-spacing:.04em;text-transform:uppercase;}
+
+  .typing-row{align-self:flex-start;margin-bottom:3px;}
+  .typing-dots{display:flex;align-items:center;gap:4px;padding:12px 16px;background:var(--bubble-theirs);border-radius:20px;box-shadow:var(--shadow-bubble);width:fit-content;}
+  .typing-dots span{width:6.5px;height:6.5px;border-radius:50%;background:var(--grey);animation:typingBounce 1.1s infinite ease-in-out;}
+  .typing-dots span:nth-child(2){animation-delay:.15s;background:var(--accent);opacity:.75;}
+  .typing-dots span:nth-child(3){animation-delay:.3s;}
+  @keyframes typingBounce{0%,60%,100%{transform:translateY(0);opacity:.5;}30%{transform:translateY(-5px);opacity:1;}}
 
   .thread-form{display:flex;align-items:center;gap:10px;padding:12px 16px 18px;flex-shrink:0;}
-  .composer{flex:1;display:flex;align-items:center;border:1.5px solid var(--line-strong,#e0e0e0);border-radius:99px;padding:6px 8px 6px 18px;transition:border-color .15s ease;}
-  .composer:focus-within{border-color:#ccc;}
+  .composer{flex:1;display:flex;align-items:center;border:1.5px solid #e0e0e0;border-radius:99px;padding:6px 8px 6px 18px;transition:border-color .15s ease, box-shadow .2s ease;}
+  .composer:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);}
   .thread-form input{flex:1;border:none;font-family:var(--font-serif);font-size:14.5px;outline:none;background:transparent;padding:6px 0;}
-  .send-btn{width:34px;height:34px;border-radius:50%;background:var(--accent);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:transform .1s ease, opacity .15s ease;}
-  .send-btn:active{transform:scale(.92);}
-  .send-btn svg{width:15px;height:15px;stroke:#fff;}
+  .send-btn{width:34px;height:34px;border-radius:50%;background:var(--accent);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:transform .12s ease, opacity .15s ease, box-shadow .15s ease;}
+  .send-btn:not(:disabled):hover{transform:scale(1.06);box-shadow:0 4px 14px var(--accent-glow);}
+  .send-btn:active{transform:scale(.9);}
+  .send-btn svg{width:15px;height:15px;stroke:#fff;transition:transform .15s ease;}
+  .send-btn:not(:disabled):hover svg{transform:translate(1px,-1px);}
   .send-btn:disabled{opacity:.35;}
-  .send-btn.hide{display:none;}
 
   .thread-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:12px;color:var(--grey);gap:10px;}
   .thread-empty .big-avatar{width:88px;height:88px;border-radius:50%;background:#f2f2f3;display:flex;align-items:center;justify-content:center;margin-bottom:6px;}
   .thread-empty .big-avatar svg{width:40px;height:40px;stroke:var(--grey);}
   .thread-empty .big{font-family:var(--font-display);font-size:17px;color:var(--ink);font-weight:700;}
+
+  @media (prefers-reduced-motion: reduce){
+    .bubble-wrap.new{animation:none;}
+    .typing-dots span{animation:none;opacity:.7;}
+    .send-btn,.status-dot,.sent-check{transition:none;}
+  }
 </style>
 </head>
 <body>
@@ -180,9 +215,16 @@
 
   let currentUser = null;
   let activeConversationId = null;
-  let activeChannel = null;
-  let inboxByUserId = {}; // otherUserId -> { user, conversationId, lastMessage }
-  let sentMessageIds = new Set(); // guards against double-rendering our own message when realtime echoes it back
+  let activeThreadUserId = null;
+  let activeChannel = null;         // per-open-thread channel (messages + typing broadcast)
+  let inboxChannel = null;          // persistent channel for cross-conversation live updates
+  let presenceChannel = null;       // global "who's online" presence
+  let inboxByUserId = {};           // otherUserId -> { user, conversationId, lastMessage, unread }
+  let convIdToUserId = {};          // conversationId -> otherUserId (fast lookup for the global channel)
+  let onlineUserIds = new Set();
+  let sentMessageIds = new Set();   // guards against double-rendering our own message when realtime echoes it back
+  let typingTimeout = null;
+  let typingSendCooldown = false;
 
   function requireAuth(){
     if (currentUser) return true;
@@ -259,9 +301,17 @@
         conversationId: p.conversation_id,
         user: p.profiles,
         lastMessage: lastByConv[p.conversation_id] || null,
+        unread: false,
       };
     });
     return byUserId;
+  }
+
+  function rebuildConvIndex(){
+    convIdToUserId = {};
+    Object.entries(inboxByUserId).forEach(([uid, entry]) => {
+      if (entry.conversationId) convIdToUserId[entry.conversationId] = uid;
+    });
   }
 
   function renderInbox(){
@@ -286,12 +336,20 @@
       const preview = r.lastMessage ? escapeHtml(r.lastMessage.body) : 'Say hi 👋';
       const time = r.lastMessage ? timeAgo(r.lastMessage.created_at) : '';
       const isActive = r.conversationId && r.conversationId === activeConversationId;
+      const isOnline = onlineUserIds.has(r.user.id);
+      const isUnread = !!r.unread && !isActive;
       return `
         <div class="conv-row ${isActive ? 'active' : ''}" data-user-id="${r.user.id}" data-name="${name.toLowerCase()}">
-          <div class="avatar">${avatarHtml}</div>
+          <div class="avatar-wrap">
+            <div class="avatar">${avatarHtml}</div>
+            <span class="status-dot ${isOnline ? 'on' : ''}"></span>
+          </div>
           <div class="meta">
             <div class="top-line"><span class="name">${name}</span><span class="time">${time}</span></div>
-            <div class="preview">${preview}</div>
+            <div class="preview-line">
+              <span class="preview ${isUnread ? 'unread' : ''}">${preview}</span>
+              ${isUnread ? '<span class="unread-dot"></span>' : ''}
+            </div>
           </div>
         </div>
       `;
@@ -308,9 +366,11 @@
 
     inboxByUserId = { ...existing };
     friends.forEach(f => {
-      if (!inboxByUserId[f.id]) inboxByUserId[f.id] = { conversationId: null, user: f, lastMessage: null };
+      if (!inboxByUserId[f.id]) inboxByUserId[f.id] = { conversationId: null, user: f, lastMessage: null, unread: false };
     });
+    rebuildConvIndex();
     renderInbox();
+    setupInboxChannel();
   }
 
   document.getElementById('convSearch').addEventListener('input', (e) => {
@@ -320,13 +380,68 @@
     });
   });
 
-  function renderBubble(msg, showDay){
+  // ---- global channel: keeps the inbox live even for conversations that aren't open ----
+  function setupInboxChannel(){
+    if (inboxChannel) supabaseClient.removeChannel(inboxChannel);
+    inboxChannel = supabaseClient
+      .channel('inbox-live')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dm_messages' }, (payload) => {
+        const msg = payload.new;
+        const otherUserId = convIdToUserId[msg.conversation_id];
+        if (!otherUserId) return; // not one of our conversations
+        // the currently open thread already handles its own rendering via activeChannel
+        if (msg.conversation_id === activeConversationId) return;
+
+        const entry = inboxByUserId[otherUserId];
+        if (!entry) return;
+        entry.lastMessage = msg;
+        if (msg.sender_id !== currentUser.id) entry.unread = true;
+        renderInbox();
+      })
+      .subscribe();
+  }
+
+  // ---- presence: who's online right now ----
+  function setupPresence(){
+    presenceChannel = supabaseClient.channel('online-users', { config: { presence: { key: currentUser.id } } });
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        onlineUserIds = new Set(Object.keys(state));
+        renderInbox();
+        updateThreadPresence();
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') await presenceChannel.track({ online_at: new Date().toISOString() });
+      });
+  }
+
+  function updateThreadPresence(){
+    if (!activeThreadUserId) return;
+    const dot = document.querySelector('.thread-head .status-dot');
+    const statusText = document.querySelector('.thread-head .status');
+    if (!dot || !statusText) return;
+    const isOnline = onlineUserIds.has(activeThreadUserId);
+    dot.classList.toggle('on', isOnline);
+    statusText.classList.toggle('on', isOnline);
+    if (!statusText.dataset.typing) statusText.textContent = isOnline ? 'Active now' : 'Active recently';
+  }
+
+  function renderBubble(msg, showDay, isNew){
     const mine = msg.sender_id === currentUser.id;
     const dayHtml = showDay ? `<div class="day-divider">${dayLabel(msg.created_at)}</div>` : '';
+    const time = clockTime(msg.created_at);
+    const isTemp = typeof msg.id === 'string' && msg.id.startsWith('temp-');
+    const checkHtml = mine ? `
+      <span class="sent-check ${isTemp ? '' : 'show'}">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+      </span>` : '';
     return `
       ${dayHtml}
-      <div class="bubble-wrap ${mine ? 'mine' : 'theirs'}" data-msg-id="${msg.id || ''}">
-        <div class="bubble ${mine ? 'mine' : 'theirs'}">${escapeHtml(msg.body)}</div>
+      <div class="bubble-wrap ${mine ? 'mine' : 'theirs'} ${isNew ? 'new' : ''}" data-msg-id="${msg.id || ''}">
+        <div class="bubble-row">
+          <div class="bubble ${mine ? 'mine' : 'theirs'}" title="${time}">${escapeHtml(msg.body)}</div>
+        </div>
       </div>
     `;
   }
@@ -337,8 +452,27 @@
       const day = dayLabel(m.created_at);
       const showDay = day !== lastDay;
       lastDay = day;
-      return renderBubble(m, showDay);
+      return renderBubble(m, showDay, false);
     }).join('');
+  }
+
+  function showTypingIndicator(threadBody, lastRenderedDayRef){
+    if (document.getElementById('typingIndicator')) { threadBody.scrollTop = threadBody.scrollHeight; return; }
+    threadBody.insertAdjacentHTML('beforeend', `
+      <div class="bubble-wrap theirs typing-row" id="typingIndicator">
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+      </div>
+    `);
+    threadBody.scrollTop = threadBody.scrollHeight;
+    const statusText = document.querySelector('.thread-head .status');
+    if (statusText) { statusText.dataset.typing = '1'; statusText.textContent = 'typing…'; statusText.classList.add('on'); }
+  }
+
+  function hideTypingIndicator(){
+    const el = document.getElementById('typingIndicator');
+    if (el) el.remove();
+    const statusText = document.querySelector('.thread-head .status');
+    if (statusText) { delete statusText.dataset.typing; updateThreadPresence(); }
   }
 
   async function findOrCreateConversation(otherUserId){
@@ -355,6 +489,7 @@
     if (partErr) console.error('Failed to add participants:', partErr);
 
     if (inboxByUserId[otherUserId]) inboxByUserId[otherUserId].conversationId = newConv.id;
+    convIdToUserId[newConv.id] = otherUserId;
     return newConv.id;
   }
 
@@ -366,6 +501,8 @@
     const conversationId = await findOrCreateConversation(otherUserId);
     if (!conversationId) return;
     activeConversationId = conversationId;
+    activeThreadUserId = otherUserId;
+    if (entry) entry.unread = false;
 
     document.querySelectorAll('.conv-row').forEach(r => r.classList.toggle('active', r.dataset.userId === otherUserId));
     document.getElementById('listPane').classList.remove('show');
@@ -375,14 +512,18 @@
     const name = escapeHtml(entry.user.username || 'Someone');
     const uname = entry.user.username || '';
     const avatarHtml = entry.user.avatar_url ? `<img src="${escapeHtml(entry.user.avatar_url)}" alt="">` : initials(name);
+    const isOnline = onlineUserIds.has(otherUserId);
 
     threadPane.innerHTML = `
       <div class="thread-head">
         <button class="thread-back" id="threadBackBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
-        <div class="avatar">${avatarHtml}</div>
+        <div class="avatar-wrap">
+          <div class="avatar">${avatarHtml}</div>
+          <span class="status-dot ${isOnline ? 'on' : ''}"></span>
+        </div>
         <div class="who-col">
           <a href="/profile?u=${encodeURIComponent(uname)}" class="name">${name}</a>
-          <span class="status">Active recently</span>
+          <span class="status ${isOnline ? 'on' : ''}">${isOnline ? 'Active now' : 'Active recently'}</span>
         </div>
       </div>
       <div class="thread-body" id="threadBody"><div class="empty-note">Loading…</div></div>
@@ -409,17 +550,20 @@
 
     let lastRenderedDay = msgs && msgs.length ? dayLabel(msgs[msgs.length - 1].created_at) : null;
 
-    // Enable/disable send button based on whether there's text typed
     const threadInput = document.getElementById('threadInput');
     const sendBtn = document.getElementById('threadSendBtn');
     threadInput.addEventListener('input', () => {
       sendBtn.disabled = threadInput.value.trim().length === 0;
+      // broadcast "typing" (throttled so we don't spam the channel on every keystroke)
+      if (activeChannel && !typingSendCooldown && threadInput.value.trim().length > 0) {
+        typingSendCooldown = true;
+        activeChannel.send({ type: 'broadcast', event: 'typing', payload: { userId: currentUser.id } });
+        setTimeout(() => { typingSendCooldown = false; }, 1500);
+      }
     });
     threadInput.focus();
 
-    // ---- THE FIX: draw our own message immediately (optimistic UI),
-    // instead of only waiting for the realtime channel to echo it back.
-    // Realtime is now used ONLY to receive messages from the other person.
+    // optimistic render right away, instead of waiting for the realtime echo
     document.getElementById('threadForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const body = threadInput.value.trim();
@@ -428,7 +572,6 @@
       threadInput.value = '';
       sendBtn.disabled = true;
 
-      // optimistic render right away
       const tempId = `temp-${Date.now()}`;
       const optimisticMsg = { id: tempId, sender_id: currentUser.id, body, created_at: new Date().toISOString() };
       const day = dayLabel(optimisticMsg.created_at);
@@ -436,7 +579,7 @@
       lastRenderedDay = day;
       const emptyNote = threadBody.querySelector('.empty-note');
       if (emptyNote) emptyNote.remove();
-      threadBody.insertAdjacentHTML('beforeend', renderBubble(optimisticMsg, showDay));
+      threadBody.insertAdjacentHTML('beforeend', renderBubble(optimisticMsg, showDay, true));
       threadBody.scrollTop = threadBody.scrollHeight;
 
       const { data: saved, error: sendErr } = await supabaseClient.from('dm_messages').insert({
@@ -452,24 +595,28 @@
         return;
       }
 
-      // swap temp id for the real DB id and remember it so the realtime
-      // echo (if it arrives) doesn't get rendered a second time
       sentMessageIds.add(saved.id);
       const tempEl = threadBody.querySelector(`[data-msg-id="${tempId}"]`);
-      if (tempEl) tempEl.dataset.msgId = saved.id;
+      if (tempEl) {
+        tempEl.dataset.msgId = saved.id;
+        const check = tempEl.querySelector('.sent-check');
+        if (check) check.classList.add('show');
+      }
 
-      if (inboxByUserId[otherUserId]) inboxByUserId[otherUserId].lastMessage = saved;
+      if (inboxByUserId[otherUserId]) { inboxByUserId[otherUserId].lastMessage = saved; inboxByUserId[otherUserId].unread = false; }
       renderInbox();
     });
 
     if (activeChannel) supabaseClient.removeChannel(activeChannel);
     activeChannel = supabaseClient
-      .channel(`conv-${conversationId}`)
+      .channel(`conv-${conversationId}`, { config: { broadcast: { self: false } } })
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'dm_messages', filter: `conversation_id=eq.${conversationId}`,
       }, (payload) => {
-        // skip messages we already drew optimistically
         if (payload.new.sender_id === currentUser.id || sentMessageIds.has(payload.new.id)) return;
+
+        hideTypingIndicator();
+        clearTimeout(typingTimeout);
 
         const body2 = document.getElementById('threadBody');
         if (!body2) return;
@@ -478,10 +625,18 @@
         const day = dayLabel(payload.new.created_at);
         const showDay = day !== lastRenderedDay;
         lastRenderedDay = day;
-        body2.insertAdjacentHTML('beforeend', renderBubble(payload.new, showDay));
+        body2.insertAdjacentHTML('beforeend', renderBubble(payload.new, showDay, true));
         body2.scrollTop = body2.scrollHeight;
-        if (inboxByUserId[otherUserId]) inboxByUserId[otherUserId].lastMessage = payload.new;
+        if (inboxByUserId[otherUserId]) { inboxByUserId[otherUserId].lastMessage = payload.new; inboxByUserId[otherUserId].unread = false; }
         renderInbox();
+      })
+      .on('broadcast', { event: 'typing' }, (payload) => {
+        if (payload.payload.userId === currentUser.id) return;
+        const body2 = document.getElementById('threadBody');
+        if (!body2) return;
+        showTypingIndicator(body2, () => lastRenderedDay);
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(hideTypingIndicator, 3000);
       })
       .subscribe();
 
@@ -490,11 +645,13 @@
 
   async function init(){
     await renderSidebar();
+    if (!currentUser) { requireAuth(); return; }
     await refreshInbox();
+    setupPresence();
 
     const params = new URLSearchParams(window.location.search);
     const withUserId = params.get('with');
-    if (withUserId && currentUser){
+    if (withUserId){
       openConversationWithUser(withUserId);
     }
   }
