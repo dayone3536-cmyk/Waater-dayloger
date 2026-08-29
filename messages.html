@@ -586,9 +586,11 @@
 
       const tempId = `temp-${Date.now()}`;
       const optimisticMsg = { id: tempId, sender_id: currentUser.id, body, created_at: new Date().toISOString() };
+
       const day = dayLabel(optimisticMsg.created_at);
       const showDay = day !== lastRenderedDay;
       lastRenderedDay = day;
+      
       const emptyNote = threadBody.querySelector('.empty-note');
       if (emptyNote) emptyNote.remove();
       threadBody.insertAdjacentHTML('beforeend', renderBubble(optimisticMsg, showDay, true));
