@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile — Waater</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --white:#ffffff;
+    --ink:#14151a;
+    --ink-soft:#4a4d55;
+    --grey:#8a8d94;
+    --line:#ececec;
+    --line-strong:#e0e0e0;
+    --accent:#ff5a36;
+    --accent-2:#ffb199;
+    --accent-soft:#fff1ec;
+    --danger:#e0433f;
+    --nav-w:248px;
+    --font-display:'Space Grotesk', sans-serif;
+    --font-serif:'Newsreader', serif;
+    --font-mono:'JetBrains Mono', monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    background:var(--white);
+    color:var(--ink);
+    font-family:var(--font-serif);
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:78px;
+  }
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;border:none;background:none;cursor:pointer;}
+  ::selection{background:var(--accent-soft);color:var(--accent);}
+
+  /* ---------- shared shell ---------- */
+  .app{display:flex;max-width:1180px;margin:0 auto;}
+  .main{flex:1;min-width:0;border-left:1px solid var(--line);border-right:1px solid var(--line);}
+
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 20px 14px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:rgba(255,255,255,.92);
+    backdrop-filter:blur(8px);z-index:20;
+  }
+  .wordmark{font-family:var(--font-display);font-weight:700;font-size:20px;letter-spacing:-0.02em;display:flex;align-items:baseline;gap:2px;}
+  .wordmark .dot{color:var(--accent);}
+
+  .sidebar{
+    display:none;width:var(--nav-w);flex-shrink:0;padding:28px 18px;
+    flex-direction:column;height:100vh;position:sticky;top:0;
+  }
+  .sidebar .wordmark{font-size:24px;padding:0 10px;margin-bottom:36px;}
+  .nav-list{list-style:none;display:flex;flex-direction:column;gap:4px;}
+  .nav-item{
+    display:flex;align-items:center;gap:14px;padding:12px 12px;border-radius:12px;
+    font-family:var(--font-display);font-size:15.5px;font-weight:500;
+    color:var(--ink-soft);transition:background .15s ease, color .15s ease;
+  }
+  .nav-item svg{width:22px;height:22px;flex-shrink:0;}
+  .nav-item:hover{background:#f7f7f8;color:var(--ink);}
+  .nav-item.active{color:var(--ink);}
+  .nav-item.active svg{stroke:var(--accent);}
+  .nav-create{margin-top:14px;background:var(--ink);color:var(--white)!important;justify-content:center;font-weight:600;padding:13px 12px;}
+  .nav-create:hover{background:#000;}
+  .nav-create svg{stroke:var(--white);}
+
+  .sidebar-profile{
+    margin-top:auto;display:flex;align-items:center;gap:10px;
+    padding:10px 12px;border-radius:12px;border:1px solid var(--line);
+  }
+  .mini-avatar{
+    width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd8c9,var(--accent));
+    flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;
+    font-family:var(--font-display);font-weight:700;font-size:14px;overflow:hidden;
+  }
+  .mini-avatar img{width:100%;height:100%;object-fit:cover;}
+  .sidebar-profile .who{display:flex;flex-direction:column;line-height:1.2;flex:1;min-width:0;}
+  .sidebar-profile .who span:first-child{font-family:var(--font-display);font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sidebar-profile .who span:last-child{font-family:var(--font-mono);font-size:11px;color:var(--grey);}
+  .sidebar-signout{font-family:var(--font-mono);font-size:10px;color:var(--grey);padding:4px 6px;border-radius:6px;flex-shrink:0;}
+  .sidebar-signout:hover{color:var(--accent);}
+  .sidebar-signin{
+    margin-top:auto;display:block;text-align:center;background:var(--ink);color:#fff!important;
+    font-family:var(--font-display);font-weight:600;font-size:13.5px;padding:12px;border-radius:12px;
+  }
+  .sidebar-signin:hover{background:#000;}
+
+  @media (min-width:900px){
+    body{padding-bottom:0;}
+    .topbar{display:none;}
+    .sidebar{display:flex;}
+  }
+
+  /* ---------- bottom nav (mobile, shared) ---------- */
+  .bottom-nav{
+    position:fixed;bottom:0;left:0;right:0;height:64px;
+    background:rgba(255,255,255,.96);backdrop-filter:blur(10px);
+    border-top:1px solid var(--line);display:flex;align-items:center;
+    justify-content:space-around;z-index:30;
+  }
+  .tab{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--grey);font-family:var(--font-mono);font-size:9.5px;letter-spacing:.02em;padding:6px 10px;}
+  .tab svg{width:22px;height:22px;stroke:var(--grey);}
+  .tab.active{color:var(--ink);}
+  .tab.active svg{stroke:var(--ink);}
+  .tab-create{position:relative;top:-20px;}
+  .tab-create .ring{width:52px;height:52px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(255,90,54,.4);}
+  .tab-create svg{width:22px;height:22px;stroke:#fff;stroke-width:2.4;}
+  .tab-create span{display:none;}
+  @media (min-width:900px){ .bottom-nav{display:none;} }
+
+  /* ============================================================
+     PROFILE — the actual page
+     ============================================================ */
+  .profile-loading{
+    padding:80px 22px;text-align:center;
+    font-family:var(--font-mono);font-size:12px;color:var(--grey);
+  }
+
+  .profile-wrap{
+    padding:40px 22px 20px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+
+  /* --- avatar with signature rotating gradient ring --- */
+  .avatar-stage{
+    position:relative;
+    width:132px;height:132px;
+    margin-bottom:18px;
+  }
+  .avatar-ring{
+    position:absolute;inset:0;
+    border-radius:50%;
+    padding:4px;
+    background:conic-gradient(from 0deg, var(--accent), var(--accent-2), #ffe3d6, var(--accent-2), var(--accent));
+    animation:spin 8s linear infinite;
+  }
+  @media (prefers-reduced-motion:reduce){ .avatar-ring{animation:none;} }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .avatar-ring-inner{
+    width:100%;height:100%;border-radius:50%;
+    background:var(--white);
+    padding:4px;
+  }
+  .avatar-photo{
+    width:100%;height:100%;border-radius:50%;
+    overflow:hidden;
+    background:linear-gradient(135deg,#ffd8c9,var(--accent));
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-family:var(--font-display);font-weight:700;font-size:42px;
+    position:relative;
+  }
+  .avatar-photo img{width:100%;height:100%;object-fit:cover;}
+
+  .avatar-edit-btn{
+    position:absolute;
+    bottom:2px;right:2px;
+    width:36px;height:36px;
+    border-radius:50%;
+    background:var(--ink);
+    border:3px solid var(--white);
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .15s ease, background .15s ease;
+    z-index:5;
+  }
+  .avatar-edit-btn:hover{background:#000;transform:scale(1.08);}
+  .avatar-edit-btn svg{width:15px;height:15px;stroke:#fff;}
+  .avatar-edit-btn input{display:none;}
+
+  .avatar-uploading{
+    position:absolute;inset:4px;border-radius:50%;
+    background:rgba(0,0,0,.5);
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-family:var(--font-mono);font-size:10px;
+  }
+
+  .profile-username{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:-0.01em;
+    text-align:center;
+  }
+  .profile-sub{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--grey);
+    margin-top:4px;
+    letter-spacing:.02em;
+  }
+
+  /* --- stats row --- */
+  .stats-row{
+    display:flex;
+    align-items:center;
+    gap:0;
+    margin-top:22px;
+    border:1px solid var(--line-strong);
+    border-radius:16px;
+    overflow:hidden;
+  }
+  .stat{
+    padding:14px 26px;
+    text-align:center;
+    cursor:default;
+  }
+  .stat.clickable{cursor:pointer;transition:background .15s ease;}
+  .stat.clickable:hover{background:#f7f7f8;}
+  .stat + .stat{border-left:1px solid var(--line-strong);}
+  .stat .num{
+    display:block;
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:18px;
+    color:var(--ink);
+  }
+  .stat .label{
+    font-family:var(--font-mono);
+    font-size:9.5px;
+    letter-spacing:.04em;
+    color:var(--grey);
+    text-transform:uppercase;
+    margin-top:2px;
+    display:block;
+  }
+
+  /* --- friend action button --- */
+  .friend-action{
+    margin-top:20px;
+    display:flex;
+    gap:10px;
+  }
+  .friend-btn{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:13.5px;
+    padding:11px 22px;
+    border-radius:99px;
+    display:flex;align-items:center;gap:8px;
+    transition:background .15s ease, opacity .15s ease, transform .1s ease;
+  }
+  .friend-btn svg{width:15px;height:15px;}
+  .friend-btn.primary{background:var(--ink);color:#fff;}
+  .friend-btn.primary:hover{background:#000;}
+  .friend-btn.ghost{background:var(--accent-soft);color:#c24020;}
+  .friend-btn.ghost:hover{opacity:.85;}
+  .friend-btn.outline{border:1px solid var(--line-strong);color:var(--ink-soft);}
+  .friend-btn.outline:hover{border-color:var(--ink);color:var(--ink);}
+  .friend-btn.danger{background:#fdeceb;color:var(--danger);}
+  .friend-btn:disabled{opacity:.5;cursor:default;}
+  .friend-btn:active{transform:scale(.97);}
+
+  /* --- friend requests panel (own profile only) --- */
+  .section{
+    width:100%;
+    max-width:520px;
+    margin-top:36px;
+  }
+  .section-title{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:13px;
+    letter-spacing:.01em;
+    color:var(--ink);
+    padding:0 22px;
+    margin-bottom:12px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .section-title .badge{
+    background:var(--accent);
+    color:#fff;
+    font-family:var(--font-mono);
+    font-size:10px;
+    padding:1px 7px;
+    border-radius:99px;
+  }
+
+  .request-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 22px;
+    border-bottom:1px solid var(--line);
+  }
+  .request-row .mini-avatar{width:38px;height:38px;font-size:14px;}
+  .request-row .req-name{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:14px;
+    flex:1;
+  }
+  .req-actions{display:flex;gap:8px;}
+  .req-actions button{
+    width:32px;height:32px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .1s ease;
+  }
+  .req-actions button:active{transform:scale(.92);}
+  .req-accept{background:var(--ink);}
+  .req-accept svg{width:14px;height:14px;stroke:#fff;}
+  .req-decline{background:#f2f2f3;}
+  .req-decline svg{width:14px;height:14px;stroke:var(--ink-soft);}
+
+  .empty-note{
+    padding:20px 22px;
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--grey);
+    text-align:center;
+  }
+
+  /* --- posts grid --- */
+  .grid-head{
+    width:100%;
+    max-width:820px;
+    padding:0 22px;
+    margin-top:40px;
+    margin-bottom:14px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .grid-head svg{width:16px;height:16px;stroke:var(--ink);}
+  .grid-head span{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:13px;
+  }
+
+  .posts-grid{
+    width:100%;
+    max-width:820px;
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:3px;
+    padding:0 22px 40px;
+  }
+  .grid-cell{
+    position:relative;
+    aspect-ratio:1/1;
+    overflow:hidden;
+    background:linear-gradient(160deg,var(--g1,#ffe3d6),var(--g2,#ffb199));
+    cursor:pointer;
+  }
+  .grid-cell img,
+  .grid-cell video{
+    position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  }
+  .grid-cell .video-tag{
+    position:absolute;top:6px;right:6px;
+    width:18px;height:18px;
+  }
+  .grid-cell .video-tag svg{width:100%;height:100%;fill:#fff;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));}
+  .grid-cell .cap-peek{
+    position:absolute;inset:0;
+    display:flex;align-items:flex-end;
+    padding:8px;
+    background:linear-gradient(to top, rgba(0,0,0,.35), transparent 55%);
+    color:#fff;
+    font-family:var(--font-serif);
+    font-style:italic;
+    font-size:11px;
+    line-height:1.3;
+    opacity:0;
+    transition:opacity .15s ease;
+  }
+  .grid-cell:hover .cap-peek{opacity:1;}
+
+  @media (min-width:900px){
+    .profile-wrap{padding-top:56px;}
+  }
+
+  .status-msg{
+    margin-top:14px;font-family:var(--font-mono);font-size:11.5px;
+    padding:10px 12px;border-radius:8px;display:none;max-width:320px;text-align:center;
+  }
+  .status-msg.show{display:block;}
+  .status-msg.error{background:#fdeceb;color:var(--danger);}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="wordmark">waater<span class="dot">.</span></div>
+    <ul class="nav-list">
+      <li><a href="/" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+        Home</a></li>
+      <li><a href="/explore" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        Explore</a></li>
+      <li><a href="/create" class="nav-item nav-create">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+        Create</a></li>
+      <li><a href="/inbox" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Inbox</a></li>
+      <li><a href="/profile" class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+        Profile</a></li>
+    </ul>
+    <div id="sidebarAuthArea"></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="wordmark">waater<span class="dot">.</span></div>
+    </div>
+
+    <div id="pageBody">
+      <div class="profile-loading" id="pageLoading">Loading profile…</div>
+    </div>
+  </main>
+</div>
+
+<nav class="bottom-nav">
+  <a href="/" class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+    home
+  </a>
+  <a href="/explore" class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    explore
+  </a>
+  <a href="/create" class="tab tab-create">
+    <div class="ring">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>
+    </div>
+    <span>create</span>
+  </a>
+  <a href="/inbox" class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    inbox
+  </a>
+  <a href="/profile" class="tab active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+    profile
+  </a>
+</nav>
+
+<script>
+  const GRADIENTS = [
+    ['#ffe3d6', '#ff9d76'], ['#dcefff', '#7fb8ff'],
+    ['#eaffe0', '#a3e88f'], ['#f3e3ff', '#c79dff'],
+  ];
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str ?? '';
+    return div.innerHTML;
+  }
+  function initials(name) {
+    return (name || '?').trim().slice(0, 1).toUpperCase();
+  }
+
+  // ============================================================
+  // SUPABASE CONFIG — same project as the rest of the app.
+  // ============================================================
+  const SUPABASE_URL = 'https://yacrwbpvcqurxsqpmron.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_Any50PwhIupj5rZbez1W4Q_dIx-VRIs';
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let currentUser = null;      // signed-in visitor (or null)
+  let currentUsername = null;
+  let targetProfile = null;    // the profile.id/username/avatar_url being viewed
+  let isOwnProfile = false;
+
+  function requireAuth(nextPath) {
+    if (currentUser) return true;
+    window.location.href = `/auth?next=${encodeURIComponent(nextPath || window.location.pathname + window.location.search)}`;
+    return false;
+  }
+
+  // ---- sidebar auth widget (shared look with index.html) ----
+  async function renderSidebar() {
+    const { data } = await supabaseClient.auth.getSession();
+    currentUser = data.session ? data.session.user : null;
+    const area = document.getElementById('sidebarAuthArea');
+
+    if (!currentUser) {
+      area.innerHTML = `<a href="/auth" class="sidebar-signin">Sign in</a>`;
+      return;
+    }
+
+    const { data: me } = await supabaseClient
+      .from('profiles')
+      .select('username, avatar_url')
+      .eq('id', currentUser.id)
+      .maybeSingle();
+
+    currentUsername = me?.username || currentUser.email || 'You';
+    const avatarHtml = me?.avatar_url
+      ? `<img src="${escapeHtml(me.avatar_url)}" alt="">`
+      : initials(currentUsername);
+
+    area.innerHTML = `
+      <a href="/profile" class="sidebar-profile">
+        <div class="mini-avatar">${avatarHtml}</div>
+        <div class="who">
+          <span>${escapeHtml(currentUsername)}</span>
+          <span>view profile</span>
+        </div>
+      </a>
+      <button class="sidebar-signout" id="signOutBtn">Sign out</button>
+    `;
+    document.getElementById('signOutBtn').addEventListener('click', async () => {
+      await supabaseClient.auth.signOut();
+      window.location.href = '/';
+    });
+  }
+
+  // ---- figure out whose profile we're looking at ----
+  async function resolveTarget() {
+    const params = new URLSearchParams(window.location.search);
+    const requestedUsername = params.get('u');
+
+    if (requestedUsername) {
+      const { data: profile, error } = await supabaseClient
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .eq('username', requestedUsername)
+        .maybeSingle();
+      if (error || !profile) return null;
+      targetProfile = profile;
+      isOwnProfile = currentUser && currentUser.id === profile.id;
+      return profile;
+    }
+
+    // No ?u= — this is "my profile". Must be signed in.
+    if (!requireAuth('/profile')) return null;
+
+    const { data: profile, error } = await supabaseClient
+      .from('profiles')
+      .select('id, username, avatar_url')
+      .eq('id', currentUser.id)
+      .maybeSingle();
+    if (error || !profile) return null;
+    targetProfile = profile;
+    isOwnProfile = true;
+    return profile;
+  }
+
+  // ---- stats: post count + friend count ----
+  async function loadStats(userId) {
+    const [{ count: postCount }, { count: friendCount }] = await Promise.all([
+      supabaseClient.from('posts').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+      supabaseClient.from('friendships').select('id', { count: 'exact', head: true })
+        .eq('status', 'accepted').or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
+    ]);
+    return { postCount: postCount || 0, friendCount: friendCount || 0 };
+  }
+
+  // ---- friendship state between currentUser and targetProfile ----
+  async function loadFriendshipState() {
+    if (!currentUser || isOwnProfile) return null;
+    const { data } = await supabaseClient
+      .from('friendships')
+      .select('*')
+      .or(`and(requester_id.eq.${currentUser.id},addressee_id.eq.${targetProfile.id}),and(requester_id.eq.${targetProfile.id},addressee_id.eq.${currentUser.id})`)
+      .maybeSingle();
+    return data || null;
+  }
+
+  function friendButtonHtml(friendship) {
+    if (!currentUser) {
+      return `<button class="friend-btn primary" id="friendBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+        Add friend
+      </button>`;
+    }
+    if (!friendship) {
+      return `<button class="friend-btn primary" id="friendBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+        Add friend
+      </button>`;
+    }
+    if (friendship.status === 'accepted') {
+      return `<button class="friend-btn outline" id="friendBtn" data-action="unfriend">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+        Friends
+      </button>`;
+    }
+    if (friendship.requester_id === currentUser.id) {
+      return `<button class="friend-btn outline" id="friendBtn" data-action="cancel">Request sent</button>`;
+    }
+    return `
+      <button class="friend-btn primary" id="acceptBtn">Accept</button>
+      <button class="friend-btn ghost" id="declineBtn">Decline</button>
+    `;
+  }
+
+  async function wireFriendButton(friendship) {
+    const btn = document.getElementById('friendBtn');
+    if (btn) {
+      btn.addEventListener('click', async () => {
+        if (!requireAuth()) return;
+        btn.disabled = true;
+        const action = btn.dataset.action;
+        try {
+          if (!friendship) {
+            await supabaseClient.from('friendships').insert({
+              requester_id: currentUser.id, addressee_id: targetProfile.id, status: 'pending'
+            });
+          } else if (action === 'cancel') {
+            await supabaseClient.from('friendships').delete().eq('id', friendship.id);
+          } else if (action === 'unfriend') {
+            await supabaseClient.from('friendships').delete().eq('id', friendship.id);
+          }
+          renderPage();
+        } catch (err) {
+          console.error('Friend action failed:', err);
+          btn.disabled = false;
+        }
+      });
+    }
+
+    const acceptBtn = document.getElementById('acceptBtn');
+    const declineBtn = document.getElementById('declineBtn');
+    if (acceptBtn) acceptBtn.addEventListener('click', async () => {
+      acceptBtn.disabled = true;
+      await supabaseClient.from('friendships').update({ status: 'accepted' }).eq('id', friendship.id);
+      renderPage();
+    });
+    if (declineBtn) declineBtn.addEventListener('click', async () => {
+      declineBtn.disabled = true;
+      await supabaseClient.from('friendships').delete().eq('id', friendship.id);
+      renderPage();
+    });
+  }
+
+  // ---- pending requests panel (own profile only) ----
+  async function loadPendingRequests() {
+    const { data } = await supabaseClient
+      .from('friendships')
+      .select('id, requester_id, profiles!friendships_requester_id_fkey(username, avatar_url)')
+      .eq('addressee_id', currentUser.id)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+    return data || [];
+  }
+
+  function renderRequestRow(req) {
+    const name = req.profiles?.username || 'Someone';
+    const avatar = req.profiles?.avatar_url
+      ? `<img src="${escapeHtml(req.profiles.avatar_url)}" alt="">`
+      : initials(name);
+    return `
+      <div class="request-row" data-req-id="${req.id}">
+        <div class="mini-avatar">${avatar}</div>
+        <span class="req-name">${escapeHtml(name)}</span>
+        <div class="req-actions">
+          <button class="req-accept" data-req="${req.id}" data-act="accept">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+          </button>
+          <button class="req-decline" data-req="${req.id}" data-act="decline">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  // ---- avatar upload ----
+  async function handleAvatarUpload(file) {
+    if (!file || !currentUser) return;
+    const stage = document.getElementById('avatarStage');
+    const overlay = document.createElement('div');
+    overlay.className = 'avatar-uploading';
+    overlay.textContent = 'uploading…';
+    stage.appendChild(overlay);
+
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `${currentUser.id}/avatar.${ext}`;
+
+      const { error: uploadError } = await supabaseClient.storage
+        .from('avatars')
+        .upload(path, file, { cacheControl: '3600', upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabaseClient.storage.from('avatars').getPublicUrl(path);
+      // cache-bust so the new photo shows immediately
+      const avatarUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
+
+      const { error: updateError } = await supabaseClient
+        .from('profiles')
+        .update({ avatar_url: avatarUrl })
+        .eq('id', currentUser.id);
+      if (updateError) throw updateError;
+
+      targetProfile.avatar_url = avatarUrl;
+      renderPage();
+    } catch (err) {
+      console.error('Avatar upload failed:', err);
+      overlay.remove();
+      const statusEl = document.getElementById('avatarStatus');
+      if (statusEl) {
+        statusEl.textContent = err.message || 'Upload failed. Try a smaller image.';
+        statusEl.className = 'status-msg show error';
+      }
+    }
+  }
+
+  // ---- posts grid ----
+  async function loadPosts(userId) {
+    const { data } = await supabaseClient
+      .from('posts')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    return data || [];
+  }
+
+  function renderGridCell(post, index) {
+    const [g1, g2] = GRADIENTS[index % GRADIENTS.length];
+    let mediaHtml = '';
+    if (post.media_type === 'video' && post.media_url) {
+      mediaHtml = `
+        <video src="${escapeHtml(post.media_url)}" muted playsinline preload="metadata"></video>
+        <div class="video-tag"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+      `;
+    } else if (post.media_type === 'photo' && post.media_url) {
+      mediaHtml = `<img src="${escapeHtml(post.media_url)}" alt="" loading="lazy">`;
+    }
+    return `
+      <div class="grid-cell" style="--g1:${g1};--g2:${g2};">
+        ${mediaHtml}
+        ${post.caption ? `<div class="cap-peek">${escapeHtml(post.caption)}</div>` : ''}
+      </div>
+    `;
+  }
+
+  // ---- main render ----
+  async function renderPage() {
+    const body = document.getElementById('pageBody');
+
+    const profile = await resolveTarget();
+    if (!profile) {
+      body.innerHTML = `<div class="profile-loading">Couldn't find that profile.</div>`;
+      return;
+    }
+
+    const [{ postCount, friendCount }, friendship, posts] = await Promise.all([
+      loadStats(profile.id),
+      loadFriendshipState(),
+      loadPosts(profile.id),
+    ]);
+
+    const avatarHtml = profile.avatar_url
+      ? `<img src="${escapeHtml(profile.avatar_url)}" alt="">`
+      : initials(profile.username);
+
+    let requestsHtml = '';
+    if (isOwnProfile) {
+      const requests = await loadPendingRequests();
+      if (requests.length > 0) {
+        requestsHtml = `
+          <div class="section">
+            <div class="section-title">Friend requests <span class="badge">${requests.length}</span></div>
+            ${requests.map(renderRequestRow).join('')}
+          </div>
+        `;
+      }
+    }
+
+    body.innerHTML = `
+      <div class="profile-wrap">
+        <div class="avatar-stage" id="avatarStage">
+          <div class="avatar-ring">
+            <div class="avatar-ring-inner">
+              <div class="avatar-photo">${avatarHtml}</div>
+            </div>
+          </div>
+          ${isOwnProfile ? `
+            <label class="avatar-edit-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>
+              <input type="file" id="avatarInput" accept="image/*">
+            </label>
+          ` : ''}
+        </div>
+
+        <div class="profile-username">${escapeHtml(profile.username)}</div>
+        <div class="profile-sub">${isOwnProfile ? 'this is you' : 'waater member'}</div>
+
+        <div class="stats-row">
+          <div class="stat">
+            <span class="num">${postCount}</span>
+            <span class="label">Posts</span>
+          </div>
+          <div class="stat">
+            <span class="num">${friendCount}</span>
+            <span class="label">Friends</span>
+          </div>
+        </div>
+
+        ${!isOwnProfile ? `<div class="friend-action">${friendButtonHtml(friendship)}</div>` : ''}
+        <div class="status-msg" id="avatarStatus"></div>
+
+        ${requestsHtml}
+
+        <div class="grid-head">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span>${isOwnProfile ? 'Your days' : `${escapeHtml(profile.username)}'s days`}</span>
+        </div>
+        <div class="posts-grid">
+          ${posts.length > 0
+            ? posts.map(renderGridCell).join('')
+            : `<div class="empty-note" style="grid-column:1/-1;">No posts yet.</div>`}
+        </div>
+      </div>
+    `;
+
+    if (!isOwnProfile) wireFriendButton(friendship);
+
+    if (isOwnProfile) {
+      const avatarInput = document.getElementById('avatarInput');
+      if (avatarInput) {
+        avatarInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (file) handleAvatarUpload(file);
+        });
+      }
+
+      document.querySelectorAll('.req-accept, .req-decline').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const reqId = btn.dataset.req;
+          const act = btn.dataset.act;
+          btn.disabled = true;
+          if (act === 'accept') {
+            await supabaseClient.from('friendships').update({ status: 'accepted' }).eq('id', reqId);
+          } else {
+            await supabaseClient.from('friendships').delete().eq('id', reqId);
+          }
+          renderPage();
+        });
+      });
+    }
+  }
+
+  async function init() {
+    await renderSidebar();
+    await renderPage();
+  }
+
+  init();
+</script>
+
+</body>
+</html>
