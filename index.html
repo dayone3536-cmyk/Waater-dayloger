@@ -92,6 +92,7 @@
     position:fixed;
     top:0;
     left:0;
+    z-index:15;
   }
   .sidebar .wordmark{font-size:24px;padding:0 10px;margin-bottom:36px;}
   .nav-list{list-style:none;display:flex;flex-direction:column;gap:4px;}
@@ -177,14 +178,14 @@
   }
   .sidebar-signin:hover{background:#000;}
 
-  /* ---------- side promo (sits directly beside the nav, on the left, signed-out only) ---------- */
+  /* ---------- side promo (spans the full left edge; nav sits on top of it, signed-out only) ---------- */
   .side-promo{
     display:none;
     position:fixed;
     top:0;
-    left:var(--nav-w);
+    left:0;
     bottom:0;
-    width:300px;
+    width:calc(var(--nav-w) + 300px);
     overflow:hidden;
     background:
       radial-gradient(520px 420px at 18% 82%, rgba(255,255,255,.16), transparent 60%),
@@ -207,7 +208,11 @@
     display:flex;
     flex-direction:column;
     justify-content:center;
-    padding:48px 32px;
+    /* left padding leaves room for the nav sitting on top, so text starts
+       right where it used to — the gradient just now runs underneath the
+       nav all the way to the true edge of the window instead of stopping
+       short of it. */
+    padding:48px 32px 48px calc(var(--nav-w) + 32px);
     color:#fff;
   }
   .side-promo-badge{
@@ -257,6 +262,22 @@
 
   @media (min-width:1100px){
     .side-promo{display:block;}
+
+    /* the nav has no background of its own, so once it's stacked above the
+       full-bleed promo, the gradient shows straight through behind it —
+       we just need the text/icons to read against color instead of white */
+    body:not(.signed-in) .sidebar .wordmark{color:#fff;}
+    body:not(.signed-in) .sidebar .wordmark .dot{color:rgba(255,255,255,.5);-webkit-text-stroke:1px #fff;}
+    body:not(.signed-in) .sidebar .nav-item{color:rgba(255,255,255,.92);}
+    body:not(.signed-in) .sidebar .nav-item:hover{background:rgba(255,255,255,.16);color:#fff;}
+    body:not(.signed-in) .sidebar .nav-item.active{color:#fff;}
+    body:not(.signed-in) .sidebar .nav-item.active svg{stroke:#fff;}
+    body:not(.signed-in) .sidebar .nav-create{background:#fff;}
+    body:not(.signed-in) .sidebar .nav-create svg{stroke:var(--ink);}
+    body:not(.signed-in) .sidebar .nav-create{color:var(--ink)!important;}
+    body:not(.signed-in) .sidebar .nav-create:hover{background:#f2f2f2;}
+    body:not(.signed-in) .sidebar-signin{background:#fff;color:var(--ink)!important;}
+    body:not(.signed-in) .sidebar-signin:hover{background:#f2f2f2;}
   }
 
   /* ---------- feed ---------- */
@@ -642,7 +663,7 @@
   </main>
 </div>
 
-<!-- Colorful sign-in promo, sits on the left right after the nav (hidden once signed in) -->
+<!-- Colorful sign-in promo, spans the full left edge (nav sits on top of it, hidden once signed in) -->
 <aside class="side-promo" id="sidePromo">
   <div class="side-promo-blob b1"></div>
   <div class="side-promo-blob b2"></div>

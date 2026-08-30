@@ -15,12 +15,22 @@
     --font-display:'Space Grotesk', sans-serif;
     --font-serif:'Newsreader', serif;
     --font-mono:'JetBrains Mono', monospace;
+    --ease:cubic-bezier(.22,.9,.32,1);
+    --ease-spring:cubic-bezier(.34,1.56,.64,1);
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   html,body{height:100%;}
   body{background:var(--white);color:var(--ink);font-family:var(--font-serif);-webkit-font-smoothing:antialiased;padding-bottom:78px;}
   a{color:inherit;text-decoration:none;}
   button{font-family:inherit;border:none;background:none;cursor:pointer;}
+  ::selection{background:var(--accent-soft);color:var(--accent);}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important;}
+  }
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px;}
+
+  @keyframes riseIn{ from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
 
   .app{display:flex;max-width:1180px;margin:0 auto;}
   .main{flex:1;min-width:0;border-left:1px solid var(--line);border-right:1px solid var(--line);}
@@ -33,7 +43,10 @@
   .back-btn{
     width:34px;height:34px;border-radius:50%;background:#f2f2f3;
     display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    transition:background .16s var(--ease), transform .14s var(--ease);
   }
+  .back-btn:hover{background:#e9e9ea;}
+  .back-btn:active{transform:scale(.9);}
   .back-btn svg{width:16px;height:16px;stroke:var(--ink);}
   .topbar .title{font-family:var(--font-display);font-weight:600;font-size:15px;}
 
@@ -47,16 +60,21 @@
   .nav-item{
     display:flex;align-items:center;gap:14px;padding:12px 12px;border-radius:12px;
     font-family:var(--font-display);font-size:15.5px;font-weight:500;color:var(--ink-soft);
+    transition:background .16s var(--ease), color .16s var(--ease), transform .14s var(--ease);
   }
   .nav-item svg{width:22px;height:22px;flex-shrink:0;}
-  .nav-item:hover{background:#f7f7f8;color:var(--ink);}
+  .nav-item:hover{background:#f7f7f8;color:var(--ink);transform:translateX(2px);}
   .nav-create{margin-top:14px;background:var(--ink);color:#fff!important;justify-content:center;font-weight:600;padding:13px 12px;}
+  .nav-create:hover{background:#000;transform:none;}
   .nav-create svg{stroke:#fff;}
   .sidebar-signin{
     margin-top:auto;display:block;text-align:center;background:var(--ink);color:#fff!important;
     font-family:var(--font-display);font-weight:600;font-size:13.5px;padding:12px;border-radius:12px;
+    transition:background .16s var(--ease);
   }
-  .sidebar-profile{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);}
+  .sidebar-signin:hover{background:#000;}
+  .sidebar-profile{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);transition:border-color .16s var(--ease);}
+  .sidebar-profile:hover{border-color:var(--line-strong);}
   .avatar{
     width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd8c9,var(--accent));
     flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;
@@ -65,7 +83,8 @@
   .avatar img{width:100%;height:100%;object-fit:cover;}
   .sidebar-profile .who{display:flex;flex-direction:column;line-height:1.2;flex:1;min-width:0;}
   .sidebar-profile .who span:first-child{font-family:var(--font-display);font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .sidebar-signout{font-family:var(--font-mono);font-size:10px;color:var(--grey);padding:4px 6px;}
+  .sidebar-signout{font-family:var(--font-mono);font-size:10px;color:var(--grey);padding:4px 6px;transition:color .16s var(--ease);}
+  .sidebar-signout:hover{color:var(--ink);}
 
   @media (min-width:900px){ body{padding-bottom:0;} .topbar{display:none;} .sidebar{display:flex;} }
 
@@ -74,53 +93,176 @@
     background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-top:1px solid var(--line);
     display:flex;align-items:center;justify-content:space-around;z-index:30;
   }
-  .tab{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--grey);font-family:var(--font-mono);font-size:9.5px;padding:6px 10px;}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--grey);font-family:var(--font-mono);font-size:9.5px;padding:6px 10px;transition:color .16s var(--ease), transform .12s var(--ease);}
+  .tab:active{transform:scale(.92);}
   .tab svg{width:22px;height:22px;stroke:var(--grey);}
   @media (min-width:900px){ .bottom-nav{display:none;} }
 
   .status-state{padding:60px 22px;text-align:center;font-family:var(--font-mono);font-size:12px;color:var(--grey);}
+  .status-state.small{padding:26px 0;}
 
-  .post-detail{padding:20px 22px;}
+  /* ---------- skeleton (initial post load) ---------- */
+  .skel-wrap{padding:20px 22px;}
+  .skel{border-radius:16px;background:linear-gradient(100deg,#f2f2f3 30%,#fafafa 50%,#f2f2f3 70%);background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite;}
+  @keyframes shimmer{ 0%{background-position:180% 0;} 100%{background-position:-20% 0;} }
+  .skel-avatar{width:34px;height:34px;border-radius:50%;}
+  .skel-meta{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+  .skel-line{height:12px;border-radius:6px;}
+  .skel-line.w40{width:120px;}
+  .skel-media{width:100%;max-width:420px;margin:0 auto 16px;aspect-ratio:9/13;max-height:600px;}
+
+  .post-detail{padding:20px 22px;opacity:0;animation:riseIn .5s var(--ease) forwards;}
   .post-meta{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
   .post-meta .avatar{width:34px;height:34px;font-size:12px;}
-  .post-meta .name{font-family:var(--font-display);font-weight:600;font-size:14px;}
-  .post-meta .name a{hover:underline;}
+  .post-meta .name{font-family:var(--font-display);font-weight:600;font-size:14px;transition:opacity .14s var(--ease);}
+  .post-meta .name:hover{opacity:.7;}
+  .post-meta .time{font-family:var(--font-mono);font-size:10.5px;color:var(--grey);margin-left:auto;}
 
-  .caption-top{font-family:var(--font-serif);font-size:15px;font-style:italic;line-height:1.4;color:var(--ink);margin-bottom:12px;}
+  .caption-top{font-family:var(--font-serif);font-size:15px;font-style:italic;line-height:1.45;color:var(--ink);margin-bottom:14px;}
 
+  /* ---------- media / lightbox trigger ---------- */
   .clip{
     position:relative;width:100%;max-width:420px;margin:0 auto;
     aspect-ratio:9/13;max-height:600px;border-radius:16px;overflow:hidden;
     background:linear-gradient(160deg,#ffe3d6,#ff9d76);
+    cursor:zoom-in;user-select:none;-webkit-user-select:none;
+    transition:transform .18s var(--ease);
   }
-  .clip img,.clip video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+  .clip:hover{transform:translateY(-2px);}
+  .clip:active{transform:scale(.99);}
+  .clip img,.clip video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;}
 
-  .post-actions{display:flex;align-items:center;gap:22px;margin-top:16px;}
-  .post-actions button{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:12px;color:var(--ink-soft);}
-  .post-actions svg{width:19px;height:19px;stroke:var(--ink-soft);}
-  .post-actions button.liked{color:var(--accent);}
-  .post-actions button.liked svg{stroke:var(--accent);fill:var(--accent);}
-  .post-actions button:disabled{opacity:.5;}
+  .clip-expand-hint{
+    position:absolute;top:12px;right:12px;width:30px;height:30px;border-radius:50%;
+    background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;
+    opacity:0;transition:opacity .18s var(--ease);pointer-events:none;
+  }
+  .clip:hover .clip-expand-hint{opacity:1;}
+  .clip-expand-hint svg{width:14px;height:14px;stroke:#fff;}
 
-  .comments-section{padding:8px 22px 40px;border-top:1px solid var(--line);margin-top:20px;}
-  .comments-title{font-family:var(--font-display);font-weight:600;font-size:13px;padding:16px 0 10px;}
-  .comment-item{padding:12px 0;border-bottom:1px solid var(--line);display:flex;gap:10px;}
-  .comment-item .avatar{width:30px;height:30px;font-size:11px;}
+  .heart-burst{
+    position:absolute;top:50%;left:50%;width:84px;height:84px;
+    transform:translate(-50%,-50%) scale(0);opacity:0;pointer-events:none;
+    filter:drop-shadow(0 6px 18px rgba(0,0,0,.35));
+  }
+  .heart-burst svg{width:100%;height:100%;fill:#fff;}
+  .heart-burst.play{animation:heartPop .75s var(--ease) forwards;}
+  @keyframes heartPop{
+    0%{transform:translate(-50%,-50%) scale(0);opacity:0;}
+    18%{transform:translate(-50%,-50%) scale(1.1);opacity:1;}
+    32%{transform:translate(-50%,-50%) scale(.95);opacity:1;}
+    75%{transform:translate(-50%,-50%) scale(1);opacity:1;}
+    100%{transform:translate(-50%,-50%) scale(1.15);opacity:0;}
+  }
+
+  /* ---------- lightbox ---------- */
+  .lightbox{
+    position:fixed;inset:0;z-index:100;background:rgba(10,10,12,.94);
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;pointer-events:none;transition:opacity .22s var(--ease);
+    backdrop-filter:blur(6px);
+  }
+  .lightbox.open{opacity:1;pointer-events:auto;}
+  .lightbox-media{
+    max-width:min(92vw,520px);max-height:88vh;border-radius:14px;overflow:hidden;
+    transform:scale(.92);transition:transform .28s var(--ease-spring);
+    box-shadow:0 30px 70px rgba(0,0,0,.5);
+  }
+  .lightbox.open .lightbox-media{transform:scale(1);}
+  .lightbox-media img,.lightbox-media video{display:block;width:100%;height:100%;max-height:88vh;object-fit:contain;background:#000;}
+  .lightbox-close{
+    position:absolute;top:20px;right:20px;width:40px;height:40px;border-radius:50%;
+    background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;
+    transition:background .16s var(--ease), transform .16s var(--ease-spring);
+  }
+  .lightbox-close:hover{background:rgba(255,255,255,.22);transform:rotate(90deg);}
+  .lightbox-close svg{width:18px;height:18px;stroke:#fff;}
+
+  /* ---------- like / actions ---------- */
+  .post-actions{display:flex;align-items:center;gap:24px;margin-top:16px;}
+  .like-btn{display:flex;align-items:center;gap:7px;font-family:var(--font-mono);font-size:12.5px;color:var(--ink-soft);}
+  .like-btn svg{width:20px;height:20px;stroke:var(--ink-soft);transition:transform .18s var(--ease-spring), stroke .16s var(--ease);}
+  .like-btn:active svg{transform:scale(.82);}
+  .like-btn.liked{color:var(--accent);}
+  .like-btn.liked svg{stroke:var(--accent);fill:var(--accent);}
+  .like-btn.pulse svg{animation:likePulse .38s var(--ease-spring);}
+  @keyframes likePulse{
+    0%{transform:scale(1);} 35%{transform:scale(1.35);} 100%{transform:scale(1);}
+  }
+  .like-btn:disabled{opacity:.6;}
+  .like-count{display:inline-block;transition:transform .18s var(--ease-spring);}
+  .like-count.bump{animation:countBump .3s var(--ease-spring);}
+  @keyframes countBump{ 0%{transform:translateY(0);} 40%{transform:translateY(-4px);} 100%{transform:translateY(0);} }
+
+  .comment-jump{display:flex;align-items:center;gap:7px;font-family:var(--font-mono);font-size:12.5px;color:var(--ink-soft);}
+  .comment-jump svg{width:19px;height:19px;stroke:var(--ink-soft);}
+
+  /* ---------- comments (rebuilt) ---------- */
+  .comments-section{padding:6px 22px 24px;border-top:1px solid var(--line);margin-top:20px;}
+  .comments-title{
+    font-family:var(--font-display);font-weight:600;font-size:13px;letter-spacing:.01em;
+    padding:18px 0 4px;display:flex;align-items:center;gap:8px;
+  }
+  .comments-title .count-chip{
+    font-family:var(--font-mono);font-size:10.5px;color:var(--grey);
+    background:#f5f5f6;padding:2px 8px;border-radius:99px;
+  }
+
+  #commentsList{display:flex;flex-direction:column;padding-bottom:8px;}
+  .comment-item{
+    display:flex;gap:11px;padding:14px 10px;border-radius:14px;
+    transition:background .14s var(--ease);
+    opacity:0;animation:commentIn .4s var(--ease) forwards;
+  }
+  .comment-item:hover{background:#fafafa;}
+  .comment-item.pending{opacity:.55;}
+  @keyframes commentIn{ from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
+  .comment-item .avatar{width:32px;height:32px;font-size:11.5px;flex-shrink:0;}
   .comment-item .body-wrap{flex:1;min-width:0;}
-  .comment-item .comment-name{font-family:var(--font-display);font-weight:600;font-size:12.5px;display:block;margin-bottom:2px;}
-  .comment-item .comment-body{font-family:var(--font-serif);font-size:14px;color:var(--ink-soft);}
+  .comment-item .comment-head{display:flex;align-items:baseline;gap:8px;margin-bottom:3px;}
+  .comment-item .comment-name{font-family:var(--font-display);font-weight:600;font-size:13px;}
+  .comment-item .comment-time{font-family:var(--font-mono);font-size:10px;color:var(--grey);}
+  .comment-item .comment-body{
+    font-family:var(--font-serif);font-size:14.5px;line-height:1.45;color:var(--ink);
+    word-break:break-word;overflow-wrap:anywhere;
+  }
+  .comments-empty{
+    text-align:center;padding:36px 20px;color:var(--grey);
+  }
+  .comments-empty .big-icon{width:30px;height:30px;margin:0 auto 10px;opacity:.5;}
+  .comments-empty .big-icon svg{width:100%;height:100%;stroke:var(--grey);}
+  .comments-empty p{font-family:var(--font-serif);font-style:italic;font-size:13.5px;}
 
+  /* ---------- comment composer ---------- */
   .comment-form{
-    display:flex;gap:10px;padding:14px 22px;
-    position:sticky;bottom:64px;background:var(--white);border-top:1px solid var(--line);
+    display:flex;gap:10px;align-items:center;
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+    position:sticky;bottom:76px;z-index:25;
+    background:rgba(255,255,255,.9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border:1px solid var(--line);border-radius:99px;
+    box-shadow:0 -4px 20px rgba(20,21,26,.05), 0 6px 20px rgba(20,21,26,.06);
+    margin:0 22px 18px;
   }
-  @media (min-width:900px){ .comment-form{bottom:0;} }
+  @media (min-width:900px){ .comment-form{bottom:20px;} }
   .comment-form input{
-    flex:1;border:1px solid var(--line-strong);border-radius:99px;
-    padding:11px 16px;font-family:var(--font-serif);font-size:14px;outline:none;
+    flex:1;border:none;background:transparent;
+    padding:6px 4px;font-family:var(--font-serif);font-size:14.5px;outline:none;color:var(--ink);
   }
-  .comment-form input:focus{border-color:var(--accent);}
-  .comment-form button{background:var(--ink);color:#fff;font-family:var(--font-display);font-weight:600;font-size:13px;padding:0 18px;border-radius:99px;}
+  .comment-form input::placeholder{color:var(--grey);}
+  .comment-form button{
+    background:var(--ink);color:#fff;font-family:var(--font-display);font-weight:600;font-size:13px;
+    padding:9px 18px;border-radius:99px;display:flex;align-items:center;justify-content:center;gap:6px;
+    transition:background .16s var(--ease), transform .12s var(--ease), opacity .16s var(--ease);
+    flex-shrink:0;
+  }
+  .comment-form button:hover:not(:disabled){background:#000;}
+  .comment-form button:active:not(:disabled){transform:scale(.94);}
+  .comment-form button:disabled{opacity:.45;cursor:not-allowed;}
+  .mini-spinner{
+    width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin{ to{transform:rotate(360deg);} }
 </style>
 </head>
 <body>
@@ -147,7 +289,13 @@
     </div>
 
     <div id="pageBody">
-      <div class="status-state" id="pageLoading">Loading post…</div>
+      <div class="skel-wrap">
+        <div class="skel-meta">
+          <div class="skel skel-avatar"></div>
+          <div class="skel skel-line w40"></div>
+        </div>
+        <div class="skel skel-media"></div>
+      </div>
     </div>
   </main>
 </div>
@@ -160,15 +308,39 @@
   <a href="/profile" class="tab">profile</a>
 </nav>
 
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose" aria-label="Close">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+  </button>
+  <div class="lightbox-media" id="lightboxMedia"></div>
+</div>
+
 <script>
   function escapeHtml(str){ const d=document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
   function initials(name){ return (name || '?').trim().slice(0,1).toUpperCase(); }
+
+  function relativeTime(iso){
+    if (!iso) return '';
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const sec = Math.max(1, Math.floor(diffMs / 1000));
+    if (sec < 60) return `${sec}s`;
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min}m`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr}h`;
+    const day = Math.floor(hr / 24);
+    if (day < 7) return `${day}d`;
+    const wk = Math.floor(day / 7);
+    if (wk < 5) return `${wk}w`;
+    return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  }
 
   const SUPABASE_URL = 'https://yacrwbpvcqurxsqpmron.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_Any50PwhIupj5rZbez1W4Q_dIx-VRIs';
   const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   let currentUser = null;
+  let currentProfile = null;
   let post = null;
   let isLiked = false;
 
@@ -185,6 +357,7 @@
     if (!currentUser){ area.innerHTML = `<a href="/auth" class="sidebar-signin">Sign in</a>`; return; }
 
     const { data: me } = await supabaseClient.from('profiles').select('username, avatar_url').eq('id', currentUser.id).maybeSingle();
+    currentProfile = me || null;
     const name = me?.username || currentUser.email || 'You';
     const avatarHtml = me?.avatar_url ? `<img src="${escapeHtml(me.avatar_url)}" alt="">` : initials(name);
     area.innerHTML = `
@@ -200,56 +373,154 @@
     });
   }
 
-  function renderComment(c){
+  function renderComment(c, opts = {}){
     const name = escapeHtml(c.profiles?.username || 'Someone');
     const avatarUrl = c.profiles?.avatar_url;
     const avatarHtml = avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="">` : initials(name);
+    const time = opts.pending ? 'sending…' : relativeTime(c.created_at);
     return `
-      <div class="comment-item">
+      <div class="comment-item${opts.pending ? ' pending' : ''}">
         <div class="avatar">${avatarHtml}</div>
         <div class="body-wrap">
-          <span class="comment-name">${name}</span>
-          <span class="comment-body">${escapeHtml(c.body || '')}</span>
+          <div class="comment-head">
+            <span class="comment-name">${name}</span>
+            <span class="comment-time">${time}</span>
+          </div>
+          <div class="comment-body">${escapeHtml(c.body || '')}</div>
         </div>
       </div>
     `;
   }
 
+  function emptyCommentsHtml(){
+    return `
+      <div class="comments-empty">
+        <div class="big-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        </div>
+        <p>No comments yet — say something first.</p>
+      </div>
+    `;
+  }
+
   async function loadComments(postId){
-    const { data } = await supabaseClient
+    const list0 = document.getElementById('commentsList');
+    const { data, error } = await supabaseClient
       .from('comments')
       .select('*, profiles(username, avatar_url)')
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
+
+    if (error){
+      list0.innerHTML = `<div class="status-state small">Couldn't load comments — try refreshing.</div>`;
+      return;
+    }
     const list = data || [];
-    document.getElementById('commentsList').innerHTML = list.length
-      ? list.map(renderComment).join('')
-      : `<div class="status-state">No comments yet — be the first.</div>`;
+    list0.innerHTML = list.length ? '' : emptyCommentsHtml();
+    list.forEach((c, i) => {
+      const el = document.createElement('div');
+      el.innerHTML = renderComment(c).trim();
+      const node = el.firstElementChild;
+      node.style.animationDelay = `${Math.min(i, 8) * 0.04}s`;
+      list0.appendChild(node);
+    });
     document.getElementById('commentsCount').textContent = list.length;
+  }
+
+  function triggerHeartBurst(clipEl){
+    let burst = clipEl.querySelector('.heart-burst');
+    if (!burst){
+      burst = document.createElement('div');
+      burst.className = 'heart-burst';
+      burst.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10.2-9.1C.2 8.7 1.4 5 5 4.1c2.2-.6 4.3.4 5.5 2.2C11.7 4.5 13.8 3.5 16 4.1c3.6.9 4.8 4.6 3.2 7.8C19.5 16.4 12 21 12 21z"/></svg>`;
+      clipEl.appendChild(burst);
+    }
+    burst.classList.remove('play');
+    void burst.offsetWidth;
+    burst.classList.add('play');
+  }
+
+  function bumpLikeCount(el){
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+  }
+
+  async function setLiked(liked, btn){
+    const countEl = btn.querySelector('.like-count');
+    const svg = btn.querySelector('svg');
+    if (liked){
+      await supabaseClient.from('likes').insert({ post_id: post.id, user_id: currentUser.id });
+      isLiked = true;
+      btn.classList.add('liked','pulse'); svg.setAttribute('fill','currentColor');
+      countEl.textContent = parseInt(countEl.textContent,10) + 1;
+    } else {
+      await supabaseClient.from('likes').delete().match({ post_id: post.id, user_id: currentUser.id });
+      isLiked = false;
+      btn.classList.remove('liked'); btn.classList.add('pulse'); svg.setAttribute('fill','none');
+      countEl.textContent = Math.max(0, parseInt(countEl.textContent,10) - 1);
+    }
+    bumpLikeCount(countEl);
+    setTimeout(() => btn.classList.remove('pulse'), 400);
   }
 
   async function toggleLike(btn){
     if (!requireAuth() || btn.disabled) return;
     btn.disabled = true;
-    const countEl = btn.querySelector('.like-count');
-    const svg = btn.querySelector('svg');
     try {
-      if (isLiked){
-        await supabaseClient.from('likes').delete().match({ post_id: post.id, user_id: currentUser.id });
-        isLiked = false;
-        btn.classList.remove('liked'); svg.setAttribute('fill','none');
-        countEl.textContent = Math.max(0, parseInt(countEl.textContent,10) - 1);
-      } else {
-        await supabaseClient.from('likes').insert({ post_id: post.id, user_id: currentUser.id });
-        isLiked = true;
-        btn.classList.add('liked'); svg.setAttribute('fill','currentColor');
-        countEl.textContent = parseInt(countEl.textContent,10) + 1;
-      }
+      await setLiked(!isLiked, btn);
     } catch (err) {
       console.error('Like toggle failed:', err);
     } finally {
       btn.disabled = false;
     }
+  }
+
+  async function likeFromMedia(clipEl){
+    triggerHeartBurst(clipEl);
+    if (!currentUser || isLiked) return; // burst is just delight if already liked / signed out
+    const btn = document.getElementById('likeBtn');
+    if (btn) await toggleLike(btn);
+  }
+
+  function openLightbox(mediaType, mediaUrl){
+    if (!mediaUrl) return;
+    const lightbox = document.getElementById('lightbox');
+    const holder = document.getElementById('lightboxMedia');
+    holder.innerHTML = mediaType === 'video'
+      ? `<video src="${escapeHtml(mediaUrl)}" controls autoplay playsinline></video>`
+      : `<img src="${escapeHtml(mediaUrl)}" alt="">`;
+    lightbox.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox(){
+    const lightbox = document.getElementById('lightbox');
+    lightbox.classList.remove('open');
+    document.body.style.overflow = '';
+    setTimeout(() => { document.getElementById('lightboxMedia').innerHTML = ''; }, 220);
+  }
+  document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+  document.getElementById('lightbox').addEventListener('click', (e) => {
+    if (e.target.id === 'lightbox') closeLightbox();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeLightbox();
+  });
+
+  function wireClip(clipEl, mediaType, mediaUrl){
+    let clickTimer = null;
+    clipEl.addEventListener('click', () => {
+      if (clickTimer){
+        clearTimeout(clickTimer);
+        clickTimer = null;
+        likeFromMedia(clipEl);
+        return;
+      }
+      clickTimer = setTimeout(() => {
+        clickTimer = null;
+        openLightbox(mediaType, mediaUrl);
+      }, 240);
+    });
   }
 
   async function renderPage(){
@@ -286,10 +557,11 @@
     const caption = escapeHtml(post.caption || '');
     const likeCount = post.likes?.[0]?.count ?? 0;
     const commentCount = post.comments?.[0]?.count ?? 0;
+    const postTime = relativeTime(post.created_at);
 
     let mediaHtml = '';
     if (post.media_type === 'video' && post.media_url){
-      mediaHtml = `<video src="${escapeHtml(post.media_url)}" controls playsinline></video>`;
+      mediaHtml = `<video src="${escapeHtml(post.media_url)}" muted loop autoplay playsinline></video>`;
     } else if (post.media_type === 'photo' && post.media_url){
       mediaHtml = `<img src="${escapeHtml(post.media_url)}" alt="">`;
     }
@@ -299,42 +571,94 @@
         <div class="post-meta">
           <div class="avatar">${avatarHtml}</div>
           <span class="name">${name}</span>
+          ${postTime ? `<span class="time">${postTime}</span>` : ''}
         </div>
         ${caption ? `<div class="caption-top">${caption}</div>` : ''}
-        <div class="clip">${mediaHtml}</div>
+        <div class="clip" id="postClip">
+          ${mediaHtml}
+          ${post.media_url ? `<div class="clip-expand-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div>` : ''}
+        </div>
         <div class="post-actions">
           <button class="like-btn ${isLiked ? 'liked' : ''}" id="likeBtn">
             <svg viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke-width="1.8"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 10-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 000-7.8z"/></svg>
             <span class="like-count">${likeCount}</span>
           </button>
-          <div>💬 <span id="commentsCount">${commentCount}</span> comments</div>
+          <button class="comment-jump" id="commentJumpBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            <span id="commentsCount">${commentCount}</span>
+          </button>
         </div>
       </div>
 
       <div class="comments-section">
-        <div class="comments-title">Comments</div>
-        <div id="commentsList"><div class="status-state">Loading comments…</div></div>
+        <div class="comments-title">Comments <span class="count-chip" id="commentsCountChip">${commentCount}</span></div>
+        <div id="commentsList"><div class="status-state small">Loading comments…</div></div>
       </div>
 
       <form class="comment-form" id="commentForm">
-        <input type="text" id="commentInput" placeholder="Add a comment..." maxlength="280">
-        <button type="submit">Post</button>
+        <input type="text" id="commentInput" placeholder="Add a comment..." maxlength="280" autocomplete="off">
+        <button type="submit" id="commentSubmitBtn">Post</button>
       </form>
     `;
 
     document.getElementById('likeBtn').addEventListener('click', (e) => toggleLike(e.currentTarget));
+    document.getElementById('commentJumpBtn').addEventListener('click', () => {
+      document.getElementById('commentInput')?.focus({ preventScroll: false });
+      document.getElementById('commentInput')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    if (post.media_url) wireClip(document.getElementById('postClip'), post.media_type, post.media_url);
+
+    const commentInput = document.getElementById('commentInput');
+    const commentSubmitBtn = document.getElementById('commentSubmitBtn');
     document.getElementById('commentForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!requireAuth()) return;
-      const input = document.getElementById('commentInput');
-      const text = input.value.trim();
+      const text = commentInput.value.trim();
       if (!text) return;
+
+      commentSubmitBtn.disabled = true;
+      commentInput.disabled = true;
+      const originalLabel = commentSubmitBtn.textContent;
+      commentSubmitBtn.innerHTML = `<span class="mini-spinner"></span>`;
+
+      // optimistic row so it feels instant while the insert is in flight
+      const list0 = document.getElementById('commentsList');
+      const emptyState = list0.querySelector('.comments-empty');
+      if (emptyState) emptyState.remove();
+      const tempEl = document.createElement('div');
+      tempEl.innerHTML = renderComment({ body: text, profiles: currentProfile }, { pending: true }).trim();
+      const tempNode = tempEl.firstElementChild;
+      list0.appendChild(tempNode);
+      tempNode.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
       try {
-        await supabaseClient.from('comments').insert({ post_id: post.id, user_id: currentUser.id, body: text });
-        input.value = '';
-        await loadComments(post.id);
+        const { data: inserted, error: insertError } = await supabaseClient
+          .from('comments')
+          .insert({ post_id: post.id, user_id: currentUser.id, body: text })
+          .select('*, profiles(username, avatar_url)')
+          .maybeSingle();
+        if (insertError) throw insertError;
+
+        tempNode.classList.remove('pending');
+        const timeEl = tempNode.querySelector('.comment-time');
+        if (timeEl) timeEl.textContent = relativeTime(inserted?.created_at) || 'now';
+
+        commentInput.value = '';
+        const countEl = document.getElementById('commentsCount');
+        const chipEl = document.getElementById('commentsCountChip');
+        const newCount = parseInt(countEl.textContent, 10) + 1;
+        countEl.textContent = newCount;
+        chipEl.textContent = newCount;
       } catch (err) {
         console.error('Failed to post comment:', err);
+        tempNode.remove();
+        if (!list0.children.length) list0.innerHTML = emptyCommentsHtml();
+      } finally {
+        commentSubmitBtn.disabled = false;
+        commentInput.disabled = false;
+        commentSubmitBtn.textContent = originalLabel;
+        commentInput.focus();
       }
     });
 
