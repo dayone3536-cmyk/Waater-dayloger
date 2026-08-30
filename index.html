@@ -39,13 +39,11 @@
   /* ---------- layout shell ---------- */
   .app{
     display:flex;
-    max-width:1180px;
-    margin:0 auto;
   }
   .main{
     flex:1;
     min-width:0;
-    border-left:1px solid var(--line);
+    max-width:680px;
     border-right:1px solid var(--line);
   }
 
@@ -91,8 +89,9 @@
     padding:28px 18px;
     flex-direction:column;
     height:100vh;
-    position:sticky;
+    position:fixed;
     top:0;
+    left:0;
   }
   .sidebar .wordmark{font-size:24px;padding:0 10px;margin-bottom:36px;}
   .nav-list{list-style:none;display:flex;flex-direction:column;gap:4px;}
@@ -177,6 +176,88 @@
     border-radius:12px;
   }
   .sidebar-signin:hover{background:#000;}
+
+  /* ---------- side promo (sits directly beside the nav, on the left, signed-out only) ---------- */
+  .side-promo{
+    display:none;
+    position:fixed;
+    top:0;
+    left:var(--nav-w);
+    bottom:0;
+    width:300px;
+    overflow:hidden;
+    background:
+      radial-gradient(520px 420px at 18% 82%, rgba(255,255,255,.16), transparent 60%),
+      radial-gradient(600px 500px at 85% 8%, rgba(255,255,255,.14), transparent 55%),
+      linear-gradient(160deg, #ff8a5c 0%, var(--accent) 46%, #d63d8f 100%);
+    z-index:10;
+  }
+  .side-promo-blob{
+    position:absolute;
+    border-radius:50%;
+    filter:blur(2px);
+    opacity:.5;
+  }
+  .side-promo-blob.b1{width:220px;height:220px;background:#ffd27a;top:-60px;right:-60px;}
+  .side-promo-blob.b2{width:160px;height:160px;background:#7fe0c9;bottom:60px;left:-50px;opacity:.4;}
+  .side-promo-blob.b3{width:110px;height:110px;background:#fff;bottom:220px;right:20px;opacity:.18;}
+  .side-promo-content{
+    position:relative;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding:48px 32px;
+    color:#fff;
+  }
+  .side-promo-badge{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:-.02em;
+    margin-bottom:28px;
+  }
+  .side-promo-badge .dot{color:#fff2; -webkit-text-stroke:1px #fff;}
+  .side-promo-content h2{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:26px;
+    line-height:1.25;
+    letter-spacing:-.01em;
+    margin-bottom:14px;
+  }
+  .side-promo-content p{
+    font-family:var(--font-serif);
+    font-size:15px;
+    line-height:1.55;
+    color:rgba(255,255,255,.88);
+    margin-bottom:30px;
+  }
+  .side-promo-cta{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:fit-content;
+    background:#fff;
+    color:var(--ink)!important;
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:14.5px;
+    padding:14px 28px;
+    border-radius:99px;
+    box-shadow:0 10px 24px rgba(0,0,0,.18);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .side-promo-cta:hover{
+    transform:translateY(-2px);
+    box-shadow:0 14px 28px rgba(0,0,0,.22);
+  }
+
+  body.signed-in .side-promo{display:none!important;}
+
+  @media (min-width:1100px){
+    .side-promo{display:block;}
+  }
 
   /* ---------- feed ---------- */
   .feed-head{
@@ -499,11 +580,16 @@
 
     .sidebar{display:flex;}
     .app{gap:0;}
+    .main{margin-left:calc(var(--nav-w) + 32px);}
 
     .feed-head{padding-top:32px;}
 
     .post{padding-left:32px;padding-right:32px;}
     .clip{max-width:380px;}
+  }
+
+  @media (min-width:1100px){
+    body:not(.signed-in) .main{margin-left:calc(var(--nav-w) + 300px + 32px);}
   }
 
 
@@ -555,6 +641,19 @@
     </div>
   </main>
 </div>
+
+<!-- Colorful sign-in promo, sits on the left right after the nav (hidden once signed in) -->
+<aside class="side-promo" id="sidePromo">
+  <div class="side-promo-blob b1"></div>
+  <div class="side-promo-blob b2"></div>
+  <div class="side-promo-blob b3"></div>
+  <div class="side-promo-content">
+    <div class="side-promo-badge">waater<span class="dot">.</span></div>
+    <h2>Your day is<br>worth logging.</h2>
+    <p>Post a photo, a clip, or a few words about today — friends rate it, and you build a streak worth keeping.</p>
+    <a href="/auth" class="side-promo-cta">Sign in</a>
+  </div>
+</aside>
 
 <!-- Mobile bottom nav -->
 <nav class="bottom-nav">
@@ -679,6 +778,7 @@
     currentUser = data.session ? data.session.user : null;
 
     const area = document.getElementById('sidebarAuthArea');
+    document.body.classList.toggle('signed-in', !!currentUser);
 
     if (!currentUser) {
       area.innerHTML = `<a href="/auth" class="sidebar-signin">Sign in</a>`;
