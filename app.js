@@ -9,6 +9,10 @@ const morgan = require('morgan');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.get('/ping', (req, res) => res.status(200).send('pong'));
+
+
+
 // ---- core middleware -------------------------------------------------------
 app.use(cors());
 app.use(morgan('dev'));
@@ -55,7 +59,9 @@ app.get('/api/users', (req, res) => res.json(users));
 app.get('/api/users/me', (req, res) => res.json(req.user));
 app.get('/api/inbox', (req, res) => res.json(messages)); // kept as-is; DMs live in Supabase now, not this in-memory array
 
-app.get('/ping', (req, res) => res.status(200).send('pong'));
+
+
+
 app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 
 // ---- SPA fallback (catch anything else non-/api) ---------------------------
