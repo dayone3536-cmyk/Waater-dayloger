@@ -9,7 +9,13 @@ const morgan = require('morgan');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.get('/ping', (req, res) => res.status(200).send('pong'));
+app.get('/ping', (req, res) => {
+  
+  res.set('Content-Type', 'text/plain');
+  res.status(200).send('pong');
+
+});
+
 
 
 
