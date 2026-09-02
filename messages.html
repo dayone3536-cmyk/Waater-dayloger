@@ -55,16 +55,15 @@
   .list-pane{width:100%;border-right:1px solid var(--line);display:flex;flex-direction:column;height:100vh;background:var(--white);}
   @media (min-width:700px){ .list-pane{width:var(--list-w);flex-shrink:0;} }
 
-  /* FIX: on mobile, hide the list pane while a thread is open — previously nothing
-     ever hid it, so list + thread rendered side-by-side and squeezed the thread
-     into an unusably narrow sliver. */
+  /* on mobile, hide the list pane while a thread is open */
   @media (max-width:699px){
     .list-pane.thread-open{ display:none; }
   }
 
   .list-head{padding:20px 20px 14px;flex-shrink:0;position:relative;}
   .list-head::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,var(--line) 20%,var(--line) 80%,transparent);}
-  .list-head h1{font-family:var(--font-display);font-weight:700;font-size:21px;margin-bottom:14px;letter-spacing:-.01em;}
+  .list-head-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
+  .list-head h1{font-family:var(--font-display);font-weight:700;font-size:21px;letter-spacing:-.01em;margin-bottom:0;}
   .search-box{position:relative;}
   .search-box svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--grey);pointer-events:none;transition:stroke .15s ease;}
   .search-box input{width:100%;border:1.5px solid transparent;border-radius:99px;padding:10px 14px 10px 36px;font-size:13.5px;font-family:var(--font-serif);outline:none;background:#f2f2f3;transition:background .15s ease, box-shadow .2s ease;}
@@ -89,6 +88,66 @@
 
   .empty-note{padding:50px 24px;text-align:center;font-family:var(--font-mono);font-size:11.5px;color:var(--grey);line-height:1.6;}
   .empty-note .big{font-family:var(--font-display);font-size:14px;color:var(--ink);font-weight:600;margin-bottom:6px;display:block;}
+
+  /* ---------- invite / growth ---------- */
+  .invite-btn{
+    display:flex;align-items:center;gap:6px;
+    background:var(--accent-soft);color:var(--accent);
+    font-family:var(--font-display);font-weight:600;font-size:12.5px;
+    padding:8px 12px;border-radius:99px;flex-shrink:0;
+    transition:background .15s ease, transform .12s ease;
+  }
+  .invite-btn:hover{background:#ffe4d9;transform:translateY(-1px);}
+  .invite-btn svg{width:15px;height:15px;stroke:var(--accent);}
+
+  .invite-card{
+    margin:6px 8px 12px;padding:18px;border-radius:16px;
+    background:linear-gradient(135deg, var(--accent-soft), #fff);
+    border:1px solid #ffe0d2;
+    text-align:center;
+  }
+  .invite-card .big{font-family:var(--font-display);font-size:14px;font-weight:700;margin-bottom:4px;display:block;color:var(--ink);}
+  .invite-card p{font-family:var(--font-mono);font-size:11px;color:var(--grey);margin-bottom:14px;line-height:1.6;}
+  .invite-card button{
+    background:var(--accent);color:#fff;font-family:var(--font-display);
+    font-weight:600;font-size:12.5px;padding:10px 22px;border-radius:99px;
+    transition:transform .12s ease;
+  }
+  .invite-card button:hover{transform:translateY(-1px);}
+
+  .invite-overlay{
+    position:fixed;inset:0;background:rgba(10,10,12,.5);
+    display:none;align-items:flex-end;justify-content:center;z-index:200;
+  }
+  .invite-overlay.show{display:flex;}
+  .invite-panel{
+    background:#fff;width:100%;max-width:420px;border-radius:20px 20px 0 0;
+    padding:22px 22px 26px;box-shadow:var(--shadow-float);
+  }
+  @media (min-width:700px){ .invite-overlay{align-items:center;} .invite-panel{border-radius:20px;} }
+  .invite-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .invite-panel-head h3{font-family:var(--font-display);font-size:15.5px;font-weight:700;}
+  .invite-panel-close{width:28px;height:28px;border-radius:50%;background:#f2f2f3;display:flex;align-items:center;justify-content:center;}
+  .invite-panel-close svg{width:14px;height:14px;stroke:var(--ink);}
+  .invite-panel p.sub{font-family:var(--font-serif);font-size:13.5px;color:var(--ink-soft);margin-bottom:18px;line-height:1.5;}
+  .invite-link-row{display:flex;gap:8px;margin-bottom:14px;}
+  .invite-link-row input{
+    flex:1;border:1.5px solid var(--line);border-radius:12px;
+    padding:11px 14px;font-family:var(--font-mono);font-size:12px;color:var(--ink-soft);
+    background:#f7f7f8;outline:none;min-width:0;
+  }
+  .invite-copy-btn{
+    background:var(--ink);color:#fff;font-family:var(--font-display);font-weight:600;
+    font-size:12.5px;padding:0 16px;border-radius:12px;flex-shrink:0;transition:background .15s ease;
+  }
+  .invite-copy-btn.copied{background:var(--online);}
+  .invite-share-btn{
+    width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+    background:var(--accent);color:#fff;font-family:var(--font-display);font-weight:700;
+    font-size:14px;padding:14px;border-radius:99px;transition:transform .12s ease, box-shadow .15s ease;
+  }
+  .invite-share-btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px var(--accent-glow);}
+  .invite-share-btn svg{width:16px;height:16px;stroke:#fff;}
 
   /* ---------- thread ---------- */
   .thread-pane{flex:1;display:none;flex-direction:column;height:100vh;min-width:0;background:var(--white);}
@@ -145,7 +204,7 @@
   .send-btn:not(:disabled):hover svg{transform:translate(1px,-1px);}
   .send-btn:disabled{opacity:.35;}
 
-  .thread-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:12px;color:var(--grey);gap:10px;}
+  .thread-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:12px;color:var(--grey);gap:10px;text-align:center;padding:0 24px;}
   .thread-empty .big-avatar{width:88px;height:88px;border-radius:50%;background:#f2f2f3;display:flex;align-items:center;justify-content:center;margin-bottom:6px;}
   .thread-empty .big-avatar svg{width:40px;height:40px;stroke:var(--grey);}
   .thread-empty .big{font-family:var(--font-display);font-size:17px;color:var(--ink);font-weight:700;}
@@ -173,7 +232,13 @@
 
   <div class="list-pane" id="listPane">
     <div class="list-head">
-      <h1>Messages</h1>
+      <div class="list-head-top">
+        <h1>Messages</h1>
+        <button class="invite-btn" id="inviteOpenBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 5l3 3-3 3M19 8H9a5 5 0 000 10h1"/></svg>
+          Invite
+        </button>
+      </div>
       <div class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
         <input type="text" id="convSearch" placeholder="Search">
@@ -189,7 +254,32 @@
       <div class="big-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
       <span class="big">Your messages</span>
       Pick a friend to start chatting.
+      <button class="invite-btn" id="inviteEmptyBtn" type="button" style="margin-top:14px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 5l3 3-3 3M19 8H9a5 5 0 000 10h1"/></svg>
+        Invite friends
+      </button>
     </div>
+  </div>
+</div>
+
+<!-- Invite / referral sheet -->
+<div class="invite-overlay" id="inviteOverlay">
+  <div class="invite-panel">
+    <div class="invite-panel-head">
+      <h3>Invite friends</h3>
+      <button class="invite-panel-close" id="inviteCloseBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <p class="sub">Messaging is more fun with friends on Waater. Send them your link — once they join, they'll show up right here.</p>
+    <div class="invite-link-row">
+      <input type="text" id="inviteLinkInput" readonly>
+      <button class="invite-copy-btn" id="inviteCopyBtn" type="button">Copy</button>
+    </div>
+    <button class="invite-share-btn" id="inviteShareBtn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7M16 6l-4-4-4 4M12 2v13"/></svg>
+      Share invite
+    </button>
   </div>
 </div>
 
@@ -221,6 +311,7 @@
   const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   let currentUser = null;
+  let currentUsername = null;
   let activeConversationId = null;
   let activeThreadUserId = null;
   let activeChannel = null;         // per-open-thread channel (messages + typing broadcast)
@@ -233,9 +324,13 @@
   let typingTimeout = null;
   let typingSendCooldown = false;
 
+  // ---- routing helpers ----
+  // requireAuth() preserves the full path + query string (not just pathname) so a
+  // deep link like /messages?with=<id> survives a sign-in redirect round trip.
   function requireAuth(){
     if (currentUser) return true;
-    window.location.href = `/auth?next=${encodeURIComponent('/messages')}`;
+    const next = window.location.pathname + window.location.search;
+    window.location.href = `/auth?next=${encodeURIComponent(next)}`;
     return false;
   }
 
@@ -247,6 +342,7 @@
 
     const { data: me } = await supabaseClient.from('profiles').select('username, avatar_url').eq('id', currentUser.id).maybeSingle();
     const name = me?.username || currentUser.email || 'You';
+    currentUsername = me?.username || null;
     const avatarHtml = me?.avatar_url ? `<img src="${escapeHtml(me.avatar_url)}" alt="">` : initials(name);
     area.innerHTML = `
       <a href="/profile" class="sidebar-profile">
@@ -333,7 +429,16 @@
     });
 
     if (rows.length === 0){
-      convListEl.innerHTML = `<div class="empty-note"><span class="big">No friends yet</span>Add friends and they'll show up here to message.</div>`;
+      convListEl.innerHTML = `
+        <div class="empty-note"><span class="big">No friends yet</span>Add friends and they'll show up here to message.</div>
+        <div class="invite-card">
+          <span class="big">Bring your people in 👋</span>
+          <p>Waater is way more fun with friends around. Send an invite and your first chat is one tap away.</p>
+          <button id="inviteCardBtn" type="button">Invite friends</button>
+        </div>
+      `;
+      const cardBtn = document.getElementById('inviteCardBtn');
+      if (cardBtn) cardBtn.addEventListener('click', openInvitePanel);
       return;
     }
 
@@ -463,7 +568,7 @@
     }).join('');
   }
 
-  function showTypingIndicator(threadBody, lastRenderedDayRef){
+  function showTypingIndicator(threadBody){
     if (document.getElementById('typingIndicator')) { threadBody.scrollTop = threadBody.scrollHeight; return; }
     threadBody.insertAdjacentHTML('beforeend', `
       <div class="bubble-wrap theirs typing-row" id="typingIndicator">
@@ -500,7 +605,32 @@
     return newConv.id;
   }
 
-  async function openConversationWithUser(otherUserId){
+  // ---- thread routing ----
+  // Restores the placeholder pane and clears the URL back to a clean /messages.
+  // Called both by the mobile back button and by browser back/forward (popstate).
+  function closeThread(){
+    document.getElementById('listPane').classList.remove('thread-open');
+    const threadPane = document.getElementById('threadPane');
+    threadPane.classList.remove('show');
+    if (activeChannel) { supabaseClient.removeChannel(activeChannel); activeChannel = null; }
+    activeConversationId = null;
+    activeThreadUserId = null;
+    threadPane.innerHTML = `
+      <div class="thread-empty" id="threadEmpty">
+        <div class="big-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+        <span class="big">Your messages</span>
+        Pick a friend to start chatting.
+        <button class="invite-btn" id="inviteEmptyBtn" type="button" style="margin-top:14px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 5l3 3-3 3M19 8H9a5 5 0 000 10h1"/></svg>
+          Invite friends
+        </button>
+      </div>
+    `;
+    wireInviteButtons();
+    renderInbox();
+  }
+
+  async function openConversationWithUser(otherUserId, { pushState = true } = {}){
     if (!requireAuth()) return;
     const entry = inboxByUserId[otherUserId];
     if (!entry) return;
@@ -511,10 +641,16 @@
     activeThreadUserId = otherUserId;
     if (entry) entry.unread = false;
 
+    // Keep the URL and browser history in sync with the open thread so refresh,
+    // sharing a link, and the back/forward buttons all behave correctly.
+    if (pushState) {
+      const url = `/messages?with=${encodeURIComponent(otherUserId)}`;
+      if (window.location.pathname + window.location.search !== url) {
+        history.pushState({ view: 'thread', userId: otherUserId }, '', url);
+      }
+    }
+
     document.querySelectorAll('.conv-row').forEach(r => r.classList.toggle('active', r.dataset.userId === otherUserId));
-    // FIX: was classList.remove('show') — that class was never used to control
-    // .list-pane's visibility, so the list stayed on screen next to the thread
-    // on mobile. 'thread-open' is the class the CSS above actually checks.
     document.getElementById('listPane').classList.add('thread-open');
     const threadPane = document.getElementById('threadPane');
     threadPane.classList.add('show');
@@ -546,10 +682,8 @@
     `;
 
     document.getElementById('threadBackBtn').addEventListener('click', () => {
-      // FIX: was classList.add('show') on a class the list-pane never checked.
-      // Remove 'thread-open' instead, which is what actually brings it back.
-      document.getElementById('listPane').classList.remove('thread-open');
-      document.getElementById('threadPane').classList.remove('show');
+      history.pushState({ view: 'list' }, '', '/messages');
+      closeThread();
     });
 
     const { data: msgs, error: msgErr } = await supabaseClient
@@ -590,7 +724,7 @@
       const day = dayLabel(optimisticMsg.created_at);
       const showDay = day !== lastRenderedDay;
       lastRenderedDay = day;
-      
+
       const emptyNote = threadBody.querySelector('.empty-note');
       if (emptyNote) emptyNote.remove();
       threadBody.insertAdjacentHTML('beforeend', renderBubble(optimisticMsg, showDay, true));
@@ -648,7 +782,7 @@
         if (payload.payload.userId === currentUser.id) return;
         const body2 = document.getElementById('threadBody');
         if (!body2) return;
-        showTypingIndicator(body2, () => lastRenderedDay);
+        showTypingIndicator(body2);
         clearTimeout(typingTimeout);
         typingTimeout = setTimeout(hideTypingIndicator, 3000);
       })
@@ -657,16 +791,117 @@
     renderInbox();
   }
 
+  // Handle browser back/forward so the URL and the open thread always agree.
+  window.addEventListener('popstate', () => {
+    const params = new URLSearchParams(window.location.search);
+    const withUserId = params.get('with');
+    if (withUserId) {
+      openConversationWithUser(withUserId, { pushState: false });
+    } else {
+      closeThread();
+    }
+  });
+
+  // ---- invite / growth loop (K-factor) ----
+  // Every signed-in user gets a personal invite link that carries a referral
+  // code (their username). Sharing it — and someone joining through it — is
+  // the loop that grows the user base, i.e. what pushes K-factor up.
+  function getReferralLink(){
+    const code = currentUsername || currentUser?.id || '';
+    return `${window.location.origin}/auth?ref=${encodeURIComponent(code)}`;
+  }
+
+  function openInvitePanel(){
+    if (!requireAuth()) return;
+    document.getElementById('inviteLinkInput').value = getReferralLink();
+    document.getElementById('inviteOverlay').classList.add('show');
+  }
+
+  function closeInvitePanel(){
+    document.getElementById('inviteOverlay').classList.remove('show');
+  }
+
+  // Best-effort growth analytics: logs that an invite went out so invites-per-user
+  // (half of K-factor) is measurable later. Safe no-op if the invite_events table
+  // doesn't exist yet — it just won't block or break the invite flow.
+  async function logInviteSent(channel){
+    try {
+      await supabaseClient.from('invite_events').insert({ user_id: currentUser.id, channel });
+    } catch (err) {
+      console.warn('Invite tracking skipped (invite_events table may not exist yet):', err);
+    }
+  }
+
+  function wireInviteButtons(){
+    const emptyBtn = document.getElementById('inviteEmptyBtn');
+    if (emptyBtn) emptyBtn.addEventListener('click', openInvitePanel);
+  }
+
+  document.getElementById('inviteOpenBtn').addEventListener('click', openInvitePanel);
+  document.getElementById('inviteCloseBtn').addEventListener('click', closeInvitePanel);
+  document.getElementById('inviteOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'inviteOverlay') closeInvitePanel();
+  });
+
+  document.getElementById('inviteCopyBtn').addEventListener('click', async () => {
+    const input = document.getElementById('inviteLinkInput');
+    const btn = document.getElementById('inviteCopyBtn');
+    try {
+      await navigator.clipboard.writeText(input.value);
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+      logInviteSent('copy_link');
+    } catch (err) {
+      console.error('Clipboard copy failed:', err);
+    }
+  });
+
+  document.getElementById('inviteShareBtn').addEventListener('click', async () => {
+    const link = getReferralLink();
+    const shareData = {
+      title: 'Join me on Waater',
+      text: `I'm logging my days on Waater — come join and rate mine 👋`,
+      url: link,
+    };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        logInviteSent('native_share');
+      } catch (err) {
+        if (err.name !== 'AbortError') console.error('Share failed:', err);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(link);
+        const btn = document.getElementById('inviteShareBtn');
+        const original = btn.innerHTML;
+        btn.innerHTML = 'Link copied!';
+        setTimeout(() => { btn.innerHTML = original; }, 1500);
+        logInviteSent('copy_link_fallback');
+      } catch (err) {
+        console.error('Clipboard copy failed:', err);
+      }
+    }
+  });
+
   async function init(){
     await renderSidebar();
     if (!currentUser) { requireAuth(); return; }
     await refreshInbox();
     setupPresence();
+    wireInviteButtons();
 
     const params = new URLSearchParams(window.location.search);
     const withUserId = params.get('with');
+    // Replace (not push) so the very first history entry matches the URL we loaded on.
+    history.replaceState(
+      { view: withUserId ? 'thread' : 'list', userId: withUserId || null },
+      '',
+      window.location.pathname + window.location.search
+    );
     if (withUserId){
-      openConversationWithUser(withUserId);
+      openConversationWithUser(withUserId, { pushState: false });
     }
   }
   init();
