@@ -998,59 +998,30 @@
 
     if (!isOwnProfile) wireFriendButton(friendship);
 
-    if (isOwnProfile) {
-      const avatarInput = document.getElementById('avatarInput');
-      if (avatarInput) {
-        avatarInput.addEventListener('change', (e) => {
-          const file = e.target.files[0];
-          if (file) handleAvatarUpload(file);
-        });
-
-          document.getElementById('bfSlot').innerHTML = bestFriendButtonHtml(bf);
-          wireBestFriendButton(bf);
-
-
-      }
-
-      const bfAccept = document.getElementById('bfAcceptBtn');
-      const bfDecline = document.getElementById('bfDeclineBtn');
-      if (bfAccept) bfAccept.addEventListener('click', async () => {
-        bfAccept.disabled = true;
-        await supabaseClient.from('best_friends').update({ status: 'accepted' }).eq('id', bfAccept.dataset.id);
-        renderPage();
-      });
-      if (bfDecline) bfDecline.addEventListener('click', async () => {
-        bfDecline.disabled = true;
-        await supabaseClient.from('best_friends').delete().eq('id', bfDecline.dataset.id);
-        renderPage();
-      });
-
-
-
-     
-
-
-
-      document.querySelectorAll('.req-accept, .req-decline').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const reqId = btn.dataset.req;
-          const act = btn.dataset.act;
-          btn.disabled = true;
-          if (act === 'accept') {
-            await supabaseClient.from('friendships').update({ status: 'accepted' }).eq('id', reqId);
-          } else {
-            await supabaseClient.from('friendships').delete().eq('id', reqId);
-          }
-          renderPage();
-
-          
-
-
-
-        });
-      });
-    }
+  if (!isOwnProfile) {
+    document.getElementById('bfSlot').innerHTML = bestFriendButtonHtml(bf);
+    wireBestFriendButton(bf);
   }
+
+  if (isOwnProfile) {
+
+    const avatarInput = document.getElementById('avatarInput');
+    if (avatarInput) {
+      avatarInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) handleAvatarUpload(file);
+      });
+
+    }
+
+  }
+
+  }
+
+
+
+
+
 
   async function init() {
     await renderSidebar();

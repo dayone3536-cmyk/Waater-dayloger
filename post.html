@@ -4,6 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Post — Waater</title>
+<meta name="theme-color" content="#ff5a36">
+<!--
+  These OG tags are a static fallback only — crawlers (Twitterbot, Facebook,
+  iMessage, WhatsApp) do NOT execute this page's JS, so a shared /post?id=…
+  link will show this generic card, not the actual post's image/caption.
+  You already solved this exact problem for live.html with server-side OG
+  image generation via @napi-rs/canvas — wire this route through the same
+  pattern (fetch the post by id server-side, inject og:title/og:image/
+  og:description before serving the HTML) to get rich per-post previews.
+-->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Waater">
+<meta property="og:title" content="A moment on Waater">
+<meta property="og:description" content="Watch it, vote, and join the conversation.">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -197,6 +212,37 @@
   .comment-jump{display:flex;align-items:center;gap:7px;font-family:var(--font-mono);font-size:12.5px;color:var(--ink-soft);}
   .comment-jump svg{width:19px;height:19px;stroke:var(--ink-soft);}
 
+  .share-btn{
+    display:flex;align-items:center;gap:7px;font-family:var(--font-mono);font-size:12.5px;color:var(--ink-soft);
+    margin-left:auto;padding:6px 12px;border-radius:99px;border:1px solid var(--line-strong);
+    transition:background .16s var(--ease), border-color .16s var(--ease), transform .12s var(--ease);
+  }
+  .share-btn svg{width:17px;height:17px;stroke:var(--ink-soft);}
+  .share-btn:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);}
+  .share-btn:hover svg{stroke:var(--accent);}
+  .share-btn:active{transform:scale(.94);}
+
+  /* ---------- toast ---------- */
+  .toast{
+    position:fixed;left:50%;bottom:96px;transform:translate(-50%,12px);
+    background:var(--ink);color:#fff;font-family:var(--font-display);font-weight:600;font-size:12.5px;
+    padding:11px 18px;border-radius:99px;box-shadow:0 12px 30px rgba(20,21,26,.25);
+    display:flex;align-items:center;gap:8px;opacity:0;pointer-events:none;z-index:200;
+    transition:opacity .2s var(--ease), transform .2s var(--ease-spring);white-space:nowrap;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0);}
+  .toast svg{width:15px;height:15px;stroke:#fff;flex-shrink:0;}
+  @media (min-width:900px){ .toast{bottom:34px;} }
+
+  /* ---------- lightbox unmute ---------- */
+  .lightbox-unmute{
+    position:absolute;bottom:20px;right:20px;width:38px;height:38px;border-radius:50%;
+    background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;
+    transition:background .16s var(--ease);
+  }
+  .lightbox-unmute:hover{background:rgba(255,255,255,.24);}
+  .lightbox-unmute svg{width:17px;height:17px;stroke:#fff;}
+
   /* ---------- comments (rebuilt) ---------- */
   .comments-section{padding:6px 22px 24px;border-top:1px solid var(--line);margin-top:20px;}
   .comments-title{
@@ -272,7 +318,6 @@
     <div class="wordmark">waater<span class="dot">.</span></div>
     <ul class="nav-list">
       <li><a href="/" class="nav-item">Home</a></li>
-      <li><a href="/explore" class="nav-item">Explore</a></li>
       <li><a href="/create" class="nav-item nav-create">Create</a></li>
       <li><a href="/inbox" class="nav-item">Inbox</a></li>
       <li><a href="/profile" class="nav-item">Profile</a></li>
@@ -282,7 +327,7 @@
 
   <main class="main">
     <div class="topbar">
-      <a href="/" class="back-btn">
+      <a href="/" class="back-btn" aria-label="Back">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
       </a>
       <span class="title">Post</span>
@@ -302,7 +347,6 @@
 
 <nav class="bottom-nav">
   <a href="/" class="tab">home</a>
-  <a href="/explore" class="tab">explore</a>
   <a href="/create" class="tab">create</a>
   <a href="/inbox" class="tab">inbox</a>
   <a href="/profile" class="tab">profile</a>
@@ -315,9 +359,23 @@
   <div class="lightbox-media" id="lightboxMedia"></div>
 </div>
 
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText"></span>
+</div>
+
 <script>
   function escapeHtml(str){ const d=document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
   function initials(name){ return (name || '?').trim().slice(0,1).toUpperCase(); }
+
+  let toastTimer = null;
+  function showToast(text){
+    const toast = document.getElementById('toast');
+    document.getElementById('toastText').textContent = text;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+  }
 
   function relativeTime(iso){
     if (!iso) return '';
@@ -476,6 +534,45 @@
     }
   }
 
+  function buildShareUrl(){
+    const url = new URL(`${window.location.origin}/post`);
+    url.searchParams.set('id', post.id);
+    if (currentUser) url.searchParams.set('ref', currentUser.id); // attributes any resulting signup back to the sharer
+    return url.toString();
+  }
+
+  async function logShare(channel){
+    // best-effort K-factor analytics — safe no-op if a `shares` table doesn't exist yet
+    try {
+      await supabaseClient.from('shares').insert({ post_id: post.id, user_id: currentUser?.id ?? null, channel });
+    } catch (err) { /* table may not exist yet — ignore */ }
+  }
+
+  async function sharePost(){
+    const shareUrl = buildShareUrl();
+    const shareData = {
+      title: 'Waater',
+      text: post.caption ? `"${post.caption}" — watch and vote on Waater` : 'Check this out on Waater',
+      url: shareUrl,
+    };
+    if (navigator.share && navigator.canShare?.(shareData) !== false){
+      try {
+        await navigator.share(shareData);
+        logShare('native');
+        return;
+      } catch (err){
+        if (err?.name === 'AbortError') return; // user cancelled — not an error
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      showToast('Link copied!');
+      logShare('copy');
+    } catch (err){
+      showToast('Copy this link: ' + shareUrl);
+    }
+  }
+
   async function likeFromMedia(clipEl){
     triggerHeartBurst(clipEl);
     if (!currentUser || isLiked) return; // burst is just delight if already liked / signed out
@@ -579,13 +676,17 @@
           ${post.media_url ? `<div class="clip-expand-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div>` : ''}
         </div>
         <div class="post-actions">
-          <button class="like-btn ${isLiked ? 'liked' : ''}" id="likeBtn">
+          <button class="like-btn ${isLiked ? 'liked' : ''}" id="likeBtn" aria-pressed="${isLiked}" aria-label="Like this post">
             <svg viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke-width="1.8"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 10-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 000-7.8z"/></svg>
             <span class="like-count">${likeCount}</span>
           </button>
-          <button class="comment-jump" id="commentJumpBtn">
+          <button class="comment-jump" id="commentJumpBtn" aria-label="Jump to comments">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             <span id="commentsCount">${commentCount}</span>
+          </button>
+          <button class="share-btn" id="shareBtn" aria-label="Share this post">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+            <span>Share</span>
           </button>
         </div>
       </div>
