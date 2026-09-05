@@ -284,6 +284,49 @@
     flex-direction:column;
   }
 
+  /* ---------- notification permission modal ---------- */
+  .notif-overlay{
+    position:fixed;inset:0;background:rgba(10,10,12,.5);
+    display:none;align-items:center;justify-content:center;
+    z-index:110;padding:24px;
+  }
+  .notif-overlay.show{display:flex;}
+  .notif-panel{
+    background:#fff;width:100%;max-width:360px;
+    border-radius:20px;padding:28px 24px 24px;
+    text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,.2);
+  }
+  .notif-icon{
+    width:56px;height:56px;border-radius:16px;
+    background:var(--accent-soft);
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 18px;
+  }
+  .notif-icon svg{width:26px;height:26px;stroke:var(--accent);}
+  .notif-panel h3{
+    font-family:var(--font-display);font-weight:600;font-size:17px;
+    margin-bottom:8px;
+  }
+  .notif-panel p{
+    font-family:var(--font-serif);font-size:14px;line-height:1.5;
+    color:var(--ink-soft);margin-bottom:22px;
+  }
+  .notif-actions{display:flex;flex-direction:column;gap:10px;}
+  .notif-allow{
+    background:var(--ink);color:#fff;
+    font-family:var(--font-display);font-weight:600;font-size:14px;
+    padding:13px;border-radius:12px;
+  }
+  .notif-allow:hover{background:#000;}
+  .notif-dismiss{
+    font-family:var(--font-mono);font-size:12px;color:var(--grey);
+    padding:8px;
+  }
+  .notif-dismiss:hover{color:var(--ink);}
+
+
+
   /* ---------- empty / loading states ---------- */
   .feed-status{
     padding:60px 22px;
@@ -720,6 +763,28 @@
   </div>
 </div>
 
+
+<!-- Notification permission soft-ask -->
+<div class="notif-overlay" id="notifOverlay">
+  <div class="notif-panel">
+    <div class="notif-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 01-3.46 0"/>
+      </svg>
+    </div>
+    <h3>Stay in the loop</h3>
+    <p>Get notified when friends like or comment on your day — turn it on any time from your profile.</p>
+    <div class="notif-actions">
+      <button class="notif-allow" id="notifAllowBtn">Allow notifications</button>
+      <button class="notif-dismiss" id="notifDismissBtn">Not now</button>
+    </div>
+  </div>
+</div>
+
+
+
+
 <script>
   // ---- date header ----
   document.getElementById('feedDate').textContent =
@@ -1034,6 +1099,7 @@
     const isLiked = likedPostIds.has(postId);
 
     btn.disabled = true;
+
     try {
       if (isLiked) {
         const { error } = await supabaseClient.from('likes').delete().match({ post_id: postId, user_id: currentUser.id });
@@ -1042,13 +1108,23 @@
         btn.classList.remove('liked');
         svg.setAttribute('fill', 'none');
         countEl.textContent = Math.max(0, parseInt(countEl.textContent, 10) - 1);
+
       } else {
+
         const { error } = await supabaseClient.from('likes').insert({ post_id: postId, user_id: currentUser.id });
         if (error) throw error;
+
         likedPostIds.add(postId);
         btn.classList.add('liked');
+
+
         svg.setAttribute('fill', 'currentColor');
         countEl.textContent = parseInt(countEl.textContent, 10) + 1;
+
+
+        maybeShowNotifPrompt();
+
+
       }
     } catch (err) {
       console.error('Like toggle failed:', err);
@@ -1185,15 +1261,52 @@
     }
   }
 
+  // ---- notification soft-ask ----
+  function maybeShowNotifPrompt() {
+    if (!('Notification' in window)) return; // not supported (e.g. iOS Safari homescreen-less)
+    if (Notification.permission !== 'default') return; // already granted, denied, or asked
+    if (localStorage.getItem('notifPromptDismissed') === '1') return;
+
+    document.getElementById('notifOverlay').classList.add('show');
+  }
+
+  
+
+
+
+  document.getElementById('notifDismissBtn').addEventListener('click', () => {
+    document.getElementById('notifOverlay').classList.remove('show');
+    localStorage.setItem('notifPromptDismissed', '1');
+  });
+
+
+
   async function init() {
     if (supabaseConfigured) await loadAuthState();
+    
     loadFeed();
+
     loadStreak();
+
+
+    await ensurePushSubscriptionIfAlreadyGranted();   // add this line
+
+
   }
 
 
   init();
-</script>
 
-</body>
+
+</script>
+<!-- Notification permission soft-ask -->
+
+
+<script src="/subscribe-snippet.js"></script>  
+
+
+
+
+
+
 </html>
