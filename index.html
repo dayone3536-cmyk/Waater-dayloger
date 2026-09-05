@@ -318,18 +318,201 @@
   .notif-dismiss:hover{color:var(--ink);}
 
   /* ---------- empty / loading states ---------- */
-  .feed-status{
-    padding:60px 22px;
-    text-align:center;
-    font-family:var(--font-mono);
-    font-size:13px;
-    color:var(--grey);
+
+  /* ---------- feed loading experience ---------- */
+
+.feed-status{
+  padding:32px 22px;
+  font-family:var(--font-mono);
+  font-size:13px;
+  color:var(--grey);
+}
+
+  /* Loading stage */
+  .feed-loading{
+    padding:12px 22px 40px;
   }
 
-  .post{
-    padding:20px 22px 24px;
+  .loading-signal{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:22px;
+    font-family:var(--font-display);
+    font-size:13px;
+    font-weight:600;
+    color:var(--ink);
+  }
+
+  .loading-signal-dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:var(--accent);
+    box-shadow:0 0 0 0 rgba(255,90,54,.4);
+    animation:loadingPulse 1.4s ease-out infinite;
+  }
+
+  @keyframes loadingPulse{
+    0%{
+      transform:scale(.8);
+      box-shadow:0 0 0 0 rgba(255,90,54,.4);
+    }
+    60%{
+      transform:scale(1);
+      box-shadow:0 0 0 9px rgba(255,90,54,0);
+    }
+    100%{
+      transform:scale(.8);
+      box-shadow:0 0 0 0 rgba(255,90,54,0);
+    }
+  }
+
+  /* Skeleton post */
+  .loading-post{
+    padding:20px 0 24px;
     border-bottom:1px solid var(--line);
   }
+
+  .loading-meta{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+  }
+
+  .loading-avatar{
+    width:36px;
+    height:36px;
+    border-radius:50%;
+    background:#eeeeef;
+    overflow:hidden;
+    position:relative;
+  }
+
+  .loading-name{
+    width:92px;
+    height:12px;
+    border-radius:99px;
+    background:#eeeeef;
+    position:relative;
+    overflow:hidden;
+  }
+
+  .loading-line{
+    height:13px;
+    border-radius:99px;
+    background:#eeeeef;
+    margin-bottom:10px;
+    position:relative;
+    overflow:hidden;
+  }
+
+  .loading-line.long{width:78%;}
+  .loading-line.medium{width:54%;}
+
+  .loading-media{
+    width:100%;
+    aspect-ratio:9/13;
+    max-height:560px;
+    border-radius:16px;
+    background:#eeeeef;
+    margin-top:14px;
+    position:relative;
+    overflow:hidden;
+  }
+
+  /* The moving light */
+  .loading-avatar::after,
+  .loading-name::after,
+  .loading-line::after,
+  .loading-media::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    transform:translateX(-100%);
+    background:linear-gradient(
+      100deg,
+      transparent 20%,
+      rgba(255,255,255,.8) 50%,
+      transparent 80%
+    );
+    animation:skeletonShimmer 1.35s ease-in-out infinite;
+  }
+
+  @keyframes skeletonShimmer{
+    100%{
+      transform:translateX(100%);
+    }
+  }
+
+  .loading-actions{
+    display:flex;
+    gap:22px;
+    margin-top:15px;
+  }
+
+  .loading-action{
+    width:42px;
+    height:11px;
+    border-radius:99px;
+    background:#eeeeef;
+    position:relative;
+    overflow:hidden;
+  }
+
+  .loading-action::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    transform:translateX(-100%);
+    background:linear-gradient(
+      100deg,
+      transparent 20%,
+      rgba(255,255,255,.8) 50%,
+      transparent 80%
+    );
+    animation:skeletonShimmer 1.35s ease-in-out infinite;
+  }
+
+  /* Make each fake post feel slightly alive */
+  .loading-post:nth-child(2) .loading-media{
+    animation:loadingFloat 3s ease-in-out infinite;
+  }
+
+  .loading-post:nth-child(3) .loading-media{
+    animation:loadingFloat 3s ease-in-out .4s infinite;
+  }
+
+  @keyframes loadingFloat{
+    0%,100%{transform:translateY(0);}
+    50%{transform:translateY(-2px);}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .loading-signal-dot,
+    .loading-avatar::after,
+    .loading-name::after,
+    .loading-line::after,
+    .loading-media::after,
+    .loading-action::after,
+    .loading-post:nth-child(2) .loading-media,
+    .loading-post:nth-child(3) .loading-media{
+      animation:none;
+    }
+  }
+
+
+
+
+  .post{
+
+    padding:20px 22px 24px;
+    border-bottom:1px solid var(--line);
+    cursor:pointer;
+
+  }
+
   .post-meta{
     display:flex;
     align-items:center;
@@ -411,6 +594,12 @@
     line-height:1.5;
     background:linear-gradient(to top, rgba(0,0,0,.45), transparent);
     width:100%;
+  }
+
+  #loadingMessage{
+
+    transition:opacity .18s ease;
+    
   }
 
   .post-actions{
@@ -751,9 +940,67 @@
     </div>
 
     <div class="feed" id="feed">
-      <div class="feed-status" id="feedStatus">Loading posts…</div>
+
+  <div class="feed-status" id="feedStatus">
+
+    <div class="feed-loading">
+
+      <div class="loading-signal">
+        <span class="loading-signal-dot"></span>
+        <span id="loadingMessage">Finding today's moments</span>
+      </div>
+
+      <!-- fake post 1 -->
+      <div class="loading-post">
+
+        <div class="loading-meta">
+          <div class="loading-avatar"></div>
+          <div class="loading-name"></div>
+        </div>
+
+        <div class="loading-line long"></div>
+        <div class="loading-line medium"></div>
+
+        <div class="loading-media"></div>
+
+        <div class="loading-actions">
+          <div class="loading-action"></div>
+          <div class="loading-action"></div>
+          <div class="loading-action"></div>
+        </div>
+
+      </div>
+
+      <!-- fake post 2 -->
+      <div class="loading-post">
+
+        <div class="loading-meta">
+          <div class="loading-avatar"></div>
+          <div class="loading-name"></div>
+        </div>
+
+        <div class="loading-line medium"></div>
+
+        <div class="loading-media"></div>
+
+        <div class="loading-actions">
+          <div class="loading-action"></div>
+          <div class="loading-action"></div>
+          <div class="loading-action"></div>
+        </div>
+
+      </div>
+
     </div>
+
+  </div>
+
+</div>
+
+
+
   </main>
+
 </div>
 
 <!-- Colorful sign-in promo, sits to the right of the nav (hidden once signed in) -->
@@ -1044,36 +1291,93 @@
   }
 
   function attachPostHandlers() {
-    document.querySelectorAll('.clip-clickable').forEach(el => {
+
+    document.querySelectorAll('.post').forEach(el => {
+
       el.addEventListener('click', () => {
-        const postId = el.closest('.post').dataset.postId;
-        window.location.href = `/post?id=${postId}`;
+        window.location.href = `/post?id=${el.dataset.postId}`;
+
       });
+
     });
 
+
     document.querySelectorAll('.like-btn').forEach(btn => {
+
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
+
         if (!requireAuth()) return;
+
         toggleLike(btn.dataset.postId, btn);
+
       });
     });
 
     document.querySelectorAll('.comment-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
+
         e.stopPropagation();
         if (!requireAuth()) return;
+
         openComments(btn.dataset.postId);
+
       });
+
     });
 
+
     document.querySelectorAll('.share-btn').forEach(btn => {
+
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
+
         openShareSheet(btn.dataset.postId);
+
       });
+
     });
+
   }
+
+  const LOADING_MESSAGES = [
+
+    'Finding today’s moments',
+    'Checking what happened',
+    'Gathering the good stuff',
+    'Almost there',
+    'Putting your day together'
+
+  ];
+
+  let loadingMessageIndex = 0;
+
+  const loadingMessageTimer = setInterval(() => {
+    const el = document.getElementById('loadingMessage');
+
+    if (!el) {
+      clearInterval(loadingMessageTimer);
+      return;
+    }
+
+    loadingMessageIndex =
+      (loadingMessageIndex + 1) % LOADING_MESSAGES.length;
+
+    el.style.opacity = '0';
+
+    setTimeout(() => {
+      if (!document.getElementById('loadingMessage')) return;
+
+      el.textContent = LOADING_MESSAGES[loadingMessageIndex];
+      el.style.opacity = '1';
+    }, 180);
+
+  }, 1600);
+
+
+
+
+
 
   async function loadFeed() {
     const feedEl = document.getElementById('feed');
