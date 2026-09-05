@@ -28,7 +28,9 @@ webpush.setVapidDetails(
 );
 
 Deno.serve(async (req) => {
+
   try {
+    
     const payload = await req.json();
     const { table, record } = payload; // Supabase webhook includes "table"
 
@@ -39,7 +41,7 @@ Deno.serve(async (req) => {
     let body = '';
     let url = '/';
 
-    if (table === 'likes') {
+        if (table === 'likes') {
       actorId = record.user_id;
       const { data: post } = await supabase
         .from('posts')
@@ -48,32 +50,34 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       postOwnerId = post?.user_id ?? null;
-
-      title = 'Congratulations🎉🎉 Someone liked your post ';
-
+      title = 'Congratulations🎉🎉 Someone liked your post';
       body = 'Someone liked your post Tap to find Out👀👀';
-
       url = `/post?id=${record.post_id}`;
 
     } else if (table === 'comments') {
       actorId = record.user_id;
       const { data: post } = await supabase
         .from('posts')
-
         .select('user_id')
-
         .eq('id', record.post_id)
-
         .maybeSingle();
 
-
       postOwnerId = post?.user_id ?? null;
-
       title = 'You Got a new comment👏👏';
-
       body = record.body?.slice(0, 120) || 'Someone commented on your post';
-
       url = `/post?id=${record.post_id}`;
+
+    } else if (table === 'friendships') {
+      // only notify on the initial request, not the later accept
+      if (record.status !== 'pending') {
+        return new Response(JSON.stringify({ skipped: true }), { status: 200 });
+      }
+      actorId = record.requester_id;
+      postOwnerId = record.addressee_id;
+      title = 'New friend request 🤝';
+      body = 'Someone wants to be friends on Waater';
+      url = `/profile?u=`; // completed below once we know the requester's username
+
     } else {
       return new Response(JSON.stringify({ skipped: true }), { status: 200 });
     }
@@ -88,18 +92,21 @@ Deno.serve(async (req) => {
       .from('profiles')
       .select('username')
       .eq('id', actorId)
-
       .maybeSingle();
 
     if (actorProfile?.username) {
-      body = table === 'likes'
-      
-        ? `${actorProfile.username} liked your post`
-        
-        : `${actorProfile.username}: ${body}`;
+      if (table === 'likes') {
+        body = `${actorProfile.username} liked your post`;
+      } else if (table === 'comments') {
+        body = `${actorProfile.username}: ${body}`;
+      } else if (table === 'friendships') {
+        title = `${actorProfile.username} sent you a friend request 🤝`;
+        body = 'Tap to view their profile';
+        url = `/profile?u=${encodeURIComponent(actorProfile.username)}`;
+      }
     }
 
-    // ---- fetch all of the post owner's push subscriptions (multi-device) ----
+    // ---- fetch all of the recipient's push subscriptions (multi-device) ----
     const { data: subs, error: subsError } = await supabase
       .from('push_subscriptions')
       .select('*')
@@ -109,9 +116,13 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ sent: 0 }), { status: 200 });
     }
 
-    const notifPayload = JSON.stringify({ title, body, url, tag: `post-${record.post_id}` });
+    const notifTag = table === 'friendships' ? `friend-${record.id}` : `post-${record.post_id}`;
+    const notifPayload = JSON.stringify({ title, body, url, tag: notifTag });
+
+
 
     const results = await Promise.allSettled(
+
       subs.map((sub) =>
         webpush.sendNotification(
           {
@@ -138,7 +149,10 @@ Deno.serve(async (req) => {
       status: 200,
 
     });
+
+
   } catch (err) {
+
     console.error('send-push error:', err);
     return new Response(JSON.stringify({ error: String(err) }), { status: 500 });
   }
