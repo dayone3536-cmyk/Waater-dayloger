@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Waater — your day, one clip at a time</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
@@ -29,6 +29,7 @@
     background:var(--white);
     color:var(--ink);
     font-family:var(--font-serif);
+    font-size:16px;
     -webkit-font-smoothing:antialiased;
     padding-bottom:78px;
   }
@@ -72,7 +73,7 @@
   .wordmark .dot{color:var(--accent);}
   .streak{
     font-family:var(--font-mono);
-    font-size:11px;
+    font-size:12px;
     color:var(--grey);
     border:1px solid var(--line-strong);
     padding:5px 10px;
@@ -103,7 +104,7 @@
     padding:12px 12px;
     border-radius:12px;
     font-family:var(--font-display);
-    font-size:15.5px;
+    font-size:16px;
     font-weight:500;
     color:var(--ink-soft);
     transition:background .15s ease, color .15s ease;
@@ -135,32 +136,23 @@
   }
 
   .avatar{
-
     width:36px;height:36px;border-radius:50%;
     background:linear-gradient(135deg,#ffd8c9,var(--accent));
-
     flex-shrink:0;
-
     display:flex;align-items:center;justify-content:center;
-
     color:#fff;font-family:var(--font-display);font-weight:700;font-size:14px;
-
     overflow:hidden;
-
   }
 
   .avatar img{width:100%;height:100%;object-fit:cover;}
 
   .avatar-link{display:block;}
 
-
-
-
   .sidebar-profile .who{display:flex;flex-direction:column;line-height:1.2;flex:1;min-width:0;}
-  .sidebar-profile .who span:first-child{font-family:var(--font-display);font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .sidebar-profile .who span:last-child{font-family:var(--font-mono);font-size:11px;color:var(--grey);}
+  .sidebar-profile .who span:first-child{font-family:var(--font-display);font-size:14.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sidebar-profile .who span:last-child{font-family:var(--font-mono);font-size:12px;color:var(--grey);}
   .sidebar-signout{
-    font-family:var(--font-mono);font-size:10px;color:var(--grey);
+    font-family:var(--font-mono);font-size:11px;color:var(--grey);
     padding:4px 6px;border-radius:6px;flex-shrink:0;
   }
   .sidebar-signout:hover{color:var(--accent);}
@@ -172,7 +164,7 @@
     color:#fff!important;
     font-family:var(--font-display);
     font-weight:600;
-    font-size:13.5px;
+    font-size:14.5px;
     padding:12px;
     border-radius:12px;
   }
@@ -222,14 +214,14 @@
   .side-promo-content h2{
     font-family:var(--font-display);
     font-weight:600;
-    font-size:26px;
+    font-size:27px;
     line-height:1.25;
     letter-spacing:-.01em;
     margin-bottom:14px;
   }
   .side-promo-content p{
     font-family:var(--font-serif);
-    font-size:15px;
+    font-size:16px;
     line-height:1.55;
     color:rgba(255,255,255,.88);
     margin-bottom:30px;
@@ -243,7 +235,7 @@
     color:var(--ink)!important;
     font-family:var(--font-display);
     font-weight:700;
-    font-size:14.5px;
+    font-size:15px;
     padding:14px 28px;
     border-radius:99px;
     box-shadow:0 10px 24px rgba(0,0,0,.18);
@@ -268,13 +260,13 @@
   .feed-head h1{
     font-family:var(--font-display);
     font-weight:600;
-    font-size:15px;
+    font-size:17px;
     letter-spacing:.01em;
     color:var(--ink);
   }
   .feed-head p{
     font-family:var(--font-mono);
-    font-size:11.5px;
+    font-size:12.5px;
     color:var(--grey);
     margin-top:4px;
   }
@@ -305,34 +297,32 @@
   }
   .notif-icon svg{width:26px;height:26px;stroke:var(--accent);}
   .notif-panel h3{
-    font-family:var(--font-display);font-weight:600;font-size:17px;
+    font-family:var(--font-display);font-weight:600;font-size:18px;
     margin-bottom:8px;
   }
   .notif-panel p{
-    font-family:var(--font-serif);font-size:14px;line-height:1.5;
+    font-family:var(--font-serif);font-size:15px;line-height:1.5;
     color:var(--ink-soft);margin-bottom:22px;
   }
   .notif-actions{display:flex;flex-direction:column;gap:10px;}
   .notif-allow{
     background:var(--ink);color:#fff;
-    font-family:var(--font-display);font-weight:600;font-size:14px;
+    font-family:var(--font-display);font-weight:600;font-size:15px;
     padding:13px;border-radius:12px;
   }
   .notif-allow:hover{background:#000;}
   .notif-dismiss{
-    font-family:var(--font-mono);font-size:12px;color:var(--grey);
+    font-family:var(--font-mono);font-size:13px;color:var(--grey);
     padding:8px;
   }
   .notif-dismiss:hover{color:var(--ink);}
-
-
 
   /* ---------- empty / loading states ---------- */
   .feed-status{
     padding:60px 22px;
     text-align:center;
     font-family:var(--font-mono);
-    font-size:12px;
+    font-size:13px;
     color:var(--grey);
   }
 
@@ -346,11 +336,11 @@
     gap:10px;
     margin-bottom:12px;
   }
-  .post-meta .avatar{width:34px;height:34px;font-size:12px;}
-  .post-meta .name{font-family:var(--font-display);font-weight:600;font-size:14px;}
+  .post-meta .avatar{width:36px;height:36px;font-size:13px;}
+  .post-meta .name{font-family:var(--font-display);font-weight:600;font-size:15px;}
   .post-meta .day-tag{
     font-family:var(--font-mono);
-    font-size:10.5px;
+    font-size:11.5px;
     color:var(--accent);
     background:var(--accent-soft);
     padding:3px 8px;
@@ -394,19 +384,18 @@
 
   .caption-top{
     font-family:var(--font-serif);
-    font-size:15px;
-    font-style:italic;
-    line-height:1.4;
+    font-size:16.5px;
+    font-style:normal;
+    line-height:1.5;
     color:var(--ink);
     margin-bottom:12px;
   }
-
 
   .clip .play svg{width:18px;height:18px;fill:var(--ink);margin-left:2px;}
   .clip .duration{
     position:absolute;top:12px;right:12px;
     font-family:var(--font-mono);
-    font-size:11px;
+    font-size:12px;
     color:#fff;
     background:rgba(0,0,0,.35);
     padding:3px 8px;
@@ -417,9 +406,9 @@
     padding:16px;
     color:#fff;
     font-family:var(--font-serif);
-    font-size:15px;
-    font-style:italic;
-    line-height:1.4;
+    font-size:16px;
+    font-style:normal;
+    line-height:1.5;
     background:linear-gradient(to top, rgba(0,0,0,.45), transparent);
     width:100%;
   }
@@ -433,7 +422,7 @@
   .post-actions button{
     display:flex;align-items:center;gap:6px;
     font-family:var(--font-mono);
-    font-size:12px;
+    font-size:13px;
     color:var(--ink-soft);
   }
   .post-actions svg{width:19px;height:19px;stroke:var(--ink-soft);}
@@ -461,8 +450,8 @@
   .lightbox-media img,
   .lightbox-media video{width:100%;max-height:70vh;object-fit:contain;}
   .lightbox-caption{
-    color:#fff;font-family:var(--font-serif);font-style:italic;
-    font-size:15px;line-height:1.5;margin-top:14px;text-align:center;
+    color:#fff;font-family:var(--font-serif);font-style:normal;
+    font-size:16px;line-height:1.55;margin-top:14px;text-align:center;
   }
   .lightbox-close{
     position:absolute;top:-44px;right:0;
@@ -489,31 +478,48 @@
     display:flex;align-items:center;justify-content:space-between;
     margin-bottom:12px;
   }
-  .modal-head h3{font-family:var(--font-display);font-size:14.5px;font-weight:600;}
+  .modal-head h3{font-family:var(--font-display);font-size:16px;font-weight:600;}
   .modal-close{
     width:28px;height:28px;border-radius:50%;background:#f2f2f3;
     display:flex;align-items:center;justify-content:center;
   }
   .modal-close svg{width:14px;height:14px;stroke:var(--ink);}
   .comment-list{overflow-y:auto;flex:1;margin-bottom:14px;min-height:60px;}
-  .comment-item{padding:10px 0;border-bottom:1px solid var(--line);}
+
+  .comment-item{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    padding:12px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .comment-item .avatar{
+    width:32px;height:32px;font-size:12px;
+    flex-shrink:0;
+    margin-top:1px;
+  }
+  .comment-item .comment-body-wrap{
+    flex:1;
+    min-width:0;
+  }
   .comment-item .comment-name{
-    font-family:var(--font-display);font-weight:600;font-size:12.5px;
-    display:block;margin-bottom:2px;
+    font-family:var(--font-display);font-weight:600;font-size:14px;
+    display:block;margin-bottom:3px;
   }
   .comment-item .comment-body{
-    font-family:var(--font-serif);font-size:14px;color:var(--ink-soft);
+    font-family:var(--font-serif);font-size:15px;line-height:1.5;color:var(--ink-soft);
   }
+
   .comment-form{display:flex;gap:10px;}
   .comment-form input{
     flex:1;border:1px solid var(--line-strong);border-radius:99px;
-    padding:11px 16px;font-family:var(--font-serif);font-size:14px;
+    padding:11px 16px;font-family:var(--font-serif);font-size:15px;
     outline:none;
   }
   .comment-form input:focus{border-color:var(--accent);}
   .comment-form button{
     background:var(--ink);color:#fff;font-family:var(--font-display);
-    font-weight:600;font-size:13px;padding:0 18px;border-radius:99px;
+    font-weight:600;font-size:14px;padding:0 18px;border-radius:99px;
   }
 
   @media (min-width:900px){
@@ -522,88 +528,60 @@
   }
 
   /* ---------- bottom nav (mobile) ---------- */
-
   .bottom-nav{
     position:fixed;
-
     bottom:0;left:0;right:0;
-
     height:64px;
-
     background:rgba(255,255,255,.96);
     backdrop-filter:blur(10px);
-
     border-top:1px solid var(--line);
-
     display:flex;
     align-items:center;
-
     justify-content:space-around;
-
     z-index:30;
   }
 
   .tab{
-
     display:flex;
-
     flex-direction:column;
     align-items:center;
-
     gap:3px;
     color:var(--grey);
-
     font-family:var(--font-mono);
-    font-size:9.5px;
-
+    font-size:10.5px;
     letter-spacing:.02em;
     padding:6px 10px;
   }
 
   .tab svg{width:22px;height:22px;stroke:var(--grey);}
-
   .tab.active{color:var(--ink);}
-
   .tab.active svg{stroke:var(--ink);}
 
   .tab-create{
-
     position:relative;
     top:-20px;
-
   }
 
   .tab-create .ring{
-
     width:52px;height:52px;
-
     border-radius:50%;
-
     background:var(--accent);
     display:flex;align-items:center;justify-content:center;
-
     box-shadow:0 8px 20px rgba(255,90,54,.4);
     position:relative;
-
   }
-
 
   .tab-create .ring::after{
     content:'';
     position:absolute;
     inset:-6px;
-
     border-radius:50%;
-
-
     border:1.5px solid var(--accent);
     opacity:.5;
-
     animation:pulse 2.2s ease-out infinite;
   }
 
   .tab-create svg{width:22px;height:22px;stroke:#fff;stroke-width:2.4;}
-
   .tab-create span{display:none;}
 
   @keyframes pulse{
@@ -616,9 +594,7 @@
   }
 
   /* ---------- desktop breakpoint ---------- */
-
   @media (min-width:900px){
-
     body{padding-bottom:0;}
     .topbar{display:none;}
     .bottom-nav{display:none;}
@@ -637,7 +613,6 @@
     body:not(.signed-in) .main{margin-left:calc(var(--nav-w) + 300px + 32px);}
   }
 
-
 </style>
 </head>
 <body>
@@ -651,7 +626,6 @@
       <li><a href="/" class="nav-item active">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
         Home</a></li>
-
 
       <li><a href="/create" class="nav-item nav-create">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
@@ -703,28 +677,18 @@
 <!-- Mobile bottom nav -->
 <nav class="bottom-nav">
   <a href="/" class="tab active">
-
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
     home
-
   </a>
 
-
-
   <a href="/create" class="tab tab-create">
-
     <div class="ring">
-
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>
-
     </div>
-
     <span>create</span>
-
   </a>
 
   <a href="/inbox" class="tab">
-    
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
     inbox
   </a>
@@ -763,7 +727,6 @@
   </div>
 </div>
 
-
 <!-- Notification permission soft-ask -->
 <div class="notif-overlay" id="notifOverlay">
   <div class="notif-panel">
@@ -781,9 +744,6 @@
     </div>
   </div>
 </div>
-
-
-
 
 <script>
   // ---- date header ----
@@ -807,6 +767,12 @@
 
   function initials(name) {
     return (name || '?').trim().slice(0, 1).toUpperCase();
+  }
+
+  function avatarHtmlFor(name, avatarUrl) {
+    return avatarUrl
+      ? `<img src="${escapeHtml(avatarUrl)}" alt="">`
+      : initials(name);
   }
 
   // ============================================================
@@ -853,36 +819,21 @@
     }
 
     const { data: profile } = await supabaseClient
-
       .from('profiles')
       .select('username, avatar_url')
-
       .eq('id', currentUser.id)
       .maybeSingle();
 
     currentUsername = profile?.username || currentUser.email || 'You';
-
-    const avatarHtml = profile?.avatar_url
-
-      ? `<img src="${escapeHtml(profile.avatar_url)}" alt="">`
-
-      : initials(currentUsername);
-
-
+    const avatarHtml = avatarHtmlFor(currentUsername, profile?.avatar_url);
 
     area.innerHTML = `
-
       <a href="/profile" class="sidebar-profile">
-
         <div class="avatar">${avatarHtml}</div>
-
         <div class="who">
-
           <span>${escapeHtml(currentUsername)}</span>
-
           <span id="sidebarStreak">day —</span>
         </div>
-
       </a>
       <button class="sidebar-signout" id="signOutBtn">Sign out</button>
     `;
@@ -897,26 +848,17 @@
   let likedPostIds = new Set();
 
   function renderPost(post, index) {
-
     const [g1, g2] = GRADIENTS[index % GRADIENTS.length];
 
     const name = escapeHtml(post.profiles?.username || 'Someone');
-    const avatarUrl = post.profiles?.avatar_url;
-
-    const avatarHtml = avatarUrl
-
-      ? `<img src="${escapeHtml(avatarUrl)}" alt="">`
-
-      : initials(name);
-      
+    const avatarHtml = avatarHtmlFor(name, post.profiles?.avatar_url);
 
     const caption = escapeHtml(post.caption || '');
     const mediaUrl = post.media_url || '';
     const mediaType = post.media_type || 'text';
 
     const likeCount = post.likes?.[0]?.count ?? 0;
-    const commentCount = post.comments?.[0]?.count ?? 0
-    ;
+    const commentCount = post.comments?.[0]?.count ?? 0;
     const isLiked = likedPostIds.has(post.id);
 
     let mediaHtml = '';
@@ -933,25 +875,17 @@
       <article class="post" data-post-id="${post.id}">
 
         <div class="post-meta">
-
           <a href="/profile?u=${encodeURIComponent(post.profiles?.username || '')}" class="avatar-link" onclick="event.stopPropagation()">
-
             <div class="avatar">${avatarHtml}</div>
-
           </a>
-
           <a href="/profile?u=${encodeURIComponent(post.profiles?.username || '')}" class="name" onclick="event.stopPropagation()">${name}</a>
-          
         </div>
 
         ${caption ? `<div class="caption-top">${caption}</div>` : ''}
 
-
         <div class="clip clip-clickable" style="--g1:${g1};--g2:${g2};">
           ${mediaHtml}
-          
         </div>
-
 
         <div class="post-actions">
           <button class="like-btn ${isLiked ? 'liked' : ''}" data-post-id="${post.id}">
@@ -960,30 +894,21 @@
           </button>
 
           <button class="comment-btn" data-post-id="${post.id}">
-
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             <span class="comment-count">${commentCount}</span>
           </button>
-          
+
           <button class="share-btn" data-post-id="${post.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7M16 6l-4-4-4 4M12 2v13"/></svg> share</button>
-
-
         </div>
       </article>
     `;
   }
 
   function attachPostHandlers() {
-
     document.querySelectorAll('.clip-clickable').forEach(el => {
-
       el.addEventListener('click', () => {
-
         const postId = el.closest('.post').dataset.postId;
-
         window.location.href = `/post?id=${postId}`;
-
-
       });
     });
 
@@ -1004,16 +929,11 @@
     });
 
     document.querySelectorAll('.share-btn').forEach(btn => {
-
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         sharePost(btn.dataset.postId);
-
       });
-
     });
-
-
   }
 
   async function loadFeed() {
@@ -1026,12 +946,9 @@
     }
 
     try {
-
       const { data: posts, error } = await supabaseClient
-
         .from('posts')
         .select('*, profiles(username , avatar_url), likes(count), comments(count)')
-
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -1108,23 +1025,16 @@
         btn.classList.remove('liked');
         svg.setAttribute('fill', 'none');
         countEl.textContent = Math.max(0, parseInt(countEl.textContent, 10) - 1);
-
       } else {
-
         const { error } = await supabaseClient.from('likes').insert({ post_id: postId, user_id: currentUser.id });
         if (error) throw error;
 
         likedPostIds.add(postId);
         btn.classList.add('liked');
-
-
         svg.setAttribute('fill', 'currentColor');
         countEl.textContent = parseInt(countEl.textContent, 10) + 1;
 
-
         maybeShowNotifPrompt();
-
-
       }
     } catch (err) {
       console.error('Like toggle failed:', err);
@@ -1134,30 +1044,20 @@
   }
 
   async function sharePost(postId) {
-
     const post = postsById[postId];
-
     const url = `${window.location.origin}/?post=${postId}`;
-
     const title = post?.profiles?.username ? `${post.profiles.username} on Waater` : 'Waater';
     const text = post?.caption || '';
 
     if (navigator.share) {
-
       try {
-
         await navigator.share({ title, text, url });
       } catch (err) {
-
-        // user cancelled the share sheet — not an error
-
         if (err.name !== 'AbortError') console.error('Share failed:', err);
-
       }
     } else if (navigator.clipboard) {
       try {
         await navigator.clipboard.writeText(url);
-        // simple feedback since there's no toast system yet
         const btn = document.querySelector(`.share-btn[data-post-id="${postId}"]`);
         if (btn) {
           const original = btn.innerHTML;
@@ -1170,8 +1070,6 @@
     }
   }
 
-
-
   // ---- comments ----
   function renderComments(comments) {
     const list = document.getElementById('commentList');
@@ -1179,12 +1077,19 @@
       list.innerHTML = '<div class="feed-status">No comments yet.</div>';
       return;
     }
-    list.innerHTML = comments.map(c => `
+    list.innerHTML = comments.map(c => {
+      const name = escapeHtml(c.profiles?.username || 'Someone');
+      const avatarHtml = avatarHtmlFor(name, c.profiles?.avatar_url);
+      return `
       <div class="comment-item">
-        <span class="comment-name">${escapeHtml(c.profiles?.username || 'Someone')}</span>
-        <span class="comment-body">${escapeHtml(c.body || '')}</span>
+        <div class="avatar">${avatarHtml}</div>
+        <div class="comment-body-wrap">
+          <span class="comment-name">${name}</span>
+          <span class="comment-body">${escapeHtml(c.body || '')}</span>
+        </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
 
   async function openComments(postId) {
@@ -1196,7 +1101,7 @@
     try {
       const { data: comments, error } = await supabaseClient
         .from('comments')
-        .select('*, profiles(username)')
+        .select('*, profiles(username, avatar_url)')
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
       if (error) throw error;
@@ -1233,7 +1138,7 @@
 
       const { data: comments } = await supabaseClient
         .from('comments')
-        .select('*, profiles(username)')
+        .select('*, profiles(username, avatar_url)')
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
       renderComments(comments);
@@ -1270,43 +1175,21 @@
     document.getElementById('notifOverlay').classList.add('show');
   }
 
-  
-
-
-
   document.getElementById('notifDismissBtn').addEventListener('click', () => {
     document.getElementById('notifOverlay').classList.remove('show');
     localStorage.setItem('notifPromptDismissed', '1');
   });
 
-
-
   async function init() {
     if (supabaseConfigured) await loadAuthState();
-    
     loadFeed();
-
     loadStreak();
-
-
-    await ensurePushSubscriptionIfAlreadyGranted();   // add this line
-
-
+    await ensurePushSubscriptionIfAlreadyGranted();
   }
 
-
   init();
-
-
 </script>
-<!-- Notification permission soft-ask -->
+<script src="/subscribe-snippet.js"></script>
 
-
-<script src="/subscribe-snippet.js"></script>  
-
-
-
-
-
-
+</body>
 </html>

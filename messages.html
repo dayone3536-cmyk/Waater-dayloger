@@ -4,8 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Messages — Waater</title>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
@@ -83,7 +85,9 @@
   .conv-row .preview-line{display:flex;align-items:center;gap:6px;margin-top:2px;}
   .conv-row .preview{font-family:var(--font-serif);font-size:13px;color:var(--grey);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;}
   .conv-row .preview.unread{color:var(--ink);font-weight:600;}
+
   .conv-row .preview.typing{color:var(--accent);font-style:italic;}
+
   .unread-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;}
 
   .empty-note{padding:50px 24px;text-align:center;font-family:var(--font-mono);font-size:11.5px;color:var(--grey);line-height:1.6;}
