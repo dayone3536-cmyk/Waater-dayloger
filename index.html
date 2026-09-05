@@ -871,7 +871,10 @@
       mediaHtml = `<img src="${escapeHtml(mediaUrl)}" alt="" loading="lazy">`;
     }
 
+        const hasMedia = mediaType !== 'text' && mediaUrl;
+
     return `
+    
       <article class="post" data-post-id="${post.id}">
 
         <div class="post-meta">
@@ -883,11 +886,16 @@
 
         ${caption ? `<div class="caption-top">${caption}</div>` : ''}
 
+        ${hasMedia ? `
         <div class="clip clip-clickable" style="--g1:${g1};--g2:${g2};">
           ${mediaHtml}
         </div>
+        ` : ''}
 
         <div class="post-actions">
+
+
+
           <button class="like-btn ${isLiked ? 'liked' : ''}" data-post-id="${post.id}">
             <svg viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke-width="1.8"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 10-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 000-7.8z"/></svg>
             <span class="like-count">${likeCount}</span>
