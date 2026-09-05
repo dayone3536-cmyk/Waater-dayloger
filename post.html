@@ -123,10 +123,15 @@
   .skel-wrap{padding:20px 22px;}
   .skel{border-radius:16px;background:linear-gradient(100deg,#f2f2f3 30%,#fafafa 50%,#f2f2f3 70%);background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite;}
   @keyframes shimmer{ 0%{background-position:180% 0;} 100%{background-position:-20% 0;} }
+
   .skel-avatar{width:34px;height:34px;border-radius:50%;}
+
   .skel-meta{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+
   .skel-line{height:12px;border-radius:6px;}
+
   .skel-line.w40{width:120px;}
+
   .skel-media{width:100%;max-width:420px;margin:0 auto 16px;aspect-ratio:9/13;max-height:600px;}
 
   .post-detail{padding:20px 22px;opacity:0;animation:riseIn .5s var(--ease) forwards;}
@@ -136,7 +141,21 @@
   .post-meta .name:hover{opacity:.7;}
   .post-meta .time{font-family:var(--font-mono);font-size:10.5px;color:var(--grey);margin-left:auto;}
 
-  .caption-top{font-family:var(--font-serif);font-size:15px;font-style:italic;line-height:1.45;color:var(--ink);margin-bottom:14px;}
+  .caption-top{
+    font-family:var(--font-serif);font-size:15px;font-style:italic;line-height:1.45;color:var(--ink);margin-bottom:14px;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+  }
+
+  .caption-top a,
+  .comment-body a{
+    color:var(--accent);
+    text-decoration:underline;
+    text-decoration-color:var(--accent-soft);
+  }
+
+
+
 
   /* ---------- media / lightbox trigger ---------- */
   .clip{
@@ -320,6 +339,14 @@
   .comments-empty{
     text-align:center;padding:36px 20px;color:var(--grey);
   }
+
+  html, body{
+
+    overflow-x:hidden;
+
+  }
+
+
   .comments-empty .big-icon{width:30px;height:30px;margin:0 auto 10px;opacity:.5;}
   .comments-empty .big-icon svg{width:100%;height:100%;stroke:var(--grey);}
   .comments-empty p{font-family:var(--font-serif);font-style:italic;font-size:13.5px;}
@@ -444,6 +471,23 @@
   function escapeHtml(str){ const d=document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
   function initials(name){ return (name || '?').trim().slice(0,1).toUpperCase(); }
 
+  function linkifyEscaped(escapedText) {
+
+  // Runs AFTER escapeHtml — safe to inject <a> tags here.
+
+
+    return escapedText.replace(
+
+      /(https?:\/\/[^\s<]+)/g,
+
+      (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer nofollow">${url}</a>`
+
+    );
+
+  }
+
+
+
   let toastTimer = null;
   function showToast(text){
     const toast = document.getElementById('toast');
@@ -524,7 +568,9 @@
             <a href="${profileUrl}" class="comment-name">${name}</a>
             <span class="comment-time">${time}</span>
           </div>
-          <div class="comment-body">${escapeHtml(c.body || '')}</div>
+
+          <div class="comment-body">${linkifyEscaped(escapeHtml(c.body || ''))}</div>
+
         </div>
       </div>
     `;
@@ -807,10 +853,15 @@
 
     const name = escapeHtml(post.profiles?.username || 'Someone');
     const avatarUrl = post.profiles?.avatar_url;
+
     const avatarHtml = avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="">` : initials(name);
-    const caption = escapeHtml(post.caption || '');
+
+    const caption = linkifyEscaped(escapeHtml(post.caption || ''));
+
     const likeCount = post.likes?.[0]?.count ?? 0;
+
     const commentCount = post.comments?.[0]?.count ?? 0;
+
     const postTime = relativeTime(post.created_at);
 
     const hasMedia = post.media_type !== 'text' && !!post.media_url;
