@@ -46,20 +46,33 @@ Deno.serve(async (req) => {
         .select('user_id')
         .eq('id', record.post_id)
         .maybeSingle();
+
       postOwnerId = post?.user_id ?? null;
-      title = 'New like';
-      body = 'Someone liked your post';
+
+      title = 'Congratulations🎉🎉 Someone liked your post ';
+
+      body = 'Someone liked your post Tap to find Out👀👀';
+
       url = `/post?id=${record.post_id}`;
+
     } else if (table === 'comments') {
       actorId = record.user_id;
       const { data: post } = await supabase
         .from('posts')
+
         .select('user_id')
+
         .eq('id', record.post_id)
+
         .maybeSingle();
+
+
       postOwnerId = post?.user_id ?? null;
-      title = 'New comment';
+
+      title = 'You Got a new comment👏👏';
+
       body = record.body?.slice(0, 120) || 'Someone commented on your post';
+
       url = `/post?id=${record.post_id}`;
     } else {
       return new Response(JSON.stringify({ skipped: true }), { status: 200 });
@@ -75,10 +88,14 @@ Deno.serve(async (req) => {
       .from('profiles')
       .select('username')
       .eq('id', actorId)
+
       .maybeSingle();
+
     if (actorProfile?.username) {
       body = table === 'likes'
+      
         ? `${actorProfile.username} liked your post`
+        
         : `${actorProfile.username}: ${body}`;
     }
 
