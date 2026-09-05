@@ -924,7 +924,65 @@
     `;
   }
 
+  function wireRequestRows() {
+    document.querySelectorAll('.req-accept[data-req]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        const { error } = await supabaseClient
+          .from('friendships')
+          .update({ status: 'accepted' })
+          .eq('id', btn.dataset.req);
+        if (error) { console.error('Accept failed:', error); btn.disabled = false; return; }
+        renderPage();
+      });
+    });
+
+    document.querySelectorAll('.req-decline[data-req]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        const { error } = await supabaseClient
+          .from('friendships')
+          .delete()
+          .eq('id', btn.dataset.req);
+        if (error) { console.error('Decline failed:', error); btn.disabled = false; return; }
+        renderPage();
+      });
+    });
+  }
+
+  function wireBestFriendRequestRow() {
+    const acceptBtn = document.getElementById('bfAcceptBtn');
+    const declineBtn = document.getElementById('bfDeclineBtn');
+
+    if (acceptBtn) {
+      acceptBtn.addEventListener('click', async () => {
+        acceptBtn.disabled = true;
+        const { error } = await supabaseClient
+          .from('best_friends')
+          .update({ status: 'accepted' })
+          .eq('id', acceptBtn.dataset.id);
+        if (error) { console.error('BF accept failed:', error); acceptBtn.disabled = false; return; }
+        renderPage();
+      });
+    }
+
+    if (declineBtn) {
+      declineBtn.addEventListener('click', async () => {
+        declineBtn.disabled = true;
+        const { error } = await supabaseClient
+          .from('best_friends')
+          .delete()
+          .eq('id', declineBtn.dataset.id);
+        if (error) { console.error('BF decline failed:', error); declineBtn.disabled = false; return; }
+        renderPage();
+      });
+    }
+  }
+
+
+
   // ---- main render ----
+
   async function renderPage() {
     const body = document.getElementById('pageBody');
 
@@ -1050,6 +1108,8 @@
 
     if (!isOwnProfile) wireFriendButton(friendship);
 
+
+
   if (!isOwnProfile) {
     document.getElementById('bfSlot').innerHTML = bestFriendButtonHtml(bf);
     wireBestFriendButton(bf);
@@ -1066,7 +1126,16 @@
 
     }
 
+
+
   }
+
+  if (isOwnProfile) {
+    wireRequestRows();
+    wireBestFriendRequestRow();
+  }
+
+
 
   }
 
