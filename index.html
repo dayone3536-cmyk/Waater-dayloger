@@ -596,6 +596,21 @@
     width:100%;
   }
 
+  html, body{
+    overflow-x:hidden; /* safety net: nothing can force horizontal scroll/zoom-out anymore */
+  }
+
+  .caption-top,
+  .clip .caption,
+  .lightbox-caption,
+  .comment-body,
+  .share-preview .meta .cap{
+    overflow-wrap:anywhere;
+    word-break:break-word;
+  }
+
+
+
   #loadingMessage{
 
     transition:opacity .18s ease;
@@ -818,6 +833,17 @@
     border-radius:14px;
     margin-bottom:18px;
   }
+
+  .caption-top a,
+.clip .caption a,
+.lightbox-caption a,
+.comment-body a{
+  color:var(--accent);
+  text-decoration:underline;
+  text-decoration-color:var(--accent-soft);
+}
+
+
   .share-preview .thumb{
     width:44px;height:58px;border-radius:8px;flex-shrink:0;
     background:linear-gradient(160deg,#ffe3d6,#ff9d76);
@@ -1231,7 +1257,9 @@
     const name = escapeHtml(post.profiles?.username || 'Someone');
     const avatarHtml = avatarHtmlFor(name, post.profiles?.avatar_url);
 
-    const caption = escapeHtml(post.caption || '');
+    const caption = linkifyEscaped(escapeHtml(post.caption || ''));
+
+
     const mediaUrl = post.media_url || '';
     const mediaType = post.media_type || 'text';
 
@@ -1589,6 +1617,17 @@
     closeShareSheet();
   });
 
+  function linkifyEscaped(escapedText) {
+  // Runs AFTER escapeHtml, so it's safe to inject <a> tags here —
+  // the text has already had < > & " ' neutralized.
+  return escapedText.replace(
+    /(https?:\/\/[^\s<]+)/g,
+    (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer nofollow">${url}</a>`
+  );
+}
+
+
+
   document.getElementById('shareNativeBtn').addEventListener('click', async () => {
     if (!shareTargetPost) return;
     const { text } = craftShareMessage(shareTargetPost);
@@ -1630,7 +1669,9 @@
         </a>
         <div class="comment-body-wrap">
           <a href="${profileUrl}" class="comment-name">${name}</a>
-          <span class="comment-body">${escapeHtml(c.body || '')}</span>
+
+          <span class="comment-body">${linkifyEscaped(escapeHtml(c.body || ''))}</span>
+
         </div>
       </div>
     `;
