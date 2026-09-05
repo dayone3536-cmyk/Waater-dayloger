@@ -803,12 +803,23 @@
     const commentCount = post.comments?.[0]?.count ?? 0;
     const postTime = relativeTime(post.created_at);
 
+    const hasMedia = post.media_type !== 'text' && !!post.media_url;
+
     let mediaHtml = '';
+
     if (post.media_type === 'video' && post.media_url){
+
       mediaHtml = `<video src="${escapeHtml(post.media_url)}" muted loop autoplay playsinline></video>`;
+
     } else if (post.media_type === 'photo' && post.media_url){
+
       mediaHtml = `<img src="${escapeHtml(post.media_url)}" alt="">`;
+
     }
+
+
+
+
 
     body.innerHTML = `
       <div class="post-detail">
@@ -817,11 +828,25 @@
           <span class="name">${name}</span>
           ${postTime ? `<span class="time">${postTime}</span>` : ''}
         </div>
+
+
         ${caption ? `<div class="caption-top">${caption}</div>` : ''}
+
+        ${hasMedia ? `
+
         <div class="clip" id="postClip">
+
           ${mediaHtml}
-          ${post.media_url ? `<div class="clip-expand-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div>` : ''}
+
+          <div class="clip-expand-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div>
+
         </div>
+
+        ` : ''}
+
+
+
+
         <div class="post-actions">
           <button class="like-btn ${isLiked ? 'liked' : ''}" id="likeBtn" aria-pressed="${isLiked}" aria-label="Like this post">
             <svg viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke-width="1.8"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 10-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 000-7.8z"/></svg>
@@ -856,7 +881,7 @@
     });
     document.getElementById('shareBtn').addEventListener('click', openShareSheet);
 
-    if (post.media_url) wireClip(document.getElementById('postClip'), post.media_type, post.media_url);
+    if (hasMedia) wireClip(document.getElementById('postClip'), post.media_type, post.media_url);
 
     const commentInput = document.getElementById('commentInput');
     const commentSubmitBtn = document.getElementById('commentSubmitBtn');
