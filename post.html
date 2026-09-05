@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Post — Waater</title>
 <meta name="theme-color" content="#ff5a36">
-
-
 <!--
   These OG tags are a static fallback only — crawlers (Twitterbot, Facebook,
   iMessage, WhatsApp) do NOT execute this page's JS, so a shared /post?id=…
@@ -16,8 +14,6 @@
   pattern (fetch the post by id server-side, inject og:title/og:image/
   og:description before serving the HTML) to get rich per-post previews.
 -->
-
-
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Waater">
 <meta property="og:title" content="A moment on Waater">
@@ -250,8 +246,47 @@
   .lightbox-unmute:hover{background:rgba(255,255,255,.24);}
   .lightbox-unmute svg{width:17px;height:17px;stroke:#fff;}
 
+  /* ---------- share sheet ---------- */
+  .share-overlay{
+    position:fixed;inset:0;background:rgba(10,10,12,.5);
+    display:flex;align-items:flex-end;justify-content:center;
+    z-index:120;opacity:0;pointer-events:none;transition:opacity .2s var(--ease);
+  }
+  .share-overlay.show{opacity:1;pointer-events:auto;}
+  .share-panel{
+    background:#fff;width:100%;max-width:420px;
+    border-radius:22px 22px 0 0;
+    padding:22px 22px calc(20px + env(safe-area-inset-bottom, 0px));
+    transform:translateY(24px);transition:transform .28s var(--ease-spring);
+  }
+  .share-overlay.show .share-panel{transform:translateY(0);}
+  .share-hook{font-family:var(--font-serif);font-size:19px;line-height:1.4;color:var(--ink);margin-bottom:4px;}
+  .share-sub{font-family:var(--font-mono);font-size:12px;color:var(--grey);margin-bottom:18px;}
+  .share-preview{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:14px;margin-bottom:18px;}
+  .share-preview .thumb{width:44px;height:58px;border-radius:8px;flex-shrink:0;background:linear-gradient(160deg,#ffe3d6,#ff9d76);object-fit:cover;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-display);font-weight:700;}
+  .share-preview .thumb img,.share-preview .thumb video{width:100%;height:100%;object-fit:cover;}
+  .share-preview .meta{min-width:0;}
+  .share-preview .meta .who{font-family:var(--font-display);font-weight:600;font-size:13.5px;}
+  .share-preview .meta .cap{font-family:var(--font-serif);font-size:13px;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .share-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+  .share-opt{display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 4px;border-radius:14px;transition:background .15s var(--ease), transform .12s var(--ease);}
+  .share-opt:hover{background:#f7f7f8;}
+  .share-opt:active{transform:scale(.94);}
+  .share-opt .icon-ring{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--accent-soft);}
+  .share-opt .icon-ring svg{width:20px;height:20px;stroke:var(--accent);}
+  .share-opt.copy-opt .icon-ring{background:var(--ink);}
+  .share-opt.copy-opt .icon-ring svg{stroke:#fff;}
+  .share-opt span{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-soft);}
+  .share-native{
+    width:100%;background:var(--ink);color:#fff;font-family:var(--font-display);font-weight:600;font-size:15px;
+    padding:14px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .share-native:hover{background:#000;}
+  .share-native svg{width:17px;height:17px;stroke:#fff;}
+  @media (min-width:900px){ .share-overlay{align-items:center;} .share-panel{border-radius:22px;} }
+
   /* ---------- comments (rebuilt) ---------- */
-  .comments-section{padding:6px 22px 24px;border-top:1px solid var(--line);margin-top:20px;}
+  .comments-section{padding:6px 22px 140px;border-top:1px solid var(--line);margin-top:20px;}
   .comments-title{
     font-family:var(--font-display);font-weight:600;font-size:13px;letter-spacing:.01em;
     padding:18px 0 4px;display:flex;align-items:center;gap:8px;
@@ -290,13 +325,15 @@
   .comment-form{
     display:flex;gap:10px;align-items:center;
     padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
-    position:sticky;bottom:76px;z-index:25;
-    background:rgba(255,255,255,.9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    position:fixed;left:0;right:0;bottom:76px;z-index:25;
+    max-width:520px;margin:0 auto;
+    background:rgba(255,255,255,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
     border:1px solid var(--line);border-radius:99px;
     box-shadow:0 -4px 20px rgba(20,21,26,.05), 0 6px 20px rgba(20,21,26,.06);
-    margin:0 22px 18px;
   }
-  @media (min-width:900px){ .comment-form{bottom:20px;} }
+  @media (min-width:900px){
+    .comment-form{position:sticky;bottom:20px;left:auto;right:auto;margin:0 22px 18px;max-width:none;}
+  }
   .comment-form input{
     flex:1;border:none;background:transparent;
     padding:6px 4px;font-family:var(--font-serif);font-size:14.5px;outline:none;color:var(--ink);
@@ -326,7 +363,6 @@
     <ul class="nav-list">
       <li><a href="/" class="nav-item">Home</a></li>
       <li><a href="/create" class="nav-item nav-create">Create</a></li>
-      <li><a href="/inbox" class="nav-item">Inbox</a></li>
       <li><a href="/profile" class="nav-item">Profile</a></li>
     </ul>
     <div id="sidebarAuthArea"><a href="/auth" class="sidebar-signin">Sign in</a></div>
@@ -355,7 +391,6 @@
 <nav class="bottom-nav">
   <a href="/" class="tab">home</a>
   <a href="/create" class="tab">create</a>
-  <a href="/inbox" class="tab">inbox</a>
   <a href="/profile" class="tab">profile</a>
 </nav>
 
@@ -364,6 +399,37 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
   </button>
   <div class="lightbox-media" id="lightboxMedia"></div>
+</div>
+
+<!-- Share sheet -->
+<div class="share-overlay" id="shareOverlay">
+  <div class="share-panel">
+    <div class="share-hook" id="shareHook">This one's too good to keep to yourself.</div>
+    <div class="share-sub">Send it before the moment passes</div>
+    <div class="share-preview" id="sharePreview"></div>
+    <div class="share-grid">
+      <button class="share-opt copy-opt" id="shareCopyBtn">
+        <div class="icon-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></div>
+        <span>Copy link</span>
+      </button>
+      <a class="share-opt" id="shareWhatsapp" target="_blank" rel="noopener">
+        <div class="icon-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
+        <span>WhatsApp</span>
+      </a>
+      <a class="share-opt" id="shareX" target="_blank" rel="noopener">
+        <div class="icon-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4l16 16M20 4L4 20"/></svg></div>
+        <span>X</span>
+      </a>
+      <a class="share-opt" id="shareSms">
+        <div class="icon-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+        <span>Text</span>
+      </a>
+    </div>
+    <button class="share-native" id="shareNativeBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+      More options
+    </button>
+  </div>
 </div>
 
 <div class="toast" id="toast">
@@ -555,30 +621,104 @@
     } catch (err) { /* table may not exist yet — ignore */ }
   }
 
-  async function sharePost(){
+  // ---- share sheet (insanely great, emotionally-charged sharing) ----
+  const SHARE_HOOKS = [
+    "This one's too good to keep to yourself.",
+    "Okay, someone needs to see this.",
+    "Stop scrolling — send this to them.",
+    "This deserves way more eyes on it.",
+    "You'll want to send this before you forget.",
+    "This is the kind of day worth sharing.",
+  ];
+
+  function craftShareMessage(){
+    const hook = SHARE_HOOKS[Math.floor(Math.random() * SHARE_HOOKS.length)];
+    const name = post?.profiles?.username || 'Someone';
+    const cap = (post?.caption || '').trim();
+    const capPart = cap ? ` — "${cap.length > 80 ? cap.slice(0, 77) + '…' : cap}"` : '';
+    return { hook, text: `${name} on Waater${capPart}` };
+  }
+
+  function openShareSheet(){
+    if (!post) return;
+    const { hook, text } = craftShareMessage();
     const shareUrl = buildShareUrl();
-    const shareData = {
-      title: 'Waater',
-      text: post.caption ? `"${post.caption}" — watch and vote on Waater` : 'Check this out on Waater',
-      url: shareUrl,
-    };
-    if (navigator.share && navigator.canShare?.(shareData) !== false){
-      try {
-        await navigator.share(shareData);
-        logShare('native');
-        return;
-      } catch (err){
-        if (err?.name === 'AbortError') return; // user cancelled — not an error
-      }
+
+    document.getElementById('shareHook').textContent = hook;
+
+    const name = escapeHtml(post.profiles?.username || 'Someone');
+    const avatarUrl = post.profiles?.avatar_url;
+    const avatarHtml = avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="">` : initials(name);
+    const caption = escapeHtml(post.caption || 'Tap to watch');
+    let thumbHtml = avatarHtml;
+    if (post.media_type === 'photo' && post.media_url) {
+      thumbHtml = `<img src="${escapeHtml(post.media_url)}" alt="">`;
+    } else if (post.media_type === 'video' && post.media_url) {
+      thumbHtml = `<video src="${escapeHtml(post.media_url)}" muted playsinline></video>`;
     }
+    document.getElementById('sharePreview').innerHTML = `
+      <div class="thumb">${thumbHtml}</div>
+      <div class="meta">
+        <div class="who">${name}</div>
+        <div class="cap">${caption}</div>
+      </div>
+    `;
+
+    const encodedText = encodeURIComponent(`${text}\n${shareUrl}`);
+    document.getElementById('shareWhatsapp').href = `https://wa.me/?text=${encodedText}`;
+    document.getElementById('shareX').href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
+    document.getElementById('shareSms').href = `sms:?&body=${encodedText}`;
+
+    ['shareWhatsapp', 'shareX', 'shareSms'].forEach(id => {
+      const el = document.getElementById(id);
+      el.onclick = () => logShare(id.replace('share', '').toLowerCase());
+    });
+
+    document.getElementById('shareOverlay').classList.add('show');
+  }
+
+  function closeShareSheet(){
+    document.getElementById('shareOverlay').classList.remove('show');
+  }
+
+  document.getElementById('shareOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'shareOverlay') closeShareSheet();
+  });
+
+  document.getElementById('shareCopyBtn').addEventListener('click', async () => {
+    if (!post) return;
+    const shareUrl = buildShareUrl();
     try {
       await navigator.clipboard.writeText(shareUrl);
-      showToast('Link copied!');
+      showToast('Link copied — go spread it!');
       logShare('copy');
-    } catch (err){
+    } catch (err) {
       showToast('Copy this link: ' + shareUrl);
     }
-  }
+    closeShareSheet();
+  });
+
+  document.getElementById('shareNativeBtn').addEventListener('click', async () => {
+    if (!post) return;
+    const { text } = craftShareMessage();
+    const shareUrl = buildShareUrl();
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Waater', text, url: shareUrl });
+        logShare('native');
+      } catch (err) {
+        if (err?.name !== 'AbortError') console.error('Share failed:', err);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        showToast('Link copied — go spread it!');
+      } catch (err) {
+        showToast('Copy this link: ' + shareUrl);
+      }
+    }
+    closeShareSheet();
+  });
 
   async function likeFromMedia(clipEl){
     triggerHeartBurst(clipEl);
@@ -714,6 +854,7 @@
       document.getElementById('commentInput')?.focus({ preventScroll: false });
       document.getElementById('commentInput')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
+    document.getElementById('shareBtn').addEventListener('click', openShareSheet);
 
     if (post.media_url) wireClip(document.getElementById('postClip'), post.media_type, post.media_url);
 
@@ -778,7 +919,10 @@
     await renderPage();
   }
   init();
+  
 </script>
 
 </body>
+
 </html>
+

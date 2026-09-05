@@ -593,6 +593,98 @@
     .tab-create .ring::after{animation:none;}
   }
 
+  /* ---------- share sheet ---------- */
+  .share-overlay{
+    position:fixed;inset:0;background:rgba(10,10,12,.5);
+    display:none;align-items:flex-end;justify-content:center;
+    z-index:120;
+  }
+  .share-overlay.show{display:flex;}
+  .share-panel{
+    background:#fff;width:100%;max-width:420px;
+    border-radius:22px 22px 0 0;
+    padding:22px 22px calc(20px + env(safe-area-inset-bottom, 0px));
+    animation:shareUp .28s cubic-bezier(.22,.9,.32,1);
+  }
+  @keyframes shareUp{from{transform:translateY(24px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .share-hook{
+    font-family:var(--font-serif);
+    font-size:19px;
+    line-height:1.4;
+    color:var(--ink);
+    margin-bottom:4px;
+  }
+  .share-sub{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--grey);
+    margin-bottom:18px;
+  }
+  .share-preview{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px;
+    border:1px solid var(--line);
+    border-radius:14px;
+    margin-bottom:18px;
+  }
+  .share-preview .thumb{
+    width:44px;height:58px;border-radius:8px;flex-shrink:0;
+    background:linear-gradient(160deg,#ffe3d6,#ff9d76);
+    object-fit:cover;
+  }
+  .share-preview .thumb img,.share-preview .thumb video{width:100%;height:100%;object-fit:cover;border-radius:8px;}
+  .share-preview .meta{min-width:0;}
+  .share-preview .meta .who{font-family:var(--font-display);font-weight:600;font-size:13.5px;}
+  .share-preview .meta .cap{
+    font-family:var(--font-serif);font-size:13px;color:var(--ink-soft);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .share-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .share-opt{
+    display:flex;flex-direction:column;align-items:center;gap:7px;
+    padding:12px 4px;border-radius:14px;
+    transition:background .15s ease, transform .12s ease;
+  }
+  .share-opt:hover{background:#f7f7f8;}
+  .share-opt:active{transform:scale(.94);}
+  .share-opt .icon-ring{
+    width:44px;height:44px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--accent-soft);
+  }
+  .share-opt .icon-ring svg{width:20px;height:20px;stroke:var(--accent);}
+  .share-opt.copy-opt .icon-ring{background:var(--ink);}
+  .share-opt.copy-opt .icon-ring svg{stroke:#fff;}
+  .share-opt span{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-soft);}
+  .share-native{
+    width:100%;
+    background:var(--ink);color:#fff;
+    font-family:var(--font-display);font-weight:600;font-size:15px;
+    padding:14px;border-radius:14px;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .share-native:hover{background:#000;}
+  .share-native svg{width:17px;height:17px;stroke:#fff;}
+
+  /* ---------- toast ---------- */
+  .waater-toast{
+    position:fixed;left:50%;bottom:96px;transform:translate(-50%,12px);
+    background:var(--ink);color:#fff;font-family:var(--font-display);font-weight:600;font-size:12.5px;
+    padding:11px 18px;border-radius:99px;box-shadow:0 12px 30px rgba(20,21,26,.25);
+    display:flex;align-items:center;gap:8px;opacity:0;pointer-events:none;z-index:200;
+    transition:opacity .2s ease, transform .2s ease;white-space:nowrap;
+  }
+  .waater-toast.show{opacity:1;transform:translate(-50%,0);}
+  .waater-toast svg{width:15px;height:15px;stroke:#fff;flex-shrink:0;}
+  @media (min-width:900px){ .waater-toast{bottom:34px;} }
+
   /* ---------- desktop breakpoint ---------- */
   @media (min-width:900px){
     body{padding-bottom:0;}
@@ -607,6 +699,9 @@
 
     .post{padding-left:32px;padding-right:32px;}
     .clip{max-width:380px;}
+
+    .share-overlay{align-items:center;}
+    .share-panel{border-radius:22px;}
   }
 
   @media (min-width:1100px){
@@ -743,6 +838,42 @@
       <button class="notif-dismiss" id="notifDismissBtn">Not now</button>
     </div>
   </div>
+</div>
+
+<!-- Share sheet -->
+<div class="share-overlay" id="shareOverlay">
+  <div class="share-panel">
+    <div class="share-hook" id="shareHook">This one's too good to keep to yourself.</div>
+    <div class="share-sub">Send it before the moment passes</div>
+    <div class="share-preview" id="sharePreview"></div>
+    <div class="share-grid">
+      <button class="share-opt copy-opt" id="shareCopyBtn">
+        <div class="icon-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></div>
+        <span>Copy link</span>
+      </button>
+      <a class="share-opt" id="shareWhatsapp" target="_blank" rel="noopener">
+        <div class="icon-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
+        <span>WhatsApp</span>
+      </a>
+      <a class="share-opt" id="shareX" target="_blank" rel="noopener">
+        <div class="icon-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4l16 16M20 4L4 20"/></svg></div>
+        <span>X</span>
+      </a>
+      <a class="share-opt" id="shareSms">
+        <div class="icon-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+        <span>Text</span>
+      </a>
+    </div>
+    <button class="share-native" id="shareNativeBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+      More options
+    </button>
+  </div>
+</div>
+
+<div class="waater-toast" id="waaterToast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="waaterToastText"></span>
 </div>
 
 <script>
@@ -939,7 +1070,7 @@
     document.querySelectorAll('.share-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        sharePost(btn.dataset.postId);
+        openShareSheet(btn.dataset.postId);
       });
     });
   }
@@ -1051,32 +1182,130 @@
     }
   }
 
-  async function sharePost(postId) {
-    const post = postsById[postId];
-    const url = `${window.location.origin}/?post=${postId}`;
-    const title = post?.profiles?.username ? `${post.profiles.username} on Waater` : 'Waater';
-    const text = post?.caption || '';
+  // ---- share sheet (insanely great, emotionally-charged sharing) ----
+  const SHARE_HOOKS = [
+    "This one's too good to keep to yourself.",
+    "Okay, someone needs to see this.",
+    "Stop scrolling — send this to them.",
+    "This deserves way more eyes on it.",
+    "You'll want to send this before you forget.",
+    "This is the kind of day worth sharing.",
+  ];
 
+  let shareTargetPost = null;
+  let waaterToastTimer = null;
+
+  function showWaaterToast(text) {
+    const toast = document.getElementById('waaterToast');
+    document.getElementById('waaterToastText').textContent = text;
+    toast.classList.add('show');
+    clearTimeout(waaterToastTimer);
+    waaterToastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+  }
+
+  function buildShareUrl(postId) {
+    const url = new URL(`${window.location.origin}/post`);
+    url.searchParams.set('id', postId);
+    if (currentUser) url.searchParams.set('ref', currentUser.id);
+    return url.toString();
+  }
+
+  function craftShareMessage(post) {
+    const hook = SHARE_HOOKS[Math.floor(Math.random() * SHARE_HOOKS.length)];
+    const name = post?.profiles?.username || 'Someone';
+    const cap = (post?.caption || '').trim();
+    const capPart = cap ? ` — "${cap.length > 80 ? cap.slice(0, 77) + '…' : cap}"` : '';
+    return { hook, text: `${name} on Waater${capPart}` };
+  }
+
+  async function logShare(postId, channel) {
+    try {
+      await supabaseClient.from('shares').insert({ post_id: postId, user_id: currentUser?.id ?? null, channel });
+    } catch (err) { /* table may not exist yet — safe to ignore */ }
+  }
+
+  function openShareSheet(postId) {
+    const post = postsById[postId];
+    if (!post) return;
+    shareTargetPost = post;
+
+    const { hook, text } = craftShareMessage(post);
+    const shareUrl = buildShareUrl(postId);
+
+    document.getElementById('shareHook').textContent = hook;
+
+    const name = escapeHtml(post.profiles?.username || 'Someone');
+    const avatarHtml = avatarHtmlFor(name, post.profiles?.avatar_url);
+    const caption = escapeHtml(post.caption || 'Tap to watch');
+    let thumbHtml = avatarHtml;
+    if (post.media_type === 'photo' && post.media_url) {
+      thumbHtml = `<img src="${escapeHtml(post.media_url)}" alt="">`;
+    } else if (post.media_type === 'video' && post.media_url) {
+      thumbHtml = `<video src="${escapeHtml(post.media_url)}" muted playsinline></video>`;
+    }
+    document.getElementById('sharePreview').innerHTML = `
+      <div class="thumb">${thumbHtml}</div>
+      <div class="meta">
+        <div class="who">${name}</div>
+        <div class="cap">${caption}</div>
+      </div>
+    `;
+
+    const encodedText = encodeURIComponent(`${text}\n${shareUrl}`);
+    document.getElementById('shareWhatsapp').href = `https://wa.me/?text=${encodedText}`;
+    document.getElementById('shareX').href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
+    document.getElementById('shareSms').href = `sms:?&body=${encodedText}`;
+
+    ['shareWhatsapp', 'shareX', 'shareSms'].forEach(id => {
+      const el = document.getElementById(id);
+      el.onclick = () => logShare(postId, id.replace('share', '').toLowerCase());
+    });
+
+    document.getElementById('shareOverlay').classList.add('show');
+  }
+
+  function closeShareSheet() {
+    document.getElementById('shareOverlay').classList.remove('show');
+  }
+
+  document.getElementById('shareOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'shareOverlay') closeShareSheet();
+  });
+
+  document.getElementById('shareCopyBtn').addEventListener('click', async () => {
+    if (!shareTargetPost) return;
+    const shareUrl = buildShareUrl(shareTargetPost.id);
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      showWaaterToast('Link copied — go spread it!');
+      logShare(shareTargetPost.id, 'copy');
+    } catch (err) {
+      showWaaterToast('Copy this link: ' + shareUrl);
+    }
+    closeShareSheet();
+  });
+
+  document.getElementById('shareNativeBtn').addEventListener('click', async () => {
+    if (!shareTargetPost) return;
+    const { text } = craftShareMessage(shareTargetPost);
+    const shareUrl = buildShareUrl(shareTargetPost.id);
     if (navigator.share) {
       try {
-        await navigator.share({ title, text, url });
+        await navigator.share({ title: 'Waater', text, url: shareUrl });
+        logShare(shareTargetPost.id, 'native');
       } catch (err) {
         if (err.name !== 'AbortError') console.error('Share failed:', err);
       }
-    } else if (navigator.clipboard) {
+    } else {
       try {
-        await navigator.clipboard.writeText(url);
-        const btn = document.querySelector(`.share-btn[data-post-id="${postId}"]`);
-        if (btn) {
-          const original = btn.innerHTML;
-          btn.innerHTML = 'copied!';
-          setTimeout(() => { btn.innerHTML = original; }, 1500);
-        }
+        await navigator.clipboard.writeText(shareUrl);
+        showWaaterToast('Link copied — go spread it!');
       } catch (err) {
-        console.error('Clipboard copy failed:', err);
+        showWaaterToast('Copy this link: ' + shareUrl);
       }
     }
-  }
+    closeShareSheet();
+  });
 
   // ---- comments ----
   function renderComments(comments) {
