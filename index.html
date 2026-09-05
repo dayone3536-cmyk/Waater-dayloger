@@ -1612,6 +1612,7 @@
   });
 
   // ---- comments ----
+
   function renderComments(comments) {
     const list = document.getElementById('commentList');
     if (!comments || comments.length === 0) {
@@ -1621,17 +1622,22 @@
     list.innerHTML = comments.map(c => {
       const name = escapeHtml(c.profiles?.username || 'Someone');
       const avatarHtml = avatarHtmlFor(name, c.profiles?.avatar_url);
+      const profileUrl = `/profile?u=${encodeURIComponent(c.profiles?.username || '')}`;
       return `
       <div class="comment-item">
-        <div class="avatar">${avatarHtml}</div>
+        <a href="${profileUrl}" class="avatar-link">
+          <div class="avatar">${avatarHtml}</div>
+        </a>
         <div class="comment-body-wrap">
-          <span class="comment-name">${name}</span>
+          <a href="${profileUrl}" class="comment-name">${name}</a>
           <span class="comment-body">${escapeHtml(c.body || '')}</span>
         </div>
       </div>
     `;
     }).join('');
   }
+
+
 
   async function openComments(postId) {
     const modal = document.getElementById('commentModal');
