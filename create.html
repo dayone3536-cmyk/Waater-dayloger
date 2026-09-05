@@ -398,6 +398,40 @@
   .tab-create svg{width:22px;height:22px;stroke:#fff;stroke-width:2.4;}
   .tab-create span{display:none;}
 
+  .prompt-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--accent-soft);
+    color:var(--accent);
+    font-family:var(--font-mono);
+    font-size:12px;
+    padding:8px 14px;
+    border-radius:99px;
+    margin-bottom:10px;
+    max-width:100%;
+    transition:background .16s var(--ease), transform .12s var(--ease);
+  }
+  .prompt-chip:hover{background:#ffe6dc;}
+  .prompt-chip:active{transform:scale(.97);}
+  .prompt-chip span{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .prompt-shuffle{
+    width:13px;height:13px;flex-shrink:0;
+    transition:transform .3s var(--ease-spring);
+  }
+  .prompt-chip:hover .prompt-shuffle{transform:rotate(180deg);}
+  .prompt-chip.cycling span{animation:promptSwap .28s var(--ease);}
+  @keyframes promptSwap{
+    0%{opacity:0;transform:translateY(3px);}
+    100%{opacity:1;transform:translateY(0);}
+  }
+
+
+
   @media (min-width:900px){
     body{padding-bottom:0;}
     .topbar{display:none;}
@@ -441,7 +475,9 @@
 
     <div class="create-head">
       <h1>Log today</h1>
-      <p id="createDate"></p>
+
+    
+
     </div>
 
     <div class="create-body" id="createBody">
@@ -479,8 +515,7 @@
 </nav>
 
 <script>
-  document.getElementById('createDate').textContent =
-    new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+
 
   // ============================================================
   // SUPABASE CONFIG — same project as index.html / auth.html.
@@ -565,6 +600,7 @@
   }
 
   function renderForm() {
+
     const createBody = document.getElementById('createBody');
     createBody.innerHTML = `
       <form id="createForm">
@@ -578,20 +614,32 @@
           <div class="uploader-preview" id="uploaderPreview" style="display:none;"></div>
         </div>
 
-        <div class="caption-field">
-          <label for="captionInput">CAPTION</label>
-          <textarea id="captionInput" rows="1" maxlength="280" placeholder="What happened today..."></textarea>
-          <div class="char-count"><span id="charCount">0</span>/280</div>
-        </div>
+        
+       <div class="caption-field">
+        <button type="button" class="prompt-chip" id="promptChip" aria-label="Get a different prompt">
+          <svg class="prompt-shuffle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M21 3l-8.5 8.5M4 20L12.5 11.5M21 16v5h-5M4 4l5 5"/></svg>
+          <span id="promptText">What made you laugh today?</span>
+        </button>
+        <textarea id="captionInput" rows="1" maxlength="280" placeholder="What made you laugh today?"></textarea>
+        <div class="char-count"><span id="charCount">0</span>/280</div>
+      </div>
+
+
+
 
         <div class="action-bar">
           <div class="upload-progress" id="uploadProgress"><div class="bar" id="uploadBar"></div></div>
           <div class="status-msg" id="statusMsg"></div>
 
           <div class="create-actions">
+
             <button type="submit" class="post-btn" id="postBtn">
+
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-              <span id="postBtnLabel">Post to your day</span>
+
+              <span id="postBtnLabel">Share this</span>
+
+
             </button>
           </div>
         </div>
@@ -611,6 +659,64 @@
     const postBtnIcon = postBtn.querySelector('svg');
     const uploadProgress = document.getElementById('uploadProgress');
     const uploadBar = document.getElementById('uploadBar');
+
+    const promptChip = document.getElementById('promptChip');
+
+    const promptTextEl = document.getElementById('promptText');
+
+    const PROMPTS = [
+
+      "What made you laugh today?",
+      "What's one thing that didn't go as planned?",
+      "Something small that made today better",
+
+      "What did someone say that stuck with you?",
+
+      "What almost ruined your day (but didn't)?",
+      "The most random thing that happened today",
+
+      "What are you low-key proud of today?",
+
+      "One thing you'd tell a friend about today",
+      "What surprised you today?",
+
+      "The best five minutes of today",
+
+      "What's a weird thing you saw today?",
+
+      "Something you overheard today",
+
+      "What went better than expected?",
+
+      "What's still making you smile from today?",
+
+      "A tiny win nobody else noticed",
+
+    ];
+
+    let lastPromptIndex = -1;
+    function pickPrompt(){
+      let i;
+      do { i = Math.floor(Math.random() * PROMPTS.length); } while (i === lastPromptIndex);
+      lastPromptIndex = i;
+      return PROMPTS[i];
+    }
+
+    function setPrompt(text){
+      promptTextEl.textContent = text;
+      captionInput.placeholder = text;
+      promptChip.classList.remove('cycling');
+      void promptChip.offsetWidth;
+      promptChip.classList.add('cycling');
+    }
+
+    setPrompt(pickPrompt());
+
+    promptChip.addEventListener('click', () => {
+      setPrompt(pickPrompt());
+    });
+
+
 
     let progressTimer = null;
 
@@ -751,7 +857,9 @@
         const check = postBtn.querySelector('.check-pop');
         if (check) check.remove();
         postBtnIcon.style.display = '';
-        postBtnLabel.textContent = 'Post to your day';
+
+        postBtnLabel.textContent = 'Share this';
+
       }
     }
 

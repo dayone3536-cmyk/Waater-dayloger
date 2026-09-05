@@ -962,7 +962,9 @@
 
     <div class="feed-head">
       <h1>Today's log</h1>
-      <p id="feedDate"></p>
+
+     
+
     </div>
 
     <div class="feed" id="feed">
@@ -1150,10 +1152,8 @@
 </div>
 
 <script>
-  // ---- date header ----
-  document.getElementById('feedDate').textContent =
-    new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()
-    + ' — ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+
 
   // Rotate through a few accent gradients so real clips still look lively
   const GRADIENTS = [
