@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Profile — Waater</title>
@@ -638,6 +645,10 @@
   const SUPABASE_ANON_KEY = 'sb_publishable_Any50PwhIupj5rZbez1W4Q_dIx-VRIs';
   const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+  emailjs.init("BTDnE087BXwzjnfK3"); // same public key you used in post.html
+
+
+
   let currentUser = null;      // signed-in visitor (or null)
   let currentUsername = null;
   let targetProfile = null;    // the profile.id/username/avatar_url being viewed
@@ -784,43 +795,62 @@
   }
 
   async function wireFriendButton(friendship) {
-    const btn = document.getElementById('friendBtn');
-    if (btn) {
-      btn.addEventListener('click', async () => {
-        if (!requireAuth()) return;
-        btn.disabled = true;
-        const action = btn.dataset.action;
-        try {
-          if (!friendship) {
-            await supabaseClient.from('friendships').insert({
-              requester_id: currentUser.id, addressee_id: targetProfile.id, status: 'pending'
-            });
-          } else if (action === 'cancel') {
-            await supabaseClient.from('friendships').delete().eq('id', friendship.id);
-          } else if (action === 'unfriend') {
-            await supabaseClient.from('friendships').delete().eq('id', friendship.id);
-          }
-          renderPage();
-        } catch (err) {
-          console.error('Friend action failed:', err);
-          btn.disabled = false;
-        }
-      });
-    }
+  const btn = document.getElementById('friendBtn');
+  if (btn) {
+    btn.addEventListener('click', async () => {
+      if (!requireAuth()) return;
+      btn.disabled = true;
+      const action = btn.dataset.action;
 
-    const acceptBtn = document.getElementById('acceptBtn');
-    const declineBtn = document.getElementById('declineBtn');
-    if (acceptBtn) acceptBtn.addEventListener('click', async () => {
-      acceptBtn.disabled = true;
-      await supabaseClient.from('friendships').update({ status: 'accepted' }).eq('id', friendship.id);
-      renderPage();
-    });
-    if (declineBtn) declineBtn.addEventListener('click', async () => {
-      declineBtn.disabled = true;
-      await supabaseClient.from('friendships').delete().eq('id', friendship.id);
-      renderPage();
+      try {
+        if (!friendship) {
+          await supabaseClient.from('friendships').insert({
+            requester_id: currentUser.id, addressee_id: targetProfile.id, status: 'pending'
+          });
+          // notify the target by email
+          const { data: targetEmailProfile } = await supabaseClient
+            .from('profiles')
+            .select('email, username')
+            .eq('id', targetProfile.id)
+            .maybeSingle();
+          if (targetEmailProfile?.email) {
+            emailjs.send("service_pgfqmti", "template_ceepy7m", {
+
+              to_email: targetEmailProfile.email,
+              to_name: targetEmailProfile.username,
+              requester_name: currentUsername || 'Someone',
+              profile_url: `${window.location.origin}/profile?u=${encodeURIComponent(currentUsername || '')}`,
+            }).catch(err => console.error('Friend request email failed:', err));
+          }
+        } else if (action === 'cancel') {
+          await supabaseClient.from('friendships').delete().eq('id', friendship.id);
+        } else if (action === 'unfriend') {
+          await supabaseClient.from('friendships').delete().eq('id', friendship.id);
+        }
+        renderPage();
+      } catch (err) {
+        console.error('Friend action failed:', err);
+        btn.disabled = false;
+      }
     });
   }
+
+  const acceptBtn = document.getElementById('acceptBtn');
+  const declineBtn = document.getElementById('declineBtn');
+  if (acceptBtn) acceptBtn.addEventListener('click', async () => {
+    acceptBtn.disabled = true;
+    await supabaseClient.from('friendships').update({ status: 'accepted' }).eq('id', friendship.id);
+    renderPage();
+  });
+  if (declineBtn) declineBtn.addEventListener('click', async () => {
+    declineBtn.disabled = true;
+    await supabaseClient.from('friendships').delete().eq('id', friendship.id);
+    renderPage();
+  });
+}
+
+
+
 
   // ---- pending requests panel (own profile only) ----
   async function loadPendingRequests() {

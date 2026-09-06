@@ -9,6 +9,10 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+
 <style>
   
   :root{
@@ -317,6 +321,8 @@
   const SUPABASE_ANON_KEY = 'sb_publishable_Any50PwhIupj5rZbez1W4Q_dIx-VRIs';
   const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+  emailjs.init('Uy1rf2bLn34vW9KqQ');
+
   let currentUser = null;
   let currentUsername = null;
   let activeConversationId = null;
@@ -594,6 +600,34 @@
     if (statusText) { delete statusText.dataset.typing; updateThreadPresence(); }
   }
 
+  async function sendMessageEmail(recipientId, senderName, messageBody, conversationOtherUserId){
+    try {
+      const { data: recipientProfile } = await supabaseClient
+        .from('profiles').select('email, username').eq('id', recipientId).maybeSingle();
+
+      if (!recipientProfile?.email) return; // no email on file, skip silently
+
+      await emailjs.send('service_echffxm', 'template_xj20ab5', {
+
+        to_email: recipientProfile.email,
+        to_name: recipientProfile.username || 'there',
+        from_name: senderName,
+
+        message_preview: messageBody.length > 140 ? messageBody.slice(0, 137) + '…' : messageBody,
+        reply_url: `${window.location.origin}/messages?with=${conversationOtherUserId}`,
+
+      });
+
+    } catch (err) {
+
+      console.error('Email notification failed:', err);
+
+    }
+
+  }
+
+
+
   async function findOrCreateConversation(otherUserId){
     const existing = inboxByUserId[otherUserId]?.conversationId;
     if (existing) return existing;
@@ -717,7 +751,9 @@
     threadInput.focus();
 
     // optimistic render right away, instead of waiting for the realtime echo
+
     document.getElementById('threadForm').addEventListener('submit', async (e) => {
+
       e.preventDefault();
       const body = threadInput.value.trim();
       if (!body) return;
@@ -751,12 +787,17 @@
       }
 
       sentMessageIds.add(saved.id);
+
       const tempEl = threadBody.querySelector(`[data-msg-id="${tempId}"]`);
       if (tempEl) {
         tempEl.dataset.msgId = saved.id;
         const check = tempEl.querySelector('.sent-check');
         if (check) check.classList.add('show');
       }
+
+      sendMessageEmail(otherUserId, currentUsername || 'Someone', body, otherUserId);
+
+
 
       if (inboxByUserId[otherUserId]) { inboxByUserId[otherUserId].lastMessage = saved; inboxByUserId[otherUserId].unread = false; }
       renderInbox();
