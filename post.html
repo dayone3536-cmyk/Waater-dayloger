@@ -1,10 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Post — Waater</title>
 <meta name="theme-color" content="#ff5a36">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+
 <!--
   These OG tags are a static fallback only — crawlers (Twitterbot, Facebook,
   iMessage, WhatsApp) do NOT execute this page's JS, so a shared /post?id=…
@@ -24,6 +30,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
 
 <style>
   :root{
@@ -467,6 +475,8 @@
   <span id="toastText"></span>
 </div>
 
+
+
 <script>
   function escapeHtml(str){ const d=document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
   function initials(name){ return (name || '?').trim().slice(0,1).toUpperCase(); }
@@ -516,6 +526,8 @@
   const SUPABASE_URL = 'https://yacrwbpvcqurxsqpmron.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_Any50PwhIupj5rZbez1W4Q_dIx-VRIs';
   const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  emailjs.init("BTDnE087BXwzjnfK3");
 
   let currentUser = null;
   let currentProfile = null;
@@ -974,6 +986,35 @@
           .select('*, profiles(username, avatar_url)')
           .maybeSingle();
         if (insertError) throw insertError;
+
+        
+
+    // notify the post owner by email (skip if they're commenting on their own post)
+
+      if (post.user_id !== currentUser.id) {
+        const { data: ownerProfile } = await supabaseClient
+          .from('profiles')
+          .select('email, username')
+          .eq('id', post.user_id)
+          .maybeSingle();
+
+        if (ownerProfile?.email) {
+
+          emailjs.send("service_pgfqmti", "template_q0fta8d", {
+
+            to_email: ownerProfile.email,
+            to_name: ownerProfile.username,
+            commenter_name: currentProfile?.username || 'Someone',
+
+            comment_text: text,
+            post_url: `${window.location.origin}/post?id=${post.id}`,
+          }).catch(err => console.error('Comment email failed:', err));
+
+        }
+      }
+
+
+
 
         tempNode.classList.remove('pending');
         const timeEl = tempNode.querySelector('.comment-time');
