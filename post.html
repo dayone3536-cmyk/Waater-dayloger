@@ -391,6 +391,34 @@
     animation:spin .7s linear infinite;
   }
   @keyframes spin{ to{transform:rotate(360deg);} }
+
+  /* ---------- swipe between posts ---------- */
+  #pageBody{ touch-action: pan-y; }
+
+  .swipe-hint{
+    position:fixed;
+    top:calc(14px + env(safe-area-inset-top, 0px));
+    left:50%;
+    transform:translateX(-50%) translateY(-14px);
+    background:rgba(20,21,26,.92);
+    color:#fff;
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:12.5px;
+    padding:10px 16px;
+    border-radius:99px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    z-index:150;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .3s var(--ease), transform .3s var(--ease);
+    white-space:nowrap;
+    box-shadow:0 10px 26px rgba(0,0,0,.25);
+  }
+  .swipe-hint.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .swipe-hint svg{width:14px;height:14px;stroke:#fff;flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -475,7 +503,10 @@
   <span id="toastText"></span>
 </div>
 
-
+<div class="swipe-hint" id="swipeHint">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+  <span>Swipe right for newer posts, left for older</span>
+</div>
 
 <script>
   function escapeHtml(str){ const d=document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
@@ -533,6 +564,138 @@
   let currentProfile = null;
   let post = null;
   let isLiked = false;
+
+  // ---- swipe between posts ----
+  let feedOrder = null;   // post ids, newest first — same order as the home feed
+  let feedIndex = -1;
+  let isNavigating = false;
+
+  async function ensureFeedOrder(currentId){
+    if (feedOrder && feedOrder.includes(currentId)){
+      feedIndex = feedOrder.indexOf(currentId);
+      return;
+    }
+    try {
+      const { data, error } = await supabaseClient
+        .from('posts')
+        .select('id')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      feedOrder = (data || []).map(p => p.id);
+    } catch (err) {
+      console.error('Failed to load post order for swipe nav:', err);
+      feedOrder = [];
+    }
+    feedIndex = feedOrder.indexOf(currentId);
+  }
+
+  function showSwipeHint(){
+    if (localStorage.getItem('swipeHintSeen') === '1') return;
+    const hint = document.getElementById('swipeHint');
+    if (!hint) return;
+    requestAnimationFrame(() => hint.classList.add('show'));
+    setTimeout(dismissSwipeHint, 3600);
+  }
+  function dismissSwipeHint(){
+    const hint = document.getElementById('swipeHint');
+    if (hint) hint.classList.remove('show');
+    localStorage.setItem('swipeHintSeen', '1');
+  }
+
+  function attachSwipeNav(){
+    const stage = document.getElementById('pageBody');
+    if (!stage) return;
+    let startX = 0, startY = 0, dx = 0, dragging = false, decided = false, horizontal = false;
+
+    stage.addEventListener('touchstart', (e) => {
+      if (isNavigating || e.touches.length !== 1) return;
+      if (e.target.closest('input, textarea, button, a, .comment-form')) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      dx = 0; dragging = true; decided = false; horizontal = false;
+    }, { passive: true });
+
+    stage.addEventListener('touchmove', (e) => {
+      if (!dragging || e.touches.length !== 1) return;
+      const x = e.touches[0].clientX;
+      const y = e.touches[0].clientY;
+      dx = x - startX;
+      const dy = y - startY;
+      if (!decided && (Math.abs(dx) > 10 || Math.abs(dy) > 10)){
+        decided = true;
+        horizontal = Math.abs(dx) > Math.abs(dy) * 1.2;
+      }
+      if (horizontal){
+        stage.style.transition = 'none';
+        stage.style.transform = `translateX(${dx}px)`;
+        stage.style.opacity = String(Math.max(0.5, 1 - Math.abs(dx) / 600));
+      }
+    }, { passive: true });
+
+    const finish = () => {
+      if (!dragging) return;
+      dragging = false;
+      if (!horizontal){
+        stage.style.transition = '';
+        stage.style.transform = '';
+        stage.style.opacity = '';
+        return;
+      }
+      const threshold = 80;
+      if (dx > threshold){
+        navigateSwipe('right');
+      } else if (dx < -threshold){
+        navigateSwipe('left');
+      } else {
+        resetStage(stage);
+      }
+    };
+    stage.addEventListener('touchend', finish);
+    stage.addEventListener('touchcancel', finish);
+  }
+
+  function resetStage(stage){
+    stage = stage || document.getElementById('pageBody');
+    stage.style.transition = 'transform .25s var(--ease-spring), opacity .2s var(--ease)';
+    stage.style.transform = 'translateX(0)';
+    stage.style.opacity = '1';
+  }
+
+  async function navigateSwipe(direction){
+    dismissSwipeHint();
+    const stage = document.getElementById('pageBody');
+    if (!post){ resetStage(stage); return; }
+
+    await ensureFeedOrder(post.id);
+    if (feedIndex === -1 || !feedOrder.length){ resetStage(stage); return; }
+
+    // swiping right reveals the newer post (earlier in the newest-first list)
+    const targetIndex = direction === 'right' ? feedIndex - 1 : feedIndex + 1;
+    if (targetIndex < 0 || targetIndex >= feedOrder.length){
+      resetStage(stage);
+      return;
+    }
+
+    isNavigating = true;
+    const outX = direction === 'right' ? window.innerWidth : -window.innerWidth;
+    stage.style.transition = 'transform .2s var(--ease), opacity .2s var(--ease)';
+    stage.style.transform = `translateX(${outX}px)`;
+    stage.style.opacity = '0';
+
+    const nextId = feedOrder[targetIndex];
+    history.pushState({}, '', `/post?id=${nextId}`);
+
+    setTimeout(async () => {
+      stage.style.transition = 'none';
+      stage.style.transform = `translateX(${-outX}px)`;
+      await renderPage(nextId);
+      void stage.offsetWidth;
+      stage.style.transition = 'transform .3s var(--ease-spring), opacity .25s var(--ease)';
+      stage.style.transform = 'translateX(0)';
+      stage.style.opacity = '1';
+      isNavigating = false;
+    }, 200);
+  }
 
   function requireAuth(){
     if (currentUser) return true;
@@ -835,9 +998,9 @@
     });
   }
 
-  async function renderPage(){
+  async function renderPage(overridePostId){
     const params = new URLSearchParams(window.location.search);
-    const postId = params.get('id');
+    const postId = overridePostId || params.get('id');
     const body = document.getElementById('pageBody');
 
     if (!postId){
@@ -1039,11 +1202,25 @@
     });
 
     await loadComments(post.id);
+
+    ensureFeedOrder(post.id);
+    showSwipeHint();
   }
 
   async function init(){
     await renderSidebar();
     await renderPage();
+    attachSwipeNav();
+
+    window.addEventListener('popstate', () => {
+      isNavigating = false;
+      const stage = document.getElementById('pageBody');
+      stage.style.transition = 'none';
+      stage.style.transform = '';
+      stage.style.opacity = '';
+      feedOrder = null;
+      renderPage();
+    });
   }
   init();
   
@@ -1052,4 +1229,3 @@
 </body>
 
 </html>
-
