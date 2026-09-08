@@ -989,34 +989,52 @@
             : `I just logged today on Waater. Add yours 👇`;
 
           createBody.innerHTML = `
-            <div class="success-splash">
-              <div class="success-ring">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>
+            <div id="postSuccessWrap" style="pointer-events:none;">
+              <div class="success-splash">
+                <div class="success-ring">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>
+                </div>
+                <p>Posted to your day</p>
+                <span>Nice — that's on your feed now</span>
               </div>
-              <p>Posted to your day</p>
-              <span>Nice — that's on your feed now</span>
-            </div>
-            <div class="share-cta" id="shareCta">
-              <span class="share-emoji">🔥</span>
-              <h3>Don't let this flop</h3>
-              <p>Posts get way more love when a friend sees them first.<br>Send it to a couple people right now.</p>
-              <div class="share-actions">
-                <button type="button" class="share-btn share-btn-primary" id="nativeShareBtn">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/></svg>
-                  Share with friends
-                </button>
-                <button type="button" class="share-btn share-btn-secondary" id="copyLinkBtn">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                  <span id="copyLinkLabel">Copy link</span>
-                </button>
+              <div class="share-cta" id="shareCta">
+                <span class="share-emoji">🔥</span>
+                <h3>Don't let this flop</h3>
+                <p>Posts get way more love when a friend sees them first.<br>Send it to a couple people right now.</p>
+                <div class="share-actions">
+                  <button type="button" class="share-btn share-btn-primary" id="nativeShareBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/></svg>
+                    Share with friends
+                  </button>
+                  <button type="button" class="share-btn share-btn-secondary" id="copyLinkBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                    <span id="copyLinkLabel">Copy link</span>
+                  </button>
+                </div>
+                <button type="button" class="share-skip" id="shareSkip">Skip, take me home</button>
               </div>
-              <a href="/" class="share-skip" id="shareSkip">Skip, take me home</a>
             </div>
           `;
+
+          // Guard against the mobile "ghost click" bug: the finger that tapped
+          // "Share this" can produce a delayed synthetic click at the same
+          // screen coordinates right after this DOM swap. If that coordinate
+          // now lands on shareSkip (or anything else here), it fires an
+          // unwanted click a few hundred ms after render — which looks
+          // exactly like "the message vanished after a second" even though
+          // nothing here ever runs a redirect on a timer. Freeze clicks on
+          // this panel briefly so any residual tap can't land on it.
+          const postSuccessWrap = document.getElementById('postSuccessWrap');
+          setTimeout(() => { postSuccessWrap.style.pointerEvents = 'auto'; }, 400);
 
           const nativeShareBtn = document.getElementById('nativeShareBtn');
           const copyLinkBtn = document.getElementById('copyLinkBtn');
           const copyLinkLabel = document.getElementById('copyLinkLabel');
+          const shareSkip = document.getElementById('shareSkip');
+
+          shareSkip.addEventListener('click', () => {
+            window.location.href = '/';
+          });
 
           nativeShareBtn.addEventListener('click', async () => {
             if (navigator.share) {
