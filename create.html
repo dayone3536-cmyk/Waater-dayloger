@@ -174,8 +174,8 @@
 
   /* ---------- create form entrance ---------- */
   #createForm{opacity:0;animation:riseIn .55s var(--ease) forwards;}
-  #createForm .uploader{animation:riseIn .55s var(--ease) .05s backwards;}
-  #createForm .caption-field{animation:riseIn .55s var(--ease) .12s backwards;}
+  #createForm .caption-field{animation:riseIn .55s var(--ease) .05s backwards;}
+  #createForm .uploader{animation:riseIn .55s var(--ease) .12s backwards;}
 
   /* dropzone / uploader, styled like the .clip card on index */
   .uploader{
@@ -187,7 +187,7 @@
     overflow:hidden;
     background:linear-gradient(160deg,#ffe3d6,#ffb199);
     background-size:220% 220%;
-    animation:gradientDrift 9s ease-in-out infinite, riseIn .55s var(--ease) .05s backwards;
+    animation:gradientDrift 9s ease-in-out infinite, riseIn .55s var(--ease) .12s backwards;
     border:1.5px dashed rgba(255,255,255,.65);
     display:flex;
     align-items:center;
@@ -202,7 +202,7 @@
   .uploader:hover{border-color:var(--white);box-shadow:0 14px 34px rgba(255,90,54,.18);transform:translateY(-2px);}
   .uploader:active{transform:scale(.995);}
   .uploader.dragover{border-color:var(--white);transform:scale(1.01);box-shadow:0 18px 40px rgba(255,90,54,.28);}
-  .uploader.has-media{background:#0d0d0f;animation:riseIn .55s var(--ease) .05s backwards;border-style:solid;border-color:var(--line);}
+  .uploader.has-media{background:#0d0d0f;animation:riseIn .55s var(--ease) .12s backwards;border-style:solid;border-color:var(--line);}
 
   .uploader input[type="file"]{display:none;}
 
@@ -264,7 +264,7 @@
   .uploader-mute svg{width:15px;height:15px;stroke:#fff;}
 
   /* caption */
-  .caption-field{margin-top:20px;}
+  .caption-field{margin-top:0;margin-bottom:20px;}
   .caption-field label{
     display:block;font-family:var(--font-mono);font-size:11px;
     letter-spacing:.02em;color:var(--grey);margin-bottom:8px;
@@ -272,7 +272,7 @@
   .caption-field textarea{
     width:100%;min-height:96px;resize:none;overflow:hidden;
     border:1px solid var(--line-strong);border-radius:12px;
-    padding:14px;font-family:var(--font-serif);font-style:italic;
+    padding:14px;font-family:var(--font-display);font-style:normal;font-weight:400;
     font-size:15.5px;color:var(--ink);line-height:1.5;
     outline:none;transition:border-color .18s var(--ease), box-shadow .18s var(--ease);
   }
@@ -379,6 +379,38 @@
   .success-ring svg path{stroke-dasharray:24;stroke-dashoffset:24;animation:drawCheck .4s .1s var(--ease) forwards;}
   .success-splash p{font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--ink);}
   .success-splash span{font-family:var(--font-mono);font-size:11px;color:var(--grey);}
+
+  /* ---------- share / virality prompt (shown right after a successful post) ---------- */
+  .share-cta{
+    width:100%;max-width:340px;margin:22px auto 0;padding:22px 20px 20px;
+    border-radius:18px;background:linear-gradient(155deg,#fff1ec,#ffe3d6);
+    border:1px solid #ffd9c8;text-align:center;
+    opacity:0;animation:riseIn .5s var(--ease) .15s backwards;
+  }
+  .share-cta .share-emoji{font-size:26px;display:inline-block;animation:softFloat 2.4s ease-in-out infinite;}
+  .share-cta h3{font-family:var(--font-display);font-weight:700;font-size:16px;color:var(--ink);margin-top:6px;}
+  .share-cta p{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-soft);margin-top:6px;line-height:1.5;}
+  .share-actions{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
+  .share-btn{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    font-family:var(--font-display);font-weight:600;font-size:14px;
+    padding:13px;border-radius:12px;
+    transition:transform .12s var(--ease), box-shadow .18s var(--ease), background .18s var(--ease);
+  }
+  .share-btn svg{width:16px;height:16px;flex-shrink:0;}
+  .share-btn-primary{background:var(--accent);color:#fff;box-shadow:0 10px 22px rgba(255,90,54,.32);}
+  .share-btn-primary svg{stroke:#fff;}
+  .share-btn-primary:hover{background:#ff4a22;transform:translateY(-1px);}
+  .share-btn-primary:active{transform:scale(.97);}
+  .share-btn-secondary{background:#fff;color:var(--ink);border:1px solid var(--line-strong);}
+  .share-btn-secondary svg{stroke:var(--ink);}
+  .share-btn-secondary:hover{border-color:var(--ink);}
+  .share-btn-secondary:active{transform:scale(.97);}
+  .share-btn-secondary.copied{background:var(--success-soft);border-color:var(--success);color:var(--success);}
+  .share-skip{
+    display:block;margin-top:14px;font-family:var(--font-mono);font-size:11px;
+    color:var(--grey);text-decoration:underline;text-underline-offset:2px;
+  }
 
   /* ---------- bottom nav (mobile, shared) ---------- */
   .bottom-nav{
@@ -604,17 +636,6 @@
     const createBody = document.getElementById('createBody');
     createBody.innerHTML = `
       <form id="createForm">
-        <div class="uploader" id="uploader">
-          <input type="file" id="fileInput" accept="image/*,video/*">
-          <div class="uploader-empty" id="uploaderEmpty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>
-            <span class="big">Tap to add a photo or video</span>
-            <span class="small">or drag a file here</span>
-          </div>
-          <div class="uploader-preview" id="uploaderPreview" style="display:none;"></div>
-        </div>
-
-        
        <div class="caption-field">
         <button type="button" class="prompt-chip" id="promptChip" aria-label="Get a different prompt">
           <svg class="prompt-shuffle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M21 3l-8.5 8.5M4 20L12.5 11.5M21 16v5h-5M4 4l5 5"/></svg>
@@ -624,8 +645,15 @@
         <div class="char-count"><span id="charCount">0</span>/280</div>
       </div>
 
-
-
+        <div class="uploader" id="uploader">
+          <input type="file" id="fileInput" accept="image/*,video/*">
+          <div class="uploader-empty" id="uploaderEmpty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>
+            <span class="big">Tap to add a photo or video</span>
+            <span class="small">or drag a file here</span>
+          </div>
+          <div class="uploader-preview" id="uploaderPreview" style="display:none;"></div>
+        </div>
 
         <div class="action-bar">
           <div class="upload-progress" id="uploadProgress"><div class="bar" id="uploadBar"></div></div>
@@ -931,14 +959,18 @@
         // user_id is now the real authenticated user id, not a guest id —
         // RLS (see supabase-setup.sql) only allows inserting rows where
         // user_id matches auth.uid(), so this must be currentUser.id.
-        const { error: insertError } = await supabaseClient
+        // .select().single() so we get the new row's id back — we need it
+        // to build a shareable link for the K-factor prompt below.
+        const { data: newPost, error: insertError } = await supabaseClient
           .from('posts')
           .insert({
             user_id: currentUser.id,
             caption,
             media_url: mediaUrl,
             media_type: mediaType
-          });
+          })
+          .select()
+          .single();
 
         if (insertError) throw insertError;
 
@@ -946,18 +978,73 @@
         createBody.querySelector('form').style.transition = 'opacity .25s var(--ease)';
 
         setTimeout(() => {
+          // NOTE: assumes an individual post page exists at /p/:id — swap
+          // this for whatever your real post-detail route is. Falling
+          // back to the homepage if there's no id for some reason.
+          const shareUrl = newPost && newPost.id
+            ? `${window.location.origin}/p/${newPost.id}`
+            : window.location.origin;
+          const shareText = caption
+            ? `I just logged today on Waater — "${caption}". Add yours 👇`
+            : `I just logged today on Waater. Add yours 👇`;
+
           createBody.innerHTML = `
             <div class="success-splash">
               <div class="success-ring">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>
               </div>
               <p>Posted to your day</p>
-              <span>Taking you home…</span>
+              <span>Nice — that's on your feed now</span>
+            </div>
+            <div class="share-cta" id="shareCta">
+              <span class="share-emoji">🔥</span>
+              <h3>Don't let this flop</h3>
+              <p>Posts get way more love when a friend sees them first.<br>Send it to a couple people right now.</p>
+              <div class="share-actions">
+                <button type="button" class="share-btn share-btn-primary" id="nativeShareBtn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/></svg>
+                  Share with friends
+                </button>
+                <button type="button" class="share-btn share-btn-secondary" id="copyLinkBtn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                  <span id="copyLinkLabel">Copy link</span>
+                </button>
+              </div>
+              <a href="/" class="share-skip" id="shareSkip">Skip, take me home</a>
             </div>
           `;
-        }, 550);
 
-        setTimeout(() => { window.location.href = '/'; }, 1250);
+          const nativeShareBtn = document.getElementById('nativeShareBtn');
+          const copyLinkBtn = document.getElementById('copyLinkBtn');
+          const copyLinkLabel = document.getElementById('copyLinkLabel');
+
+          nativeShareBtn.addEventListener('click', async () => {
+            if (navigator.share) {
+              try {
+                await navigator.share({ title: 'Waater', text: shareText, url: shareUrl });
+              } catch (shareErr) {
+                // user backed out of the native share sheet — no-op
+              }
+            } else {
+              // no native share sheet (most desktop browsers) — fall back to copy
+              copyLinkBtn.click();
+            }
+          });
+
+          copyLinkBtn.addEventListener('click', async () => {
+            try {
+              await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+              copyLinkLabel.textContent = 'Copied!';
+              copyLinkBtn.classList.add('copied');
+              setTimeout(() => {
+                copyLinkLabel.textContent = 'Copy link';
+                copyLinkBtn.classList.remove('copied');
+              }, 1800);
+            } catch (copyErr) {
+              copyLinkLabel.textContent = 'Couldn\u2019t copy';
+            }
+          });
+        }, 550);
 
       } catch (err) {
         console.error(err);
