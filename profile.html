@@ -1987,13 +1987,20 @@
       const btn = overlay.querySelector('#circleModalConfirm');
       btn.disabled = true;
       btn.textContent = 'Creating…';
+
       try {
-        const { error } = await supabaseClient.from('circles').insert({
-          name,
-          is_private: isPrivate,
-          created_by: currentUser.id,
-        });
+        const { data: newCircle, error } = await supabaseClient
+          .from('circles')
+          .insert({ name, is_private: isPrivate, created_by: currentUser.id })
+          .select()
+          .single();
         if (error) throw error;
+
+        const { error: memberError } = await supabaseClient
+          .from('circle_members')
+          .insert({ circle_id: newCircle.id, user_id: currentUser.id, role: 'owner' });
+        if (memberError) throw memberError;
+
         close();
         renderPage();
       } catch (err) {
@@ -2002,6 +2009,10 @@
         btn.parentElement.insertAdjacentHTML('beforebegin',
           `<p style="color:var(--danger);font-family:var(--font-mono);font-size:11px;margin-top:8px;">${escapeHtml(err.message || 'Something went wrong')}</p>`);
       }
+
+
+
+
     });
   }
 
