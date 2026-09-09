@@ -1221,6 +1221,32 @@
     localStorage.setItem('notifPromptDismissed', '1');
   });
 
+  document.getElementById('notifAllowBtn').addEventListener('click', async () => {
+
+    document.getElementById('notifOverlay').classList.remove('show');
+    try {
+
+      const perm = await Notification.requestPermission();
+
+      if (perm === 'granted') {
+        // TODO: subscribe them (push subscription / save to your backend)
+
+        console.log('notifications granted');
+
+      } else {
+
+        localStorage.setItem('notifPromptDismissed', '1');
+      }
+
+    } catch (err) {
+
+      console.error('notif permission error', err);
+      
+    }
+  });
+
+
+
 
 
   checkAuthAndRender();
