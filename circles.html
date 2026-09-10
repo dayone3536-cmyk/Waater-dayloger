@@ -547,6 +547,7 @@
     font-size:12.5px;
     outline:none;
     transition:border-color .16s var(--ease);
+    min-width:0;
   }
   .circles-join-row input:focus{border-color:var(--accent);}
   .circles-join-row button{
@@ -1122,7 +1123,7 @@
         ` : ''}
         ${listHtml}
         <div class="circles-join-row">
-          <input type="text" id="circleJoinInput" placeholder="Have an invite code?" maxlength="40">
+          <input type="text" id="circleJoinInput" placeholder="Have an invite code or link?" maxlength="300">
           <button id="circleJoinBtn">Join</button>
         </div>
         <div class="circles-join-status" id="circleJoinStatus"></div>
@@ -1158,6 +1159,23 @@
       `;
     }
     return `<div class="circles-section" style="margin-top:16px;">${circles.map(renderDiscoverRow).join('')}</div>`;
+  }
+
+  // ---- extract a bare invite code whether the user pasted a raw code
+  // or a full invite link (e.g. https://app.com/circle/join?code=XXXX)
+  function extractInviteCode(raw) {
+    const trimmed = (raw || '').trim();
+    if (!trimmed) return '';
+    if (trimmed.includes('://') || trimmed.startsWith('/')) {
+      try {
+        const url = new URL(trimmed.includes('://') ? trimmed : window.location.origin + trimmed);
+        const codeParam = url.searchParams.get('code');
+        if (codeParam) return codeParam.trim();
+      } catch (e) {
+        // not a parseable URL — fall through and treat it as a raw code
+      }
+    }
+    return trimmed;
   }
 
   // ---- wire clicks/expand/invite/leave/join for "Your circles" ----
@@ -1244,12 +1262,16 @@
     const joinBtn = document.getElementById('circleJoinBtn');
     const joinInput = document.getElementById('circleJoinInput');
     const joinStatus = document.getElementById('circleJoinStatus');
+
     if (joinBtn) {
       const submitJoin = async () => {
         if (!requireAuth()) return;
         if (isJoiningByCode) return;
-        const code = (joinInput.value || '').trim();
+
+        // accept either a bare invite code or a full invite link pasted in
+        const code = extractInviteCode(joinInput.value);
         if (!code) return;
+
         isJoiningByCode = true;
         joinBtn.disabled = true;
         joinBtn.innerHTML = `<span class="mini-spinner"></span>`;
@@ -1274,6 +1296,17 @@
       };
       joinBtn.addEventListener('click', submitJoin);
       joinInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submitJoin(); } });
+      // handle paste explicitly too, so a pasted link is normalized
+      // immediately rather than waiting for the user to hit Join
+      joinInput.addEventListener('paste', (e) => {
+        const pasted = (e.clipboardData || window.clipboardData)?.getData('text');
+        if (!pasted) return;
+        const extracted = extractInviteCode(pasted);
+        if (extracted && extracted !== pasted.trim()) {
+          e.preventDefault();
+          joinInput.value = extracted;
+        }
+      });
     }
   }
 
