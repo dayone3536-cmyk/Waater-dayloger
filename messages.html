@@ -220,6 +220,70 @@
   .thread-empty .big-avatar svg{width:40px;height:40px;stroke:var(--grey);}
   .thread-empty .big{font-family:var(--font-display);font-size:17px;color:var(--ink);font-weight:700;}
 
+
+
+  /* ---------- bottom nav (mobile) ---------- */
+    .bottom-nav{
+      position:fixed;
+      bottom:0;left:0;right:0;
+      height:64px;
+      background:rgba(255,255,255,.96);
+      backdrop-filter:blur(10px);
+      border-top:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-around;
+      z-index:30;
+    }
+    .tab{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:3px;
+      color:var(--grey);
+      font-family:var(--font-mono);
+      font-size:10px;
+      letter-spacing:.02em;
+      padding:6px 10px;
+    }
+    .tab svg{width:22px;height:22px;stroke:var(--grey);}
+    .tab.active{color:var(--ink);}
+    .tab.active svg{stroke:var(--ink);}
+    .tab-create{position:relative;top:-20px;}
+    .tab-create .ring{
+      width:52px;height:52px;
+      border-radius:50%;
+      background:var(--accent);
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:0 8px 20px rgba(255,90,54,.4);
+      position:relative;
+    }
+    .tab-create .ring::after{
+      content:'';
+      position:absolute;
+      inset:-6px;
+      border-radius:50%;
+      border:1.5px solid var(--accent);
+      opacity:.5;
+      animation:pulse 2.2s ease-out infinite;
+    }
+    .tab-create svg{width:22px;height:22px;stroke:#fff;stroke-width:2.4;}
+    .tab-create span{display:none;}
+    @keyframes pulse{
+      0%{transform:scale(1);opacity:.5;}
+      100%{transform:scale(1.45);opacity:0;}
+    }
+
+    @media (max-width:899px){
+      .app{ height:calc(100vh - 64px); }
+    }
+    @media (min-width:900px){ .bottom-nav{display:none;} }
+    @media (prefers-reduced-motion:reduce){
+      .tab-create .ring::after{animation:none;}
+    }
+
+
+
   @media (prefers-reduced-motion: reduce){
     .bubble-wrap.new{animation:none;}
     .typing-dots span{animation:none;opacity:.7;}
@@ -232,12 +296,17 @@
 <div class="app">
   <aside class="sidebar">
     <div class="wordmark">waater<span class="dot">.</span></div>
+
     <ul class="nav-list">
       <li><a href="/" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</a></li>
-      <li><a href="/create" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Create</a></li>
       <li><a href="/messages" class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Messages</a></li>
+      <li><a href="/create" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Create</a></li>
+      <li><a href="/circles" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>Circles</a></li>
       <li><a href="/profile" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>Profile</a></li>
     </ul>
+
+
+
     <div id="sidebarAuthArea"><a href="/auth" class="sidebar-signin">Sign in</a></div>
   </aside>
 
@@ -272,6 +341,37 @@
     </div>
   </div>
 </div>
+
+<nav class="bottom-nav">
+  <a href="/" class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+    home
+  </a>
+
+  <a href="/messages" class="tab active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    messages
+  </a>
+
+  <a href="/create" class="tab tab-create">
+    <div class="ring">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>
+    </div>
+    <span>create</span>
+  </a>
+
+  <a href="/circles" class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>
+    circles
+  </a>
+
+  <a href="/profile" class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+    profile
+  </a>
+</nav>
+
+
 
 <!-- Invite / referral sheet -->
 <div class="invite-overlay" id="inviteOverlay">

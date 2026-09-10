@@ -26,6 +26,8 @@
     --font-display:'Space Grotesk', sans-serif;
     --font-serif:'Newsreader', serif;
     --font-mono:'JetBrains Mono', monospace;
+    --ease:cubic-bezier(.22,.9,.32,1);
+    --ease-spring:cubic-bezier(.34,1.56,.64,1);
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   html,body{height:100%;}
@@ -39,6 +41,10 @@
   a{color:inherit;text-decoration:none;}
   button{font-family:inherit;border:none;background:none;cursor:pointer;}
   ::selection{background:var(--accent-soft);color:var(--accent);}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important;}
+  }
 
   /* ---------- shared shell (same as profile.html / index.html) ---------- */
   .app{display:flex;max-width:1180px;margin:0 auto;}
@@ -75,7 +81,9 @@
   .sidebar-profile{
     margin-top:auto;display:flex;align-items:center;gap:10px;
     padding:10px 12px;border-radius:12px;border:1px solid var(--line);
+    transition:border-color .16s var(--ease);
   }
+  .sidebar-profile:hover{border-color:var(--line-strong);}
   .mini-avatar{
     width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd8c9,var(--accent));
     flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;
@@ -90,6 +98,7 @@
   .sidebar-signin{
     margin-top:auto;display:block;text-align:center;background:var(--ink);color:#fff!important;
     font-family:var(--font-display);font-weight:600;font-size:13.5px;padding:12px;border-radius:12px;
+    transition:background .16s var(--ease);
   }
   .sidebar-signin:hover{background:#000;}
 
@@ -105,7 +114,8 @@
     border-top:1px solid var(--line);display:flex;align-items:center;
     justify-content:space-around;z-index:30;
   }
-  .tab{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--grey);font-family:var(--font-mono);font-size:9.5px;letter-spacing:.02em;padding:6px 10px;}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--grey);font-family:var(--font-mono);font-size:9.5px;letter-spacing:.02em;padding:6px 10px;transition:transform .12s var(--ease);}
+  .tab:active{transform:scale(.92);}
   .tab svg{width:22px;height:22px;stroke:var(--grey);}
   .tab.active{color:var(--ink);}
   .tab.active svg{stroke:var(--ink);}
@@ -115,19 +125,19 @@
   .tab-create span{display:none;}
   @media (min-width:900px){ .bottom-nav{display:none;} }
 
-  .page-loading{
-    padding:80px 22px;text-align:center;
-    font-family:var(--font-mono);font-size:12px;color:var(--grey);
-  }
+  @keyframes riseIn{ from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
 
   /* ---------- page head ---------- */
   .page-head{
-    padding:32px 22px 4px;
+    padding:32px 22px 6px;
+  }
+  .page-head-top{
+    display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
   }
   .page-head h1{
     font-family:var(--font-display);
     font-weight:700;
-    font-size:22px;
+    font-size:24px;
     letter-spacing:-0.01em;
   }
   .page-head p{
@@ -135,42 +145,97 @@
     font-size:12px;
     color:var(--grey);
     margin-top:5px;
+    max-width:420px;
+    line-height:1.5;
   }
+  .stat-pills{
+    display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;
+  }
+  .stat-pill{
+    display:flex;align-items:baseline;gap:5px;
+    background:#f7f7f8;border:1px solid var(--line);
+    border-radius:99px;padding:7px 13px;
+  }
+  .stat-pill b{font-family:var(--font-display);font-weight:700;font-size:14px;color:var(--ink);}
+  .stat-pill span{font-family:var(--font-mono);font-size:10.5px;color:var(--grey);}
 
-  /* ---------- segmented tab control (Your circles / Discover) ---------- */
+  /* ---------- segmented tab control with sliding indicator ---------- */
   .circles-tabs{
+    position:relative;
     display:flex;
-    gap:8px;
-    padding:20px 22px 4px;
+    gap:4px;
+    padding:20px 22px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .circles-tabs-track{
+    position:relative;
+    display:flex;
+    gap:4px;
+    background:#f2f2f3;
+    border-radius:99px;
+    padding:4px;
+  }
+  .tab-indicator{
+    position:absolute;
+    top:4px;bottom:4px;left:4px;
+    width:0;
+    background:var(--ink);
+    border-radius:99px;
+    transition:transform .28s var(--ease-spring), width .28s var(--ease-spring);
+    z-index:0;
   }
   .circles-tab-btn{
+    position:relative;
+    z-index:1;
     font-family:var(--font-display);
     font-weight:600;
     font-size:13px;
     padding:9px 16px;
     border-radius:99px;
     color:var(--ink-soft);
-    background:#f2f2f3;
-    transition:background .15s ease, color .15s ease;
+    transition:color .2s ease;
+    white-space:nowrap;
   }
-  .circles-tab-btn.active{background:var(--ink);color:#fff;}
+  .circles-tab-btn.active{color:#fff;}
 
-  .circles-panel{display:none;}
+  .circles-panel{display:none;animation:riseIn .35s var(--ease) forwards;}
   .circles-panel.active{display:block;}
+
+  /* ---------- search ---------- */
+  .circles-search-row{
+    padding:16px 22px 0;
+  }
+  .circles-search{
+    position:relative;
+  }
+  .circles-search svg{
+    position:absolute;left:14px;top:50%;transform:translateY(-50%);
+    width:15px;height:15px;stroke:var(--grey);pointer-events:none;
+  }
+  .circles-search input{
+    width:100%;
+    border:1px solid var(--line-strong);
+    border-radius:99px;
+    padding:10px 14px 10px 38px;
+    font-family:var(--font-serif);
+    font-size:14px;
+    outline:none;
+    transition:border-color .16s var(--ease);
+  }
+  .circles-search input:focus{border-color:var(--accent);}
 
   /* ---------- CIRCLES ---------- */
   .circles-section{
     width:100%;
     max-width:640px;
-    margin-top:12px;
+    margin-top:6px;
   }
   .circles-head{
     display:flex;
     align-items:flex-start;
     justify-content:space-between;
     gap:12px;
-    padding:0 22px;
-    margin-bottom:14px;
+    padding:16px 22px 12px;
   }
   .circles-head h2{
     font-family:var(--font-display);
@@ -201,21 +266,44 @@
   .circle-new-btn:active{transform:scale(.96);}
   .circle-new-btn svg{width:14px;height:14px;stroke:#fff;}
 
+  .circle-card{
+    margin:0 16px 10px;
+    border:1px solid var(--line);
+    border-radius:18px;
+    overflow:hidden;
+    background:#fff;
+    opacity:0;
+    animation:riseIn .4s var(--ease) forwards;
+    transition:box-shadow .18s var(--ease), border-color .18s var(--ease);
+  }
+  .circle-card:hover{
+    box-shadow:0 6px 22px rgba(20,21,26,.06);
+    border-color:var(--line-strong);
+  }
+
   .circle-row{
     display:flex;
     align-items:center;
     gap:14px;
-    padding:14px 22px;
-    border-bottom:1px solid var(--line);
+    padding:14px 16px;
     cursor:pointer;
-    transition:background .12s ease;
+    position:relative;
   }
-  .circle-row:hover{background:#faf9f8;}
+  .circle-row::before{
+    content:'';
+    position:absolute;
+    left:0;top:10px;bottom:10px;
+    width:3px;
+    border-radius:99px;
+    background:var(--row-accent, var(--accent));
+    opacity:.75;
+  }
 
   .circle-cluster{
     display:flex;
     flex-shrink:0;
     width:52px;
+    margin-left:6px;
   }
   .circle-cluster .cluster-avatar{
     width:34px;height:34px;
@@ -253,11 +341,21 @@
     margin-top:2px;
   }
   .circle-info .circle-meta svg{width:11px;height:11px;flex-shrink:0;}
+  .owner-chip{
+    font-family:var(--font-mono);
+    font-size:9px;
+    color:#c24020;
+    background:var(--accent-soft);
+    padding:2px 6px;
+    border-radius:6px;
+    margin-left:4px;
+    letter-spacing:.03em;
+  }
 
   .circle-chevron{
     width:28px;height:28px;flex-shrink:0;
     display:flex;align-items:center;justify-content:center;
-    transition:transform .2s ease;
+    transition:transform .25s var(--ease-spring);
   }
   .circle-chevron svg{width:15px;height:15px;stroke:var(--grey);}
   .circle-row.expanded .circle-chevron{transform:rotate(90deg);}
@@ -265,12 +363,12 @@
   .circle-expand{
     overflow:hidden;
     max-height:0;
-    transition:max-height .25s ease;
+    transition:max-height .3s var(--ease);
     background:#faf9f8;
-    border-bottom:1px solid var(--line);
+    border-top:1px solid transparent;
   }
-  .circle-expand.open{max-height:420px;}
-  .circle-expand-inner{padding:6px 22px 20px;}
+  .circle-expand.open{max-height:460px;border-top-color:var(--line);}
+  .circle-expand-inner{padding:14px 16px 18px;}
 
   .circle-members-row{
     display:flex;
@@ -284,7 +382,9 @@
     border:1px solid var(--line-strong);
     border-radius:99px;
     padding:4px 10px 4px 4px;
+    transition:border-color .14s var(--ease);
   }
+  .circle-member-chip:hover{border-color:var(--accent);}
   .circle-member-chip .mini-avatar{width:22px;height:22px;font-size:9.5px;}
   .circle-member-chip span{
     font-family:var(--font-mono);
@@ -292,6 +392,7 @@
     color:var(--ink-soft);
   }
 
+  .circle-action-row{display:flex;gap:8px;}
   .circle-invite-btn{
     display:flex;align-items:center;gap:7px;
     background:var(--accent-soft);
@@ -301,11 +402,12 @@
     font-size:12.5px;
     padding:10px 16px;
     border-radius:12px;
-    transition:opacity .15s ease;
-    width:100%;
+    transition:opacity .15s ease, transform .1s ease;
+    flex:1;
     justify-content:center;
   }
   .circle-invite-btn:hover{opacity:.85;}
+  .circle-invite-btn:active{transform:scale(.97);}
   .circle-invite-btn:disabled{opacity:.5;cursor:default;}
   .circle-invite-btn svg{width:14px;height:14px;stroke:#c24020;}
 
@@ -318,69 +420,99 @@
     font-size:12.5px;
     padding:10px 16px;
     border-radius:12px;
-    transition:opacity .15s ease;
-    width:100%;
+    transition:opacity .15s ease, transform .1s ease;
     justify-content:center;
-    margin-top:8px;
+    flex-shrink:0;
   }
   .circle-leave-btn:hover{opacity:.85;}
+  .circle-leave-btn:active{transform:scale(.97);}
   .circle-leave-btn:disabled{opacity:.5;cursor:default;}
 
+  /* ---------- invite result card, rebuilt with a countdown ring ---------- */
   .circle-invite-result{
     margin-top:12px;
     background:var(--white);
     border:1px dashed var(--line-strong);
-    border-radius:14px;
-    padding:14px;
+    border-radius:16px;
+    padding:16px;
+    opacity:0;
+    animation:riseIn .3s var(--ease) forwards;
+  }
+  .invite-result-top{
+    display:flex;align-items:center;gap:14px;
+  }
+  .invite-ring-wrap{
+    position:relative;
+    width:46px;height:46px;
+    flex-shrink:0;
+  }
+  .invite-ring-wrap svg{transform:rotate(-90deg);}
+  .invite-ring-bg{fill:none;stroke:var(--line);stroke-width:4;}
+  .invite-ring-fg{
+    fill:none;stroke:var(--accent);stroke-width:4;stroke-linecap:round;
+    transition:stroke-dashoffset 1s linear, stroke .3s ease;
+  }
+  .invite-ring-label{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-mono);font-size:9px;color:var(--ink-soft);
   }
   .circle-invite-code{
     font-family:var(--font-mono);
-    font-size:16px;
+    font-size:17px;
     font-weight:500;
     letter-spacing:.04em;
     color:var(--ink);
     word-break:break-all;
   }
-  .circle-invite-row{
-    display:flex;align-items:center;justify-content:space-between;
-    gap:10px;margin-top:8px;
-  }
-  .circle-invite-timer{
-    font-family:var(--font-mono);
-    font-size:11px;
-    color:var(--danger);
-  }
-  .circle-invite-copy{
-    font-family:var(--font-display);
-    font-weight:600;
-    font-size:11.5px;
-    background:var(--ink);
-    color:#fff;
-    padding:7px 12px;
-    border-radius:99px;
-    flex-shrink:0;
-  }
-  .circle-invite-copy:hover{background:#000;}
-  .circle-invite-note{
+  .circle-invite-sub{
     font-family:var(--font-mono);
     font-size:10px;
     color:var(--grey);
-    margin-top:10px;
+    margin-top:3px;
   }
+  .invite-result-actions{
+    display:flex;gap:8px;margin-top:12px;
+  }
+  .invite-result-actions button{
+    flex:1;
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:12px;
+    padding:9px;
+    border-radius:99px;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .invite-copy-btn{background:var(--ink);color:#fff;}
+  .invite-copy-btn:hover{background:#000;}
+  .invite-share-btn{background:#f2f2f3;color:var(--ink-soft);}
+  .invite-share-btn:hover{background:#e9e9ea;}
+  .invite-result-actions button:active{transform:scale(.96);}
 
   .circles-empty{
-    padding:34px 22px;
+    padding:40px 22px 34px;
     text-align:center;
   }
   .circles-empty .empty-rings{
-    display:flex;justify-content:center;gap:0;margin-bottom:16px;
+    display:flex;justify-content:center;gap:0;margin-bottom:18px;
   }
   .circles-empty .empty-rings span{
-    width:38px;height:38px;border-radius:50%;
+    width:40px;height:40px;border-radius:50%;
     border:2px solid var(--line-strong);
-    margin-left:-10px;
+    margin-left:-11px;
+    animation:emptyPulse 2.4s var(--ease) infinite;
   }
-  .circles-empty .empty-rings span:first-child{margin-left:0;}
+  .circles-empty .empty-rings span:first-child{margin-left:0;animation-delay:0s;}
+  .circles-empty .empty-rings span:nth-child(2){animation-delay:.25s;}
+  .circles-empty .empty-rings span:nth-child(3){animation-delay:.5s;}
+  @keyframes emptyPulse{
+    0%,100%{transform:scale(1);border-color:var(--line-strong);}
+    50%{transform:scale(1.08);border-color:var(--accent);}
+  }
+  .circles-empty h3{
+    font-family:var(--font-display);font-weight:600;font-size:15px;
+    margin-bottom:6px;
+  }
   .circles-empty p{
     font-family:var(--font-serif);
     font-size:14px;
@@ -391,18 +523,30 @@
   }
   .circles-empty .circle-new-btn{margin:0 auto;}
 
+  .circles-no-results{
+    padding:34px 22px;
+    text-align:center;
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--grey);
+  }
+
   .circles-join-row{
     display:flex;gap:8px;
-    padding:14px 22px 2px;
+    padding:18px 22px 2px;
+    margin-top:6px;
+    border-top:1px solid var(--line);
+    padding-top:18px;
   }
   .circles-join-row input{
     flex:1;
     border:1px solid var(--line-strong);
     border-radius:99px;
-    padding:10px 16px;
+    padding:11px 16px;
     font-family:var(--font-mono);
     font-size:12.5px;
     outline:none;
+    transition:border-color .16s var(--ease);
   }
   .circles-join-row input:focus{border-color:var(--accent);}
   .circles-join-row button{
@@ -414,9 +558,12 @@
     padding:0 18px;
     border-radius:99px;
     flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    transition:background .15s ease, transform .1s ease;
   }
-  .circles-join-row button:hover{background:#000;}
-  .circles-join-row button:disabled{opacity:.5;}
+  .circles-join-row button:hover:not(:disabled){background:#000;}
+  .circles-join-row button:active:not(:disabled){transform:scale(.95);}
+  .circles-join-row button:disabled{opacity:.5;cursor:not-allowed;}
 
   .circles-join-status{
     padding:0 22px;
@@ -428,13 +575,19 @@
   .circles-join-status.error{color:var(--danger);}
   .circles-join-status.ok{color:#2e8b57;}
 
+  .mini-spinner{
+    width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;
+    animation:spin .7s linear infinite;
+    flex-shrink:0;
+  }
+  @keyframes spin{ to{transform:rotate(360deg);} }
+
   /* ---------- discover panel ---------- */
   .discover-row{
     display:flex;
     align-items:center;
     gap:14px;
-    padding:14px 22px;
-    border-bottom:1px solid var(--line);
+    padding:14px 16px;
   }
   .discover-row .circle-info{flex:1;min-width:0;}
   .discover-join-btn{
@@ -447,9 +600,29 @@
     padding:9px 16px;
     border-radius:99px;
     transition:background .15s ease, transform .1s ease;
+    display:flex;align-items:center;gap:6px;
   }
   .discover-join-btn:hover{background:#000;}
+  .discover-join-btn:active{transform:scale(.95);}
   .discover-join-btn:disabled{opacity:.55;cursor:default;}
+  .discover-join-btn.joined{background:#2e8b57;}
+
+  /* ---------- loading skeleton ---------- */
+  .circles-skeleton{padding:16px 16px 0;}
+  .skel-card{
+    display:flex;align-items:center;gap:14px;
+    padding:14px 16px;margin-bottom:10px;
+    border:1px solid var(--line);border-radius:18px;
+  }
+  .skel{background:linear-gradient(100deg,#f2f2f3 30%,#fafafa 50%,#f2f2f3 70%);background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite;border-radius:8px;}
+  @keyframes shimmer{ 0%{background-position:180% 0;} 100%{background-position:-20% 0;} }
+  .skel-avatars{display:flex;}
+  .skel-avatars .skel{width:34px;height:34px;border-radius:50%;margin-left:-12px;}
+  .skel-avatars .skel:first-child{margin-left:0;}
+  .skel-lines{flex:1;}
+  .skel-line{height:11px;border-radius:6px;margin-bottom:7px;}
+  .skel-line.w1{width:40%;}
+  .skel-line.w2{width:60%;height:9px;margin-bottom:0;}
 
   /* ---------- create-circle modal (shared shape with best-friend modal) ---------- */
   .bf-modal-overlay{
@@ -467,12 +640,15 @@
     padding:32px 26px 26px; text-align:center;
     transform:scale(.9) translateY(10px); transition:transform .25s cubic-bezier(.34,1.56,.64,1);
     box-shadow:0 30px 60px rgba(0,0,0,.3);
+    max-height:90vh;
+    overflow-y:auto;
   }
   .bf-modal-overlay.show .bf-modal{ transform:scale(1) translateY(0); }
   .bf-modal-actions{ display:flex; gap:10px; margin-top:22px; }
   .bf-modal-actions button{
     flex:1; padding:13px; border-radius:14px; font-family:var(--font-display); font-weight:600; font-size:14px;
     transition:transform .1s ease, opacity .15s ease;
+    display:flex;align-items:center;justify-content:center;gap:7px;
   }
   .bf-modal-actions button:active{ transform:scale(.96); }
   .bf-modal-cancel{ background:#f2f2f3; color:var(--ink-soft); }
@@ -487,7 +663,10 @@
     border-radius:50%;
     background:var(--accent-soft);
     display:flex;align-items:center;justify-content:center;
+    transition:transform .3s var(--ease-spring);
   }
+  .circle-modal-icon.bump{animation:iconBump .4s var(--ease-spring);}
+  @keyframes iconBump{ 0%{transform:scale(1);} 40%{transform:scale(1.15) rotate(-4deg);} 100%{transform:scale(1);} }
   .circle-modal-icon svg{width:28px;height:28px;stroke:var(--accent);}
 
   .bf-modal h3{
@@ -504,7 +683,8 @@
     margin-bottom:14px;
   }
   .circle-form-field label{
-    display:block;
+    display:flex;
+    justify-content:space-between;
     font-family:var(--font-mono);
     font-size:10.5px;
     color:var(--grey);
@@ -521,6 +701,7 @@
     font-size:14.5px;
     outline:none;
     resize:none;
+    transition:border-color .16s var(--ease);
   }
   .circle-form-field input:focus,
   .circle-form-field textarea:focus{border-color:var(--accent);}
@@ -551,6 +732,31 @@
     color:var(--grey);
     line-height:1.5;
     margin-bottom:14px;
+    transition:opacity .15s ease;
+  }
+
+  .modal-error{
+    color:var(--danger);font-family:var(--font-mono);font-size:11px;margin-top:8px;text-align:left;
+  }
+
+  /* ---------- toast ---------- */
+  .waater-toast{
+    position:fixed;left:50%;bottom:96px;transform:translate(-50%,12px);
+    background:var(--ink);color:#fff;font-family:var(--font-display);font-weight:600;font-size:12.5px;
+    padding:11px 18px;border-radius:99px;box-shadow:0 12px 30px rgba(20,21,26,.25);
+    display:flex;align-items:center;gap:8px;opacity:0;pointer-events:none;z-index:200;
+    transition:opacity .2s ease, transform .2s ease;white-space:nowrap;
+    max-width:90vw;
+  }
+  .waater-toast span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .waater-toast.show{opacity:1;transform:translate(-50%,0);}
+  .waater-toast.error{background:var(--danger);}
+  .waater-toast svg{width:15px;height:15px;stroke:#fff;flex-shrink:0;}
+  @media (min-width:900px){ .waater-toast{bottom:34px;} }
+
+  .page-loading{
+    padding:80px 22px;text-align:center;
+    font-family:var(--font-mono);font-size:12px;color:var(--grey);
   }
 </style>
 </head>
@@ -623,6 +829,11 @@
   </a>
 </nav>
 
+<div class="waater-toast" id="waaterToast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="waaterToastText"></span>
+</div>
+
 <script>
   function escapeHtml(str) {
     const div = document.createElement('div');
@@ -647,6 +858,18 @@
     if (currentUser) return true;
     window.location.href = `/auth?next=${encodeURIComponent(nextPath || window.location.pathname)}`;
     return false;
+  }
+
+  // ---- toast ----
+  let toastTimer = null;
+  function showToast(text, type){
+    const toast = document.getElementById('waaterToast');
+    document.getElementById('waaterToastText').textContent = text;
+    toast.classList.remove('error');
+    if (type === 'error') toast.classList.add('error');
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
   }
 
   // ---- sidebar auth widget (shared look with the rest of the app) ----
@@ -688,6 +911,21 @@
   }
 
   const CIRCLE_ICON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>`;
+
+  // a small deterministic palette so each circle card gets a consistent
+  // accent stripe/color, based on a hash of its id — purely cosmetic
+  const ROW_ACCENTS = ['#ff5a36', '#7fb8ff', '#a3e88f', '#c79dff', '#ffb199', '#5fd3c4'];
+  function accentForId(id){
+    let hash = 0;
+    const str = String(id || '');
+    for (let i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+    return ROW_ACCENTS[hash % ROW_ACCENTS.length];
+  }
+
+  // cache of the last loaded lists so the search box can filter instantly
+  // without a refetch
+  let lastMyCircles = [];
+  let lastDiscoverCircles = [];
 
   // ---- load the circles the current user belongs to, with member previews ----
   async function loadMyCircles(userId) {
@@ -772,12 +1010,13 @@
 
   function renderCircleRow(circle) {
     const clusterHtml = renderCircleCluster(circle.memberProfiles || []);
+    const accent = accentForId(circle.id);
     return `
-      <div>
+      <div class="circle-card" style="--row-accent:${accent};">
         <div class="circle-row" data-circle-id="${circle.id}">
           ${clusterHtml}
           <div class="circle-info">
-            <div class="circle-name">${escapeHtml(circle.name)}</div>
+            <div class="circle-name">${escapeHtml(circle.name)}${circle.myRole === 'owner' ? '<span class="owner-chip">owner</span>' : ''}</div>
             <div class="circle-meta">
               ${circleMetaIcon(circle.is_private)}
               <span>${circle.is_private ? 'private' : 'public'} · ${circle.memberCount} ${circle.memberCount === 1 ? 'person' : 'people'}</span>
@@ -797,13 +1036,15 @@
                 </div>
               `).join('')}
             </div>
-            <button class="circle-invite-btn" data-circle-id="${circle.id}">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
-              Invite someone in
-            </button>
-            ${circle.myRole !== 'owner' ? `
-              <button class="circle-leave-btn" data-circle-id="${circle.id}">Leave circle</button>
-            ` : ''}
+            <div class="circle-action-row">
+              <button class="circle-invite-btn" data-circle-id="${circle.id}">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+                Invite someone in
+              </button>
+              ${circle.myRole !== 'owner' ? `
+                <button class="circle-leave-btn" data-circle-id="${circle.id}">Leave</button>
+              ` : ''}
+            </div>
             <div class="circle-invite-result" id="circle-invite-result-${circle.id}" style="display:none;"></div>
           </div>
         </div>
@@ -811,26 +1052,58 @@
     `;
   }
 
-  function renderCirclesSection(circles) {
-    const listHtml = circles.length > 0
-      ? circles.map(renderCircleRow).join('')
-      : `
+  function renderCirclesSkeleton(){
+    return `
+      <div class="circles-skeleton">
+        ${[0,1,2].map(() => `
+          <div class="skel-card">
+            <div class="skel-avatars">
+              <div class="skel"></div><div class="skel"></div><div class="skel"></div>
+            </div>
+            <div class="skel-lines">
+              <div class="skel skel-line w1"></div>
+              <div class="skel skel-line w2"></div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function circleMatchesQuery(circle, q){
+    if (!q) return true;
+    return (circle.name || '').toLowerCase().includes(q);
+  }
+
+  function renderCirclesSection(circles, opts = {}) {
+    const totalPeople = circles.reduce((sum, c) => sum + (c.memberCount || 0), 0);
+    const filtered = circles.filter(c => circleMatchesQuery(c, opts.query));
+
+    let listHtml;
+    if (circles.length === 0) {
+      listHtml = `
         <div class="circles-empty">
           <div class="empty-rings"><span></span><span></span><span></span></div>
-          <p>No circle yet. A circle is a small space — just the people you'd actually want seeing your gossip.</p>
+          <h3>No circle yet</h3>
+          <p>A circle is a small space — just the people you'd actually want seeing your gossip.</p>
           <button class="circle-new-btn" id="circleNewBtnEmpty">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
             Start your first circle
           </button>
         </div>
       `;
+    } else if (filtered.length === 0) {
+      listHtml = `<div class="circles-no-results">No circles match "${escapeHtml(opts.query)}".</div>`;
+    } else {
+      listHtml = filtered.map(renderCircleRow).join('');
+    }
 
     return `
       <div class="circles-section">
         <div class="circles-head">
           <div>
             <h2>Your circles</h2>
-            <p>spaces for your people</p>
+            <p>${circles.length} ${circles.length === 1 ? 'circle' : 'circles'} · ${totalPeople} ${totalPeople === 1 ? 'person' : 'people'} total</p>
           </div>
           ${circles.length > 0 ? `
             <button class="circle-new-btn" id="circleNewBtn">
@@ -839,6 +1112,14 @@
             </button>
           ` : ''}
         </div>
+        ${circles.length > 3 ? `
+        <div class="circles-search-row" style="padding-bottom:12px;">
+          <div class="circles-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <input type="text" id="circleSearchInput" placeholder="Search your circles..." value="${escapeHtml(opts.query || '')}">
+          </div>
+        </div>
+        ` : ''}
         ${listHtml}
         <div class="circles-join-row">
           <input type="text" id="circleJoinInput" placeholder="Have an invite code?" maxlength="40">
@@ -851,24 +1132,32 @@
 
   function renderDiscoverRow(circle) {
     return `
-      <div class="discover-row">
-        <div class="circle-info">
-          <div class="circle-name">${escapeHtml(circle.name)}</div>
-          <div class="circle-meta">
-            ${circleMetaIcon(false)}
-            <span>public · ${circle.memberCount} ${circle.memberCount === 1 ? 'person' : 'people'}</span>
+      <div class="circle-card" style="--row-accent:${accentForId(circle.id)};">
+        <div class="discover-row">
+          <div class="circle-info">
+            <div class="circle-name">${escapeHtml(circle.name)}</div>
+            <div class="circle-meta">
+              ${circleMetaIcon(false)}
+              <span>public · ${circle.memberCount} ${circle.memberCount === 1 ? 'person' : 'people'}</span>
+            </div>
           </div>
+          <button class="discover-join-btn" data-circle-id="${circle.id}">Join</button>
         </div>
-        <button class="discover-join-btn" data-circle-id="${circle.id}">Join</button>
       </div>
     `;
   }
 
   function renderDiscoverSection(circles) {
     if (circles.length === 0) {
-      return `<div class="circles-empty"><p>No public circles to discover yet — start your own from the "Your circles" tab.</p></div>`;
+      return `
+        <div class="circles-empty">
+          <div class="empty-rings"><span></span><span></span><span></span></div>
+          <h3>Nothing to discover yet</h3>
+          <p>No public circles around right now — start your own from the "Your circles" tab.</p>
+        </div>
+      `;
     }
-    return `<div class="circles-section">${circles.map(renderDiscoverRow).join('')}</div>`;
+    return `<div class="circles-section" style="margin-top:16px;">${circles.map(renderDiscoverRow).join('')}</div>`;
   }
 
   // ---- wire clicks/expand/invite/leave/join for "Your circles" ----
@@ -890,18 +1179,21 @@
     document.querySelectorAll('.circle-invite-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
+        if (btn.disabled) return; // guard against double-tap firing two invites
         btn.disabled = true;
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = `<span class="mini-spinner" style="border-color:rgba(194,64,32,.35);border-top-color:#c24020;"></span> Creating…`;
         const circleId = btn.dataset.circleId;
         const resultEl = document.getElementById(`circle-invite-result-${circleId}`);
         try {
           const { data, error } = await supabaseClient.rpc('create_circle_invite', { p_circle_id: circleId });
           if (error) throw error;
-          showInviteResult(resultEl, data);
+          showInviteResult(resultEl, data, circleId);
         } catch (err) {
-          resultEl.style.display = 'block';
-          resultEl.innerHTML = `<div class="circle-invite-note" style="color:var(--danger);">${escapeHtml(err.message || 'Could not create invite')}</div>`;
+          showToast(err.message || 'Could not create invite', 'error');
         } finally {
           btn.disabled = false;
+          btn.innerHTML = originalHtml;
         }
       });
     });
@@ -909,6 +1201,7 @@
     document.querySelectorAll('.circle-leave-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
+        if (btn.disabled) return;
         btn.disabled = true;
         const circleId = btn.dataset.circleId;
         try {
@@ -918,9 +1211,11 @@
             .eq('circle_id', circleId)
             .eq('user_id', currentUser.id);
           if (error) throw error;
+          showToast('You left the circle');
           renderPage();
         } catch (err) {
           console.error('Leave circle failed:', err);
+          showToast(err.message || 'Could not leave circle', 'error');
           btn.disabled = false;
         }
       });
@@ -931,15 +1226,33 @@
     const newBtnEmpty = document.getElementById('circleNewBtnEmpty');
     if (newBtnEmpty) newBtnEmpty.addEventListener('click', openCreateCircleModal);
 
+    const searchInput = document.getElementById('circleSearchInput');
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        const panel = document.getElementById('panel-mine');
+        const scrollPos = window.scrollY;
+        panel.innerHTML = renderCirclesSection(lastMyCircles, { query: searchInput.value.trim().toLowerCase() });
+        wireYourCirclesUI();
+        const reInput = document.getElementById('circleSearchInput');
+        if (reInput) { reInput.focus(); reInput.setSelectionRange(reInput.value.length, reInput.value.length); }
+        window.scrollTo(0, scrollPos);
+      });
+    }
+
+    // guard so a double-tap on Join can't fire the RPC twice
+    let isJoiningByCode = false;
     const joinBtn = document.getElementById('circleJoinBtn');
     const joinInput = document.getElementById('circleJoinInput');
     const joinStatus = document.getElementById('circleJoinStatus');
     if (joinBtn) {
-      joinBtn.addEventListener('click', async () => {
+      const submitJoin = async () => {
         if (!requireAuth()) return;
+        if (isJoiningByCode) return;
         const code = (joinInput.value || '').trim();
         if (!code) return;
+        isJoiningByCode = true;
         joinBtn.disabled = true;
+        joinBtn.innerHTML = `<span class="mini-spinner"></span>`;
         joinStatus.className = 'circles-join-status';
         joinStatus.textContent = '';
         try {
@@ -947,15 +1260,20 @@
           if (error) throw error;
           joinStatus.className = 'circles-join-status ok';
           joinStatus.textContent = `You're in ${data?.name || 'the circle'} now.`;
+          showToast(`Joined ${data?.name || 'the circle'}`);
           joinInput.value = '';
           renderPage();
         } catch (err) {
           joinStatus.className = 'circles-join-status error';
           joinStatus.textContent = err.message || 'That code did not work.';
         } finally {
+          isJoiningByCode = false;
           joinBtn.disabled = false;
+          joinBtn.textContent = 'Join';
         }
-      });
+      };
+      joinBtn.addEventListener('click', submitJoin);
+      joinInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submitJoin(); } });
     }
   }
 
@@ -964,16 +1282,21 @@
     document.querySelectorAll('.discover-join-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (!requireAuth()) return;
+        if (btn.disabled) return; // guard against a double-tap inserting membership twice
         btn.disabled = true;
-        btn.textContent = 'Joining…';
+        btn.innerHTML = `<span class="mini-spinner"></span> Joining…`;
         try {
           const { error } = await supabaseClient
             .from('circle_members')
             .insert({ circle_id: btn.dataset.circleId, user_id: currentUser.id, role: 'member' });
           if (error) throw error;
-          renderPage();
+          btn.classList.add('joined');
+          btn.textContent = 'Joined!';
+          showToast('You joined the circle');
+          setTimeout(() => renderPage(), 500);
         } catch (err) {
           console.error('Join circle failed:', err);
+          showToast(err.message || 'Could not join circle', 'error');
           btn.disabled = false;
           btn.textContent = 'Join';
         }
@@ -981,17 +1304,32 @@
     });
   }
 
-  // ---- show a freshly created invite code with a live 10-minute countdown ----
-  function showInviteResult(resultEl, invite) {
+  // ---- show a freshly created invite code with a live countdown ring ----
+  function showInviteResult(resultEl, invite, circleId) {
     resultEl.style.display = 'block';
     const link = `${window.location.origin}/circle/join?code=${encodeURIComponent(invite.code)}`;
+    const RADIUS = 20;
+    const CIRC = 2 * Math.PI * RADIUS;
+
     resultEl.innerHTML = `
-      <div class="circle-invite-code">${escapeHtml(invite.code)}</div>
-      <div class="circle-invite-row">
-        <span class="circle-invite-timer" id="invite-timer-${invite.id}">expires in 10:00</span>
-        <button class="circle-invite-copy" id="invite-copy-${invite.id}">Copy link</button>
+      <div class="invite-result-top">
+        <div class="invite-ring-wrap">
+          <svg width="46" height="46" viewBox="0 0 46 46">
+            <circle class="invite-ring-bg" cx="23" cy="23" r="${RADIUS}"></circle>
+            <circle class="invite-ring-fg" id="invite-ring-${invite.id}" cx="23" cy="23" r="${RADIUS}"
+              stroke-dasharray="${CIRC}" stroke-dashoffset="0"></circle>
+          </svg>
+          <div class="invite-ring-label" id="invite-ring-label-${invite.id}">10:00</div>
+        </div>
+        <div>
+          <div class="circle-invite-code">${escapeHtml(invite.code)}</div>
+          <div class="circle-invite-sub">Works once, for the next 10 minutes only.</div>
+        </div>
       </div>
-      <div class="circle-invite-note">Works once, for the next 10 minutes only.</div>
+      <div class="invite-result-actions">
+        <button class="invite-copy-btn" id="invite-copy-${invite.id}">Copy link</button>
+        <button class="invite-share-btn" id="invite-share-${invite.id}">Share…</button>
+      </div>
     `;
 
     const copyBtn = resultEl.querySelector(`#invite-copy-${invite.id}`);
@@ -999,30 +1337,54 @@
       e.stopPropagation();
       try {
         await navigator.clipboard.writeText(link);
-        copyBtn.textContent = 'Copied';
+        copyBtn.textContent = 'Copied ✓';
+        showToast('Invite link copied');
         setTimeout(() => { copyBtn.textContent = 'Copy link'; }, 1800);
       } catch (err) {
-        copyBtn.textContent = 'Copy failed';
+        showToast('Could not copy — copy it manually: ' + link, 'error');
       }
     });
 
-    const timerEl = resultEl.querySelector(`#invite-timer-${invite.id}`);
+    const shareBtn = resultEl.querySelector(`#invite-share-${invite.id}`);
+    shareBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: 'Join my circle on Waater', text: 'Come join my circle on Waater', url: link });
+        } catch (err) { /* user cancelled — fine */ }
+      } else {
+        try {
+          await navigator.clipboard.writeText(link);
+          showToast('Invite link copied');
+        } catch (err) {
+          showToast('Could not share — copy it manually: ' + link, 'error');
+        }
+      }
+    });
+
+    const ringEl = resultEl.querySelector(`#invite-ring-${invite.id}`);
+    const labelEl = resultEl.querySelector(`#invite-ring-label-${invite.id}`);
     const expiresAt = new Date(invite.expires_at).getTime();
-    const interval = setInterval(() => {
+    const totalMs = Math.max(1, expiresAt - Date.now());
+
+    const tick = () => {
       const msLeft = expiresAt - Date.now();
       if (msLeft <= 0) {
-        timerEl.textContent = 'expired';
+        labelEl.textContent = 'done';
+        ringEl.style.strokeDashoffset = CIRC;
+        ringEl.style.stroke = 'var(--grey)';
         clearInterval(interval);
         return;
       }
+      const fraction = msLeft / totalMs;
+      ringEl.style.strokeDashoffset = String(CIRC * (1 - fraction));
       const m = Math.floor(msLeft / 60000);
       const s = Math.floor((msLeft % 60000) / 1000);
-      timerEl.textContent = `expires in ${m}:${s.toString().padStart(2, '0')}`;
-    }, 1000);
-    const msLeftNow = expiresAt - Date.now();
-    const m0 = Math.max(0, Math.floor(msLeftNow / 60000));
-    const s0 = Math.max(0, Math.floor((msLeftNow % 60000) / 1000));
-    timerEl.textContent = `expires in ${m0}:${s0.toString().padStart(2, '0')}`;
+      labelEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+      if (msLeft < 60000) ringEl.style.stroke = 'var(--danger)';
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
   }
 
   // ---- create-circle modal ----
@@ -1032,13 +1394,13 @@
     overlay.className = 'bf-modal-overlay';
     overlay.innerHTML = `
       <div class="bf-modal">
-        <div class="circle-modal-icon">${CIRCLE_ICON_SVG}</div>
+        <div class="circle-modal-icon" id="circleModalIcon">${CIRCLE_ICON_SVG}</div>
         <h3>Start a circle</h3>
         <p style="margin-bottom:18px;">A small space for the people you actually want seeing your day — post gossip, updates, whatever's just for them.</p>
 
         <div class="circle-form-field">
-          <label>Name</label>
-          <input type="text" id="circleNameInput" placeholder="Sunday people" maxlength="40">
+          <label>Name <span id="circleNameCount">0/40</span></label>
+          <input type="text" id="circleNameInput" placeholder="Sunday people" maxlength="40" autocomplete="off">
         </div>
 
         <div class="circle-form-field">
@@ -1052,6 +1414,8 @@
           </div>
         </div>
 
+        <div id="circleModalErrorSlot"></div>
+
         <div class="bf-modal-actions">
           <button class="bf-modal-cancel" id="circleModalCancel">Cancel</button>
           <button class="bf-modal-confirm" id="circleModalConfirm">Create circle</button>
@@ -1061,9 +1425,18 @@
     document.body.appendChild(overlay);
     requestAnimationFrame(() => overlay.classList.add('show'));
 
+    const nameInput = overlay.querySelector('#circleNameInput');
+    const nameCount = overlay.querySelector('#circleNameCount');
+    nameInput.addEventListener('input', () => {
+      nameCount.textContent = `${nameInput.value.length}/40`;
+      nameInput.style.borderColor = '';
+    });
+    setTimeout(() => nameInput.focus(), 260);
+
     let isPrivate = true;
     const toggleBtns = overlay.querySelectorAll('.circle-privacy-toggle button');
     const note = overlay.querySelector('#circlePrivacyNote');
+    const icon = overlay.querySelector('#circleModalIcon');
     toggleBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         toggleBtns.forEach(b => b.classList.remove('active'));
@@ -1072,6 +1445,9 @@
         note.textContent = isPrivate
           ? 'Only people already inside can bring someone in — three invites a day each, and every invite code stops working after 10 minutes.'
           : 'Anyone can see this circle and what gets posted in it — people can also join it straight from Discover.';
+        icon.classList.remove('bump');
+        void icon.offsetWidth;
+        icon.classList.add('bump');
       });
     });
 
@@ -1081,18 +1457,24 @@
     };
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
     overlay.querySelector('#circleModalCancel').addEventListener('click', close);
+    nameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); overlay.querySelector('#circleModalConfirm').click(); }
+    });
 
+    let isCreating = false;
     overlay.querySelector('#circleModalConfirm').addEventListener('click', async () => {
-      const nameInput = overlay.querySelector('#circleNameInput');
+      if (isCreating) return; // guard against a double-tap creating two circles
       const name = nameInput.value.trim();
       if (!name) {
         nameInput.style.borderColor = 'var(--danger)';
         nameInput.focus();
         return;
       }
+      isCreating = true;
       const btn = overlay.querySelector('#circleModalConfirm');
       btn.disabled = true;
-      btn.textContent = 'Creating…';
+      btn.innerHTML = `<span class="mini-spinner"></span> Creating…`;
+      overlay.querySelector('#circleModalErrorSlot').innerHTML = '';
 
       try {
         const { data: newCircle, error } = await supabaseClient
@@ -1107,26 +1489,44 @@
           .insert({ circle_id: newCircle.id, user_id: currentUser.id, role: 'owner' });
         if (memberError) throw memberError;
 
+        showToast(`${name} is live`);
         close();
         renderPage();
       } catch (err) {
+        isCreating = false;
         btn.disabled = false;
         btn.textContent = 'Create circle';
-        btn.parentElement.insertAdjacentHTML('beforebegin',
-          `<p style="color:var(--danger);font-family:var(--font-mono);font-size:11px;margin-top:8px;">${escapeHtml(err.message || 'Something went wrong')}</p>`);
+        overlay.querySelector('#circleModalErrorSlot').innerHTML =
+          `<p class="modal-error">${escapeHtml(err.message || 'Something went wrong')}</p>`;
       }
     });
   }
 
-  // ---- tabs ----
+  // ---- tabs, with a sliding pill indicator ----
+  function positionTabIndicator(activeBtn){
+    const indicator = document.querySelector('.tab-indicator');
+    if (!indicator || !activeBtn) return;
+    indicator.style.width = `${activeBtn.offsetWidth}px`;
+    indicator.style.transform = `translateX(${activeBtn.offsetLeft - 4}px)`;
+  }
+
   function wireTabs() {
-    document.querySelectorAll('.circles-tab-btn').forEach(btn => {
+    const buttons = document.querySelectorAll('.circles-tab-btn');
+    const active = document.querySelector('.circles-tab-btn.active');
+    positionTabIndicator(active);
+
+    buttons.forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.circles-tab-btn').forEach(b => b.classList.remove('active'));
+        buttons.forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.circles-panel').forEach(p => p.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById(`panel-${btn.dataset.tab}`).classList.add('active');
+        positionTabIndicator(btn);
       });
+    });
+
+    window.addEventListener('resize', () => {
+      positionTabIndicator(document.querySelector('.circles-tab-btn.active'));
     });
   }
 
@@ -1136,19 +1536,48 @@
 
     if (!requireAuth('/circles')) return;
 
+    // show a lightweight skeleton immediately instead of a blank/plain-text wait
+    body.innerHTML = `
+      <div class="page-head">
+        <div class="page-head-top">
+          <div>
+            <h1>Circles</h1>
+            <p>Small, close spaces — create one, invite people in, or find a public one to join.</p>
+          </div>
+        </div>
+      </div>
+      ${renderCirclesSkeleton()}
+    `;
+
     const myCircles = await loadMyCircles(currentUser.id);
     const myCircleIds = new Set(myCircles.map(c => c.id));
     const discoverCircles = await loadDiscoverCircles(currentUser.id, myCircleIds);
 
+    lastMyCircles = myCircles;
+    lastDiscoverCircles = discoverCircles;
+
+    const totalPeople = new Set(myCircles.flatMap(c => (c.memberProfiles || []).map(p => p.id))).size;
+
     body.innerHTML = `
       <div class="page-head">
-        <h1>Circles</h1>
-        <p>Small, close spaces — create one, invite people in, or find a public one to join.</p>
+        <div class="page-head-top">
+          <div>
+            <h1>Circles</h1>
+            <p>Small, close spaces — create one, invite people in, or find a public one to join.</p>
+          </div>
+        </div>
+        <div class="stat-pills">
+          <div class="stat-pill"><b>${myCircles.length}</b><span>${myCircles.length === 1 ? 'circle' : 'circles'}</span></div>
+          <div class="stat-pill"><b>${totalPeople}</b><span>${totalPeople === 1 ? 'person' : 'people'} across them</span></div>
+        </div>
       </div>
 
       <div class="circles-tabs">
-        <button class="circles-tab-btn active" data-tab="mine">Your circles</button>
-        <button class="circles-tab-btn" data-tab="discover">Discover</button>
+        <div class="circles-tabs-track">
+          <div class="tab-indicator"></div>
+          <button class="circles-tab-btn active" data-tab="mine">Your circles</button>
+          <button class="circles-tab-btn" data-tab="discover">Discover</button>
+        </div>
       </div>
 
       <div class="circles-panel active" id="panel-mine">
