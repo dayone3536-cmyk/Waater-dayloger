@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Circles — Waater</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --white:#ffffff;
+    --ink:#14151a;
+    --ink-soft:#4a4d55;
+    --grey:#8a8d94;
+    --line:#ececec;
+    --line-strong:#e0e0e0;
+    --accent:#ff5a36;
+    --accent-2:#ffb199;
+    --accent-soft:#fff1ec;
+    --danger:#e0433f;
+    --nav-w:248px;
+    --font-display:'Space Grotesk', sans-serif;
+    --font-serif:'Newsreader', serif;
+    --font-mono:'JetBrains Mono', monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    background:var(--white);
+    color:var(--ink);
+    font-family:var(--font-serif);
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:78px;
+  }
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;border:none;background:none;cursor:pointer;}
+  ::selection{background:var(--accent-soft);color:var(--accent);}
+
+  /* ---------- shared shell (same as profile.html / index.html) ---------- */
+  .app{display:flex;max-width:1180px;margin:0 auto;}
+  .main{flex:1;min-width:0;border-left:1px solid var(--line);border-right:1px solid var(--line);}
+
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 20px 14px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:rgba(255,255,255,.92);
+    backdrop-filter:blur(8px);z-index:20;
+  }
+  .wordmark{font-family:var(--font-display);font-weight:700;font-size:20px;letter-spacing:-0.02em;display:flex;align-items:baseline;gap:2px;}
+  .wordmark .dot{color:var(--accent);}
+
+  .sidebar{
+    display:none;width:var(--nav-w);flex-shrink:0;padding:28px 18px;
+    flex-direction:column;height:100vh;position:sticky;top:0;
+  }
+  .sidebar .wordmark{font-size:24px;padding:0 10px;margin-bottom:36px;}
+  .nav-list{list-style:none;display:flex;flex-direction:column;gap:4px;}
+  .nav-item{
+    display:flex;align-items:center;gap:14px;padding:12px 12px;border-radius:12px;
+    font-family:var(--font-display);font-size:15.5px;font-weight:500;
+    color:var(--ink-soft);transition:background .15s ease, color .15s ease;
+  }
+  .nav-item svg{width:22px;height:22px;flex-shrink:0;}
+  .nav-item:hover{background:#f7f7f8;color:var(--ink);}
+  .nav-item.active{color:var(--ink);}
+  .nav-item.active svg{stroke:var(--accent);}
+  .nav-create{margin-top:14px;background:var(--ink);color:var(--white)!important;justify-content:center;font-weight:600;padding:13px 12px;}
+  .nav-create:hover{background:#000;}
+  .nav-create svg{stroke:var(--white);}
+
+  .sidebar-profile{
+    margin-top:auto;display:flex;align-items:center;gap:10px;
+    padding:10px 12px;border-radius:12px;border:1px solid var(--line);
+  }
+  .mini-avatar{
+    width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd8c9,var(--accent));
+    flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;
+    font-family:var(--font-display);font-weight:700;font-size:14px;overflow:hidden;
+  }
+  .mini-avatar img{width:100%;height:100%;object-fit:cover;}
+  .sidebar-profile .who{display:flex;flex-direction:column;line-height:1.2;flex:1;min-width:0;}
+  .sidebar-profile .who span:first-child{font-family:var(--font-display);font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sidebar-profile .who span:last-child{font-family:var(--font-mono);font-size:11px;color:var(--grey);}
+  .sidebar-signout{font-family:var(--font-mono);font-size:10px;color:var(--grey);padding:4px 6px;border-radius:6px;flex-shrink:0;}
+  .sidebar-signout:hover{color:var(--accent);}
+  .sidebar-signin{
+    margin-top:auto;display:block;text-align:center;background:var(--ink);color:#fff!important;
+    font-family:var(--font-display);font-weight:600;font-size:13.5px;padding:12px;border-radius:12px;
+  }
+  .sidebar-signin:hover{background:#000;}
+
+  @media (min-width:900px){
+    body{padding-bottom:0;}
+    .topbar{display:none;}
+    .sidebar{display:flex;}
+  }
+
+  .bottom-nav{
+    position:fixed;bottom:0;left:0;right:0;height:64px;
+    background:rgba(255,255,255,.96);backdrop-filter:blur(10px);
+    border-top:1px solid var(--line);display:flex;align-items:center;
+    justify-content:space-around;z-index:30;
+  }
+  .tab{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--grey);font-family:var(--font-mono);font-size:9.5px;letter-spacing:.02em;padding:6px 10px;}
+  .tab svg{width:22px;height:22px;stroke:var(--grey);}
+  .tab.active{color:var(--ink);}
+  .tab.active svg{stroke:var(--ink);}
+  .tab-create{position:relative;top:-20px;}
+  .tab-create .ring{width:52px;height:52px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(255,90,54,.4);}
+  .tab-create svg{width:22px;height:22px;stroke:#fff;stroke-width:2.4;}
+  .tab-create span{display:none;}
+  @media (min-width:900px){ .bottom-nav{display:none;} }
+
+  .page-loading{
+    padding:80px 22px;text-align:center;
+    font-family:var(--font-mono);font-size:12px;color:var(--grey);
+  }
+
+  /* ---------- page head ---------- */
+  .page-head{
+    padding:32px 22px 4px;
+  }
+  .page-head h1{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:-0.01em;
+  }
+  .page-head p{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--grey);
+    margin-top:5px;
+  }
+
+  /* ---------- segmented tab control (Your circles / Discover) ---------- */
+  .circles-tabs{
+    display:flex;
+    gap:8px;
+    padding:20px 22px 4px;
+  }
+  .circles-tab-btn{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:13px;
+    padding:9px 16px;
+    border-radius:99px;
+    color:var(--ink-soft);
+    background:#f2f2f3;
+    transition:background .15s ease, color .15s ease;
+  }
+  .circles-tab-btn.active{background:var(--ink);color:#fff;}
+
+  .circles-panel{display:none;}
+  .circles-panel.active{display:block;}
+
+  /* ---------- CIRCLES ---------- */
+  .circles-section{
+    width:100%;
+    max-width:640px;
+    margin-top:12px;
+  }
+  .circles-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    padding:0 22px;
+    margin-bottom:14px;
+  }
+  .circles-head h2{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:13px;
+    color:var(--ink);
+  }
+  .circles-head p{
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    color:var(--grey);
+    margin-top:3px;
+    letter-spacing:.01em;
+  }
+  .circle-new-btn{
+    flex-shrink:0;
+    display:flex;align-items:center;gap:6px;
+    background:var(--ink);
+    color:#fff;
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:12.5px;
+    padding:9px 14px;
+    border-radius:99px;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .circle-new-btn:hover{background:#000;}
+  .circle-new-btn:active{transform:scale(.96);}
+  .circle-new-btn svg{width:14px;height:14px;stroke:#fff;}
+
+  .circle-row{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:14px 22px;
+    border-bottom:1px solid var(--line);
+    cursor:pointer;
+    transition:background .12s ease;
+  }
+  .circle-row:hover{background:#faf9f8;}
+
+  .circle-cluster{
+    display:flex;
+    flex-shrink:0;
+    width:52px;
+  }
+  .circle-cluster .cluster-avatar{
+    width:34px;height:34px;
+    border-radius:50%;
+    border:2px solid var(--white);
+    margin-left:-12px;
+    background:linear-gradient(135deg,#ffd8c9,var(--accent));
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-family:var(--font-display);font-weight:700;font-size:11px;
+    overflow:hidden;
+  }
+  .circle-cluster .cluster-avatar:first-child{margin-left:0;}
+  .circle-cluster .cluster-avatar img{width:100%;height:100%;object-fit:cover;}
+  .circle-cluster .cluster-more{
+    width:34px;height:34px;border-radius:50%;
+    border:2px solid var(--white);margin-left:-12px;
+    background:#f2f2f3;color:var(--ink-soft);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-mono);font-size:9.5px;
+  }
+
+  .circle-info{flex:1;min-width:0;}
+  .circle-info .circle-name{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:14.5px;
+    color:var(--ink);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .circle-info .circle-meta{
+    display:flex;align-items:center;gap:5px;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    color:var(--grey);
+    margin-top:2px;
+  }
+  .circle-info .circle-meta svg{width:11px;height:11px;flex-shrink:0;}
+
+  .circle-chevron{
+    width:28px;height:28px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .2s ease;
+  }
+  .circle-chevron svg{width:15px;height:15px;stroke:var(--grey);}
+  .circle-row.expanded .circle-chevron{transform:rotate(90deg);}
+
+  .circle-expand{
+    overflow:hidden;
+    max-height:0;
+    transition:max-height .25s ease;
+    background:#faf9f8;
+    border-bottom:1px solid var(--line);
+  }
+  .circle-expand.open{max-height:420px;}
+  .circle-expand-inner{padding:6px 22px 20px;}
+
+  .circle-members-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:16px;
+  }
+  .circle-member-chip{
+    display:flex;align-items:center;gap:6px;
+    background:var(--white);
+    border:1px solid var(--line-strong);
+    border-radius:99px;
+    padding:4px 10px 4px 4px;
+  }
+  .circle-member-chip .mini-avatar{width:22px;height:22px;font-size:9.5px;}
+  .circle-member-chip span{
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    color:var(--ink-soft);
+  }
+
+  .circle-invite-btn{
+    display:flex;align-items:center;gap:7px;
+    background:var(--accent-soft);
+    color:#c24020;
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:12.5px;
+    padding:10px 16px;
+    border-radius:12px;
+    transition:opacity .15s ease;
+    width:100%;
+    justify-content:center;
+  }
+  .circle-invite-btn:hover{opacity:.85;}
+  .circle-invite-btn:disabled{opacity:.5;cursor:default;}
+  .circle-invite-btn svg{width:14px;height:14px;stroke:#c24020;}
+
+  .circle-leave-btn{
+    display:flex;align-items:center;gap:7px;
+    background:#fdeceb;
+    color:var(--danger);
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:12.5px;
+    padding:10px 16px;
+    border-radius:12px;
+    transition:opacity .15s ease;
+    width:100%;
+    justify-content:center;
+    margin-top:8px;
+  }
+  .circle-leave-btn:hover{opacity:.85;}
+  .circle-leave-btn:disabled{opacity:.5;cursor:default;}
+
+  .circle-invite-result{
+    margin-top:12px;
+    background:var(--white);
+    border:1px dashed var(--line-strong);
+    border-radius:14px;
+    padding:14px;
+  }
+  .circle-invite-code{
+    font-family:var(--font-mono);
+    font-size:16px;
+    font-weight:500;
+    letter-spacing:.04em;
+    color:var(--ink);
+    word-break:break-all;
+  }
+  .circle-invite-row{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:10px;margin-top:8px;
+  }
+  .circle-invite-timer{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--danger);
+  }
+  .circle-invite-copy{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:11.5px;
+    background:var(--ink);
+    color:#fff;
+    padding:7px 12px;
+    border-radius:99px;
+    flex-shrink:0;
+  }
+  .circle-invite-copy:hover{background:#000;}
+  .circle-invite-note{
+    font-family:var(--font-mono);
+    font-size:10px;
+    color:var(--grey);
+    margin-top:10px;
+  }
+
+  .circles-empty{
+    padding:34px 22px;
+    text-align:center;
+  }
+  .circles-empty .empty-rings{
+    display:flex;justify-content:center;gap:0;margin-bottom:16px;
+  }
+  .circles-empty .empty-rings span{
+    width:38px;height:38px;border-radius:50%;
+    border:2px solid var(--line-strong);
+    margin-left:-10px;
+  }
+  .circles-empty .empty-rings span:first-child{margin-left:0;}
+  .circles-empty p{
+    font-family:var(--font-serif);
+    font-size:14px;
+    color:var(--ink-soft);
+    line-height:1.5;
+    max-width:280px;
+    margin:0 auto 18px;
+  }
+  .circles-empty .circle-new-btn{margin:0 auto;}
+
+  .circles-join-row{
+    display:flex;gap:8px;
+    padding:14px 22px 2px;
+  }
+  .circles-join-row input{
+    flex:1;
+    border:1px solid var(--line-strong);
+    border-radius:99px;
+    padding:10px 16px;
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    outline:none;
+  }
+  .circles-join-row input:focus{border-color:var(--accent);}
+  .circles-join-row button{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:12.5px;
+    background:var(--ink);
+    color:#fff;
+    padding:0 18px;
+    border-radius:99px;
+    flex-shrink:0;
+  }
+  .circles-join-row button:hover{background:#000;}
+  .circles-join-row button:disabled{opacity:.5;}
+
+  .circles-join-status{
+    padding:0 22px;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    margin-top:6px;
+    min-height:14px;
+  }
+  .circles-join-status.error{color:var(--danger);}
+  .circles-join-status.ok{color:#2e8b57;}
+
+  /* ---------- discover panel ---------- */
+  .discover-row{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:14px 22px;
+    border-bottom:1px solid var(--line);
+  }
+  .discover-row .circle-info{flex:1;min-width:0;}
+  .discover-join-btn{
+    flex-shrink:0;
+    background:var(--ink);
+    color:#fff;
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:12px;
+    padding:9px 16px;
+    border-radius:99px;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .discover-join-btn:hover{background:#000;}
+  .discover-join-btn:disabled{opacity:.55;cursor:default;}
+
+  /* ---------- create-circle modal (shared shape with best-friend modal) ---------- */
+  .bf-modal-overlay{
+    position:fixed; inset:0; z-index:100;
+    background:rgba(20,21,26,.55);
+    backdrop-filter:blur(4px);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+    opacity:0; pointer-events:none;
+    transition:opacity .2s ease;
+  }
+  .bf-modal-overlay.show{ opacity:1; pointer-events:auto; }
+  .bf-modal{
+    background:#fff; border-radius:24px; max-width:380px; width:100%;
+    padding:32px 26px 26px; text-align:center;
+    transform:scale(.9) translateY(10px); transition:transform .25s cubic-bezier(.34,1.56,.64,1);
+    box-shadow:0 30px 60px rgba(0,0,0,.3);
+  }
+  .bf-modal-overlay.show .bf-modal{ transform:scale(1) translateY(0); }
+  .bf-modal-actions{ display:flex; gap:10px; margin-top:22px; }
+  .bf-modal-actions button{
+    flex:1; padding:13px; border-radius:14px; font-family:var(--font-display); font-weight:600; font-size:14px;
+    transition:transform .1s ease, opacity .15s ease;
+  }
+  .bf-modal-actions button:active{ transform:scale(.96); }
+  .bf-modal-cancel{ background:#f2f2f3; color:var(--ink-soft); }
+  .bf-modal-confirm{
+    background:linear-gradient(90deg,#ff5a36,#ff7d52); color:#fff;
+    box-shadow:0 6px 16px rgba(255,90,54,.35);
+  }
+  .bf-modal-confirm:disabled{ opacity:.6; }
+
+  .circle-modal-icon{
+    width:64px;height:64px;margin:0 auto 16px;
+    border-radius:50%;
+    background:var(--accent-soft);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .circle-modal-icon svg{width:28px;height:28px;stroke:var(--accent);}
+
+  .bf-modal h3{
+    font-family:var(--font-display); font-weight:700; font-size:18px;
+    margin-bottom:10px; letter-spacing:-.01em;
+  }
+  .bf-modal p{
+    font-family:var(--font-serif); font-size:14.5px; color:var(--ink-soft);
+    line-height:1.5; margin-bottom:6px;
+  }
+
+  .circle-form-field{
+    text-align:left;
+    margin-bottom:14px;
+  }
+  .circle-form-field label{
+    display:block;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    color:var(--grey);
+    margin-bottom:6px;
+    letter-spacing:.02em;
+  }
+  .circle-form-field input,
+  .circle-form-field textarea{
+    width:100%;
+    border:1px solid var(--line-strong);
+    border-radius:12px;
+    padding:11px 14px;
+    font-family:var(--font-serif);
+    font-size:14.5px;
+    outline:none;
+    resize:none;
+  }
+  .circle-form-field input:focus,
+  .circle-form-field textarea:focus{border-color:var(--accent);}
+
+  .circle-privacy-toggle{
+    display:flex;
+    border:1px solid var(--line-strong);
+    border-radius:12px;
+    overflow:hidden;
+    margin-bottom:8px;
+  }
+  .circle-privacy-toggle button{
+    flex:1;
+    padding:10px;
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    transition:background .15s ease, color .15s ease;
+  }
+  .circle-privacy-toggle button + button{border-left:1px solid var(--line-strong);}
+  .circle-privacy-toggle button.active{background:var(--ink);color:#fff;}
+
+  .circle-privacy-note{
+    text-align:left;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    color:var(--grey);
+    line-height:1.5;
+    margin-bottom:14px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="wordmark">waater<span class="dot">.</span></div>
+    <ul class="nav-list">
+      <li><a href="/" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+        Home</a></li>
+
+      <li><a href="/create" class="nav-item nav-create">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+        Create</a></li>
+
+      <li><a href="/circles" class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>
+        Circles</a></li>
+
+      <li><a href="/messages" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        messages</a></li>
+
+      <li><a href="/profile" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+        Profile</a></li>
+    </ul>
+    <div id="sidebarAuthArea"></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="wordmark">waater<span class="dot">.</span></div>
+    </div>
+
+    <div id="pageBody">
+      <div class="page-loading" id="pageLoading">Loading circles…</div>
+    </div>
+  </main>
+</div>
+
+<nav class="bottom-nav">
+  <a href="/" class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+    home
+  </a>
+
+  <a href="/create" class="tab tab-create">
+    <div class="ring">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>
+    </div>
+    <span>create</span>
+  </a>
+
+  <a href="/circles" class="tab active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>
+    circles
+  </a>
+
+  <a href="/messages" class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    messages
+  </a>
+
+  <a href="/profile" class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+    profile
+  </a>
+</nav>
+
+<script>
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str ?? '';
+    return div.innerHTML;
+  }
+  function initials(name) {
+    return (name || '?').trim().slice(0, 1).toUpperCase();
+  }
+
+  // ============================================================
+  // SUPABASE CONFIG — same project as the rest of the app.
+  // ============================================================
+  const SUPABASE_URL = 'https://yacrwbpvcqurxsqpmron.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_Any50PwhIupj5rZbez1W4Q_dIx-VRIs';
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let currentUser = null;
+  let currentUsername = null;
+
+  function requireAuth(nextPath) {
+    if (currentUser) return true;
+    window.location.href = `/auth?next=${encodeURIComponent(nextPath || window.location.pathname)}`;
+    return false;
+  }
+
+  // ---- sidebar auth widget (shared look with the rest of the app) ----
+  async function renderSidebar() {
+    const { data } = await supabaseClient.auth.getSession();
+    currentUser = data.session ? data.session.user : null;
+    const area = document.getElementById('sidebarAuthArea');
+
+    if (!currentUser) {
+      area.innerHTML = `<a href="/auth" class="sidebar-signin">Sign in</a>`;
+      return;
+    }
+
+    const { data: me } = await supabaseClient
+      .from('profiles')
+      .select('username, avatar_url')
+      .eq('id', currentUser.id)
+      .maybeSingle();
+
+    currentUsername = me?.username || currentUser.email || 'You';
+    const avatarHtml = me?.avatar_url
+      ? `<img src="${escapeHtml(me.avatar_url)}" alt="">`
+      : initials(currentUsername);
+
+    area.innerHTML = `
+      <a href="/profile" class="sidebar-profile">
+        <div class="mini-avatar">${avatarHtml}</div>
+        <div class="who">
+          <span>${escapeHtml(currentUsername)}</span>
+          <span>view profile</span>
+        </div>
+      </a>
+      <button class="sidebar-signout" id="signOutBtn">Sign out</button>
+    `;
+    document.getElementById('signOutBtn').addEventListener('click', async () => {
+      await supabaseClient.auth.signOut();
+      window.location.href = '/';
+    });
+  }
+
+  const CIRCLE_ICON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>`;
+
+  // ---- load the circles the current user belongs to, with member previews ----
+  async function loadMyCircles(userId) {
+    const { data: memberships } = await supabaseClient
+      .from('circle_members')
+      .select('circle_id, role, joined_at, circles(id, name, is_private, created_at)')
+      .eq('user_id', userId)
+      .order('joined_at', { ascending: false });
+
+    const list = (memberships || []).filter(m => m.circles);
+    if (list.length === 0) return [];
+
+    const circleIds = list.map(m => m.circle_id);
+
+    const { data: allMembers } = await supabaseClient
+      .from('circle_members')
+      .select('circle_id, user_id')
+      .in('circle_id', circleIds);
+
+    const userIds = [...new Set((allMembers || []).map(m => m.user_id))];
+    const { data: memberProfiles } = await supabaseClient
+      .from('profiles')
+      .select('id, username, avatar_url')
+      .in('id', userIds.length > 0 ? userIds : ['00000000-0000-0000-0000-000000000000']);
+
+    const profileById = {};
+    (memberProfiles || []).forEach(p => { profileById[p.id] = p; });
+
+    return list.map(m => {
+      const members = (allMembers || []).filter(x => x.circle_id === m.circle_id);
+      const memberProfilesForCircle = members.map(x => profileById[x.user_id]).filter(Boolean);
+      return {
+        ...m.circles,
+        myRole: m.role,
+        memberCount: members.length,
+        memberProfiles: memberProfilesForCircle,
+      };
+    });
+  }
+
+  // ---- discover: public circles the user hasn't joined yet ----
+  async function loadDiscoverCircles(userId, myCircleIds) {
+    const { data } = await supabaseClient
+      .from('circles')
+      .select('id, name, is_private, created_at')
+      .eq('is_private', false)
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    const list = (data || []).filter(c => !myCircleIds.has(c.id));
+    if (list.length === 0) return [];
+
+    const circleIds = list.map(c => c.id);
+    const { data: allMembers } = await supabaseClient
+      .from('circle_members')
+      .select('circle_id')
+      .in('circle_id', circleIds);
+
+    const counts = {};
+    (allMembers || []).forEach(m => { counts[m.circle_id] = (counts[m.circle_id] || 0) + 1; });
+
+    return list.map(c => ({ ...c, memberCount: counts[c.id] || 0 }));
+  }
+
+  function circleMetaIcon(isPrivate) {
+    return isPrivate
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 4 5.7 4 9s-1.5 6.5-4 9c-2.5-2.5-4-5.7-4-9s1.5-6.5 4-9z"/></svg>`;
+  }
+
+  function renderCircleCluster(members) {
+    const shown = members.slice(0, 3);
+    const extra = members.length - shown.length;
+    const avatars = shown.map(m => {
+      const name = m.username || '?';
+      const html = m.avatar_url ? `<img src="${escapeHtml(m.avatar_url)}" alt="">` : initials(name);
+      return `<div class="cluster-avatar">${html}</div>`;
+    }).join('');
+    const moreHtml = extra > 0 ? `<div class="cluster-more">+${extra}</div>` : '';
+    return `<div class="circle-cluster">${avatars}${moreHtml}</div>`;
+  }
+
+  function renderCircleRow(circle) {
+    const clusterHtml = renderCircleCluster(circle.memberProfiles || []);
+    return `
+      <div>
+        <div class="circle-row" data-circle-id="${circle.id}">
+          ${clusterHtml}
+          <div class="circle-info">
+            <div class="circle-name">${escapeHtml(circle.name)}</div>
+            <div class="circle-meta">
+              ${circleMetaIcon(circle.is_private)}
+              <span>${circle.is_private ? 'private' : 'public'} · ${circle.memberCount} ${circle.memberCount === 1 ? 'person' : 'people'}</span>
+            </div>
+          </div>
+          <div class="circle-chevron">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+          </div>
+        </div>
+        <div class="circle-expand" id="circle-expand-${circle.id}">
+          <div class="circle-expand-inner">
+            <div class="circle-members-row">
+              ${(circle.memberProfiles || []).map(m => `
+                <div class="circle-member-chip">
+                  <div class="mini-avatar">${m.avatar_url ? `<img src="${escapeHtml(m.avatar_url)}" alt="">` : initials(m.username || '?')}</div>
+                  <span>${escapeHtml(m.username || 'someone')}</span>
+                </div>
+              `).join('')}
+            </div>
+            <button class="circle-invite-btn" data-circle-id="${circle.id}">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+              Invite someone in
+            </button>
+            ${circle.myRole !== 'owner' ? `
+              <button class="circle-leave-btn" data-circle-id="${circle.id}">Leave circle</button>
+            ` : ''}
+            <div class="circle-invite-result" id="circle-invite-result-${circle.id}" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderCirclesSection(circles) {
+    const listHtml = circles.length > 0
+      ? circles.map(renderCircleRow).join('')
+      : `
+        <div class="circles-empty">
+          <div class="empty-rings"><span></span><span></span><span></span></div>
+          <p>No circle yet. A circle is a small space — just the people you'd actually want seeing your gossip.</p>
+          <button class="circle-new-btn" id="circleNewBtnEmpty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+            Start your first circle
+          </button>
+        </div>
+      `;
+
+    return `
+      <div class="circles-section">
+        <div class="circles-head">
+          <div>
+            <h2>Your circles</h2>
+            <p>spaces for your people</p>
+          </div>
+          ${circles.length > 0 ? `
+            <button class="circle-new-btn" id="circleNewBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+              New
+            </button>
+          ` : ''}
+        </div>
+        ${listHtml}
+        <div class="circles-join-row">
+          <input type="text" id="circleJoinInput" placeholder="Have an invite code?" maxlength="40">
+          <button id="circleJoinBtn">Join</button>
+        </div>
+        <div class="circles-join-status" id="circleJoinStatus"></div>
+      </div>
+    `;
+  }
+
+  function renderDiscoverRow(circle) {
+    return `
+      <div class="discover-row">
+        <div class="circle-info">
+          <div class="circle-name">${escapeHtml(circle.name)}</div>
+          <div class="circle-meta">
+            ${circleMetaIcon(false)}
+            <span>public · ${circle.memberCount} ${circle.memberCount === 1 ? 'person' : 'people'}</span>
+          </div>
+        </div>
+        <button class="discover-join-btn" data-circle-id="${circle.id}">Join</button>
+      </div>
+    `;
+  }
+
+  function renderDiscoverSection(circles) {
+    if (circles.length === 0) {
+      return `<div class="circles-empty"><p>No public circles to discover yet — start your own from the "Your circles" tab.</p></div>`;
+    }
+    return `<div class="circles-section">${circles.map(renderDiscoverRow).join('')}</div>`;
+  }
+
+  // ---- wire clicks/expand/invite/leave/join for "Your circles" ----
+  function wireYourCirclesUI() {
+    document.querySelectorAll('.circle-row').forEach(row => {
+      row.addEventListener('click', () => {
+        const id = row.dataset.circleId;
+        const expand = document.getElementById(`circle-expand-${id}`);
+        const isOpen = expand.classList.contains('open');
+        document.querySelectorAll('.circle-expand.open').forEach(el => el.classList.remove('open'));
+        document.querySelectorAll('.circle-row.expanded').forEach(el => el.classList.remove('expanded'));
+        if (!isOpen) {
+          expand.classList.add('open');
+          row.classList.add('expanded');
+        }
+      });
+    });
+
+    document.querySelectorAll('.circle-invite-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        btn.disabled = true;
+        const circleId = btn.dataset.circleId;
+        const resultEl = document.getElementById(`circle-invite-result-${circleId}`);
+        try {
+          const { data, error } = await supabaseClient.rpc('create_circle_invite', { p_circle_id: circleId });
+          if (error) throw error;
+          showInviteResult(resultEl, data);
+        } catch (err) {
+          resultEl.style.display = 'block';
+          resultEl.innerHTML = `<div class="circle-invite-note" style="color:var(--danger);">${escapeHtml(err.message || 'Could not create invite')}</div>`;
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
+
+    document.querySelectorAll('.circle-leave-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        btn.disabled = true;
+        const circleId = btn.dataset.circleId;
+        try {
+          const { error } = await supabaseClient
+            .from('circle_members')
+            .delete()
+            .eq('circle_id', circleId)
+            .eq('user_id', currentUser.id);
+          if (error) throw error;
+          renderPage();
+        } catch (err) {
+          console.error('Leave circle failed:', err);
+          btn.disabled = false;
+        }
+      });
+    });
+
+    const newBtn = document.getElementById('circleNewBtn');
+    if (newBtn) newBtn.addEventListener('click', openCreateCircleModal);
+    const newBtnEmpty = document.getElementById('circleNewBtnEmpty');
+    if (newBtnEmpty) newBtnEmpty.addEventListener('click', openCreateCircleModal);
+
+    const joinBtn = document.getElementById('circleJoinBtn');
+    const joinInput = document.getElementById('circleJoinInput');
+    const joinStatus = document.getElementById('circleJoinStatus');
+    if (joinBtn) {
+      joinBtn.addEventListener('click', async () => {
+        if (!requireAuth()) return;
+        const code = (joinInput.value || '').trim();
+        if (!code) return;
+        joinBtn.disabled = true;
+        joinStatus.className = 'circles-join-status';
+        joinStatus.textContent = '';
+        try {
+          const { data, error } = await supabaseClient.rpc('redeem_circle_invite', { p_code: code });
+          if (error) throw error;
+          joinStatus.className = 'circles-join-status ok';
+          joinStatus.textContent = `You're in ${data?.name || 'the circle'} now.`;
+          joinInput.value = '';
+          renderPage();
+        } catch (err) {
+          joinStatus.className = 'circles-join-status error';
+          joinStatus.textContent = err.message || 'That code did not work.';
+        } finally {
+          joinBtn.disabled = false;
+        }
+      });
+    }
+  }
+
+  // ---- wire "Join" buttons in the Discover tab (public circles, no code needed) ----
+  function wireDiscoverUI() {
+    document.querySelectorAll('.discover-join-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!requireAuth()) return;
+        btn.disabled = true;
+        btn.textContent = 'Joining…';
+        try {
+          const { error } = await supabaseClient
+            .from('circle_members')
+            .insert({ circle_id: btn.dataset.circleId, user_id: currentUser.id, role: 'member' });
+          if (error) throw error;
+          renderPage();
+        } catch (err) {
+          console.error('Join circle failed:', err);
+          btn.disabled = false;
+          btn.textContent = 'Join';
+        }
+      });
+    });
+  }
+
+  // ---- show a freshly created invite code with a live 10-minute countdown ----
+  function showInviteResult(resultEl, invite) {
+    resultEl.style.display = 'block';
+    const link = `${window.location.origin}/circle/join?code=${encodeURIComponent(invite.code)}`;
+    resultEl.innerHTML = `
+      <div class="circle-invite-code">${escapeHtml(invite.code)}</div>
+      <div class="circle-invite-row">
+        <span class="circle-invite-timer" id="invite-timer-${invite.id}">expires in 10:00</span>
+        <button class="circle-invite-copy" id="invite-copy-${invite.id}">Copy link</button>
+      </div>
+      <div class="circle-invite-note">Works once, for the next 10 minutes only.</div>
+    `;
+
+    const copyBtn = resultEl.querySelector(`#invite-copy-${invite.id}`);
+    copyBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      try {
+        await navigator.clipboard.writeText(link);
+        copyBtn.textContent = 'Copied';
+        setTimeout(() => { copyBtn.textContent = 'Copy link'; }, 1800);
+      } catch (err) {
+        copyBtn.textContent = 'Copy failed';
+      }
+    });
+
+    const timerEl = resultEl.querySelector(`#invite-timer-${invite.id}`);
+    const expiresAt = new Date(invite.expires_at).getTime();
+    const interval = setInterval(() => {
+      const msLeft = expiresAt - Date.now();
+      if (msLeft <= 0) {
+        timerEl.textContent = 'expired';
+        clearInterval(interval);
+        return;
+      }
+      const m = Math.floor(msLeft / 60000);
+      const s = Math.floor((msLeft % 60000) / 1000);
+      timerEl.textContent = `expires in ${m}:${s.toString().padStart(2, '0')}`;
+    }, 1000);
+    const msLeftNow = expiresAt - Date.now();
+    const m0 = Math.max(0, Math.floor(msLeftNow / 60000));
+    const s0 = Math.max(0, Math.floor((msLeftNow % 60000) / 1000));
+    timerEl.textContent = `expires in ${m0}:${s0.toString().padStart(2, '0')}`;
+  }
+
+  // ---- create-circle modal ----
+  function openCreateCircleModal() {
+    if (!requireAuth()) return;
+    const overlay = document.createElement('div');
+    overlay.className = 'bf-modal-overlay';
+    overlay.innerHTML = `
+      <div class="bf-modal">
+        <div class="circle-modal-icon">${CIRCLE_ICON_SVG}</div>
+        <h3>Start a circle</h3>
+        <p style="margin-bottom:18px;">A small space for the people you actually want seeing your day — post gossip, updates, whatever's just for them.</p>
+
+        <div class="circle-form-field">
+          <label>Name</label>
+          <input type="text" id="circleNameInput" placeholder="Sunday people" maxlength="40">
+        </div>
+
+        <div class="circle-form-field">
+          <label>Privacy</label>
+          <div class="circle-privacy-toggle">
+            <button type="button" class="active" data-value="private">Private</button>
+            <button type="button" data-value="public">Public</button>
+          </div>
+          <div class="circle-privacy-note" id="circlePrivacyNote">
+            Only people already inside can bring someone in — three invites a day each, and every invite code stops working after 10 minutes.
+          </div>
+        </div>
+
+        <div class="bf-modal-actions">
+          <button class="bf-modal-cancel" id="circleModalCancel">Cancel</button>
+          <button class="bf-modal-confirm" id="circleModalConfirm">Create circle</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('show'));
+
+    let isPrivate = true;
+    const toggleBtns = overlay.querySelectorAll('.circle-privacy-toggle button');
+    const note = overlay.querySelector('#circlePrivacyNote');
+    toggleBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        toggleBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        isPrivate = btn.dataset.value === 'private';
+        note.textContent = isPrivate
+          ? 'Only people already inside can bring someone in — three invites a day each, and every invite code stops working after 10 minutes.'
+          : 'Anyone can see this circle and what gets posted in it — people can also join it straight from Discover.';
+      });
+    });
+
+    const close = () => {
+      overlay.classList.remove('show');
+      setTimeout(() => overlay.remove(), 200);
+    };
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    overlay.querySelector('#circleModalCancel').addEventListener('click', close);
+
+    overlay.querySelector('#circleModalConfirm').addEventListener('click', async () => {
+      const nameInput = overlay.querySelector('#circleNameInput');
+      const name = nameInput.value.trim();
+      if (!name) {
+        nameInput.style.borderColor = 'var(--danger)';
+        nameInput.focus();
+        return;
+      }
+      const btn = overlay.querySelector('#circleModalConfirm');
+      btn.disabled = true;
+      btn.textContent = 'Creating…';
+
+      try {
+        const { data: newCircle, error } = await supabaseClient
+          .from('circles')
+          .insert({ name, is_private: isPrivate, created_by: currentUser.id })
+          .select()
+          .single();
+        if (error) throw error;
+
+        const { error: memberError } = await supabaseClient
+          .from('circle_members')
+          .insert({ circle_id: newCircle.id, user_id: currentUser.id, role: 'owner' });
+        if (memberError) throw memberError;
+
+        close();
+        renderPage();
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Create circle';
+        btn.parentElement.insertAdjacentHTML('beforebegin',
+          `<p style="color:var(--danger);font-family:var(--font-mono);font-size:11px;margin-top:8px;">${escapeHtml(err.message || 'Something went wrong')}</p>`);
+      }
+    });
+  }
+
+  // ---- tabs ----
+  function wireTabs() {
+    document.querySelectorAll('.circles-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.circles-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.circles-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(`panel-${btn.dataset.tab}`).classList.add('active');
+      });
+    });
+  }
+
+  // ---- main render ----
+  async function renderPage() {
+    const body = document.getElementById('pageBody');
+
+    if (!requireAuth('/circles')) return;
+
+    const myCircles = await loadMyCircles(currentUser.id);
+    const myCircleIds = new Set(myCircles.map(c => c.id));
+    const discoverCircles = await loadDiscoverCircles(currentUser.id, myCircleIds);
+
+    body.innerHTML = `
+      <div class="page-head">
+        <h1>Circles</h1>
+        <p>Small, close spaces — create one, invite people in, or find a public one to join.</p>
+      </div>
+
+      <div class="circles-tabs">
+        <button class="circles-tab-btn active" data-tab="mine">Your circles</button>
+        <button class="circles-tab-btn" data-tab="discover">Discover</button>
+      </div>
+
+      <div class="circles-panel active" id="panel-mine">
+        ${renderCirclesSection(myCircles)}
+      </div>
+
+      <div class="circles-panel" id="panel-discover">
+        ${renderDiscoverSection(discoverCircles)}
+      </div>
+    `;
+
+    wireTabs();
+    wireYourCirclesUI();
+    wireDiscoverUI();
+  }
+
+  async function init() {
+    await renderSidebar();
+    await renderPage();
+  }
+
+  init();
+</script>
+
+</body>
+</html>

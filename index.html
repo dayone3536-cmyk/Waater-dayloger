@@ -21,6 +21,8 @@
     --font-display:'Space Grotesk', sans-serif;
     --font-serif:'Newsreader', serif;
     --font-mono:'JetBrains Mono', monospace;
+    --ease:cubic-bezier(.22,.9,.32,1);
+    --ease-spring:cubic-bezier(.34,1.56,.64,1);
   }
 
   *{margin:0;padding:0;box-sizing:border-box;}
@@ -36,6 +38,10 @@
   a{color:inherit;text-decoration:none;}
   button{font-family:inherit;border:none;background:none;cursor:pointer;}
   ::selection{background:var(--accent-soft);color:var(--accent);}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important;}
+  }
 
   /* ---------- layout shell ---------- */
   .app{
@@ -665,7 +671,7 @@
   }
   .lightbox-close svg{width:18px;height:18px;stroke:#fff;}
 
-  /* ---------- comment modal ---------- */
+  /* ---------- comment modal (rebuilt for parity with post.html + optimistic send) ---------- */
   .modal-overlay{
     position:fixed;inset:0;background:rgba(10,10,12,.5);
     display:none;align-items:flex-end;justify-content:center;
@@ -682,11 +688,17 @@
     display:flex;align-items:center;justify-content:space-between;
     margin-bottom:12px;
   }
-  .modal-head h3{font-family:var(--font-display);font-size:16px;font-weight:600;}
+  .modal-head h3{font-family:var(--font-display);font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;}
+  .modal-head .count-chip{
+    font-family:var(--font-mono);font-size:10.5px;color:var(--grey);
+    background:#f5f5f6;padding:2px 8px;border-radius:99px;
+  }
   .modal-close{
     width:28px;height:28px;border-radius:50%;background:#f2f2f3;
     display:flex;align-items:center;justify-content:center;
+    transition:background .16s var(--ease);
   }
+  .modal-close:hover{background:#e9e9ea;}
   .modal-close svg{width:14px;height:14px;stroke:var(--ink);}
   .comment-list{overflow-y:auto;flex:1;margin-bottom:14px;min-height:60px;}
 
@@ -694,9 +706,17 @@
     display:flex;
     align-items:flex-start;
     gap:10px;
-    padding:12px 0;
+    padding:12px 4px;
     border-bottom:1px solid var(--line);
+    border-radius:10px;
+    opacity:0;
+    animation:commentIn .35s var(--ease) forwards;
+    transition:background .14s var(--ease);
   }
+  .comment-item:hover{background:#fafafa;}
+  .comment-item.pending{opacity:.55;}
+  @keyframes commentIn{ from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
+
   .comment-item .avatar{
     width:32px;height:32px;font-size:12px;
     flex-shrink:0;
@@ -706,25 +726,50 @@
     flex:1;
     min-width:0;
   }
+  .comment-item .comment-head{
+    display:flex;align-items:baseline;gap:8px;margin-bottom:3px;
+  }
   .comment-item .comment-name{
     font-family:var(--font-display);font-weight:600;font-size:14px;
-    display:block;margin-bottom:3px;
+  }
+  .comment-item .comment-time{
+    font-family:var(--font-mono);font-size:10.5px;color:var(--grey);
   }
   .comment-item .comment-body{
     font-family:var(--font-serif);font-size:15px;line-height:1.5;color:var(--ink-soft);
   }
 
-  .comment-form{display:flex;gap:10px;}
+  .comments-empty{
+    text-align:center;padding:36px 20px;color:var(--grey);
+  }
+  .comments-empty .big-icon{width:28px;height:28px;margin:0 auto 10px;opacity:.5;}
+  .comments-empty .big-icon svg{width:100%;height:100%;stroke:var(--grey);}
+  .comments-empty p{font-family:var(--font-serif);font-style:italic;font-size:13.5px;}
+
+  .comment-form{display:flex;gap:10px;align-items:center;}
   .comment-form input{
     flex:1;border:1px solid var(--line-strong);border-radius:99px;
     padding:11px 16px;font-family:var(--font-serif);font-size:15px;
-    outline:none;
+    outline:none;transition:border-color .16s var(--ease);
   }
   .comment-form input:focus{border-color:var(--accent);}
+  .comment-form input:disabled{opacity:.6;}
   .comment-form button{
     background:var(--ink);color:#fff;font-family:var(--font-display);
-    font-weight:600;font-size:14px;padding:0 18px;border-radius:99px;
+    font-weight:600;font-size:14px;padding:0 18px;height:42px;border-radius:99px;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    transition:background .16s var(--ease), transform .12s var(--ease), opacity .16s var(--ease);
+    flex-shrink:0;
   }
+  .comment-form button:hover:not(:disabled){background:#000;}
+  .comment-form button:active:not(:disabled){transform:scale(.94);}
+  .comment-form button:disabled{opacity:.45;cursor:not-allowed;}
+
+  .mini-spinner{
+    width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin{ to{transform:rotate(360deg);} }
 
   @media (min-width:900px){
     .modal-overlay{align-items:center;}
@@ -1084,15 +1129,15 @@
 <div class="modal-overlay" id="commentModal">
   <div class="modal-panel">
     <div class="modal-head">
-      <h3>Comments</h3>
+      <h3>Comments <span class="count-chip" id="commentModalCount">0</span></h3>
       <button class="modal-close" id="commentModalClose">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
     </div>
     <div class="comment-list" id="commentList"></div>
     <form class="comment-form" id="commentForm">
-      <input type="text" id="commentInput" placeholder="Add a comment..." maxlength="280">
-      <button type="submit">Post</button>
+      <input type="text" id="commentInput" placeholder="Add a comment..." maxlength="280" autocomplete="off">
+      <button type="submit" id="commentSubmitBtn">Post</button>
     </form>
   </div>
 </div>
@@ -1179,6 +1224,22 @@
       : initials(name);
   }
 
+  function relativeTime(iso){
+    if (!iso) return '';
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const sec = Math.max(1, Math.floor(diffMs / 1000));
+    if (sec < 60) return `${sec}s`;
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min}m`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr}h`;
+    const day = Math.floor(hr / 24);
+    if (day < 7) return `${day}d`;
+    const wk = Math.floor(day / 7);
+    if (wk < 5) return `${wk}w`;
+    return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  }
+
   // ============================================================
   // SUPABASE CONFIG — same project as create.html / auth.html.
   // The anon/publishable key is safe to expose in client-side code;
@@ -1200,6 +1261,7 @@
   // ---- auth state ----
   let currentUser = null;      // Supabase auth user, or null if signed out
   let currentUsername = null;  // from profiles table
+  let currentAvatarUrl = null;
 
   // Anything that requires being signed in (like, comment, post) calls this
   // first. If there's no session, it sends the user to /auth and remembers
@@ -1229,7 +1291,8 @@
       .maybeSingle();
 
     currentUsername = profile?.username || currentUser.email || 'You';
-    const avatarHtml = avatarHtmlFor(currentUsername, profile?.avatar_url);
+    currentAvatarUrl = profile?.avatar_url || null;
+    const avatarHtml = avatarHtmlFor(currentUsername, currentAvatarUrl);
 
     area.innerHTML = `
       <a href="/profile" class="sidebar-profile">
@@ -1650,41 +1713,84 @@
     closeShareSheet();
   });
 
-  // ---- comments ----
+  // ---- comments (rebuilt: optimistic send + a hard guard against double-posting) ----
 
-  function renderComments(comments) {
-    const list = document.getElementById('commentList');
-    if (!comments || comments.length === 0) {
-      list.innerHTML = '<div class="feed-status">No comments yet.</div>';
-      return;
-    }
-    list.innerHTML = comments.map(c => {
-      const name = escapeHtml(c.profiles?.username || 'Someone');
-      const avatarHtml = avatarHtmlFor(name, c.profiles?.avatar_url);
-      const profileUrl = `/profile?u=${encodeURIComponent(c.profiles?.username || '')}`;
-      return `
-      <div class="comment-item">
+  function renderCommentItem(c, opts = {}){
+    const name = escapeHtml(c.profiles?.username || 'Someone');
+    const avatarHtml = avatarHtmlFor(name, c.profiles?.avatar_url);
+    const profileUrl = `/profile?u=${encodeURIComponent(c.profiles?.username || '')}`;
+    const time = opts.pending ? 'sending…' : relativeTime(c.created_at);
+    return `
+      <div class="comment-item${opts.pending ? ' pending' : ''}">
         <a href="${profileUrl}" class="avatar-link">
           <div class="avatar">${avatarHtml}</div>
         </a>
         <div class="comment-body-wrap">
-          <a href="${profileUrl}" class="comment-name">${name}</a>
-
-          <span class="comment-body">${linkifyEscaped(escapeHtml(c.body || ''))}</span>
-
+          <div class="comment-head">
+            <a href="${profileUrl}" class="comment-name">${name}</a>
+            <span class="comment-time">${time}</span>
+          </div>
+          <div class="comment-body">${linkifyEscaped(escapeHtml(c.body || ''))}</div>
         </div>
       </div>
     `;
-    }).join('');
   }
 
+  function emptyCommentsHtml(){
+    return `
+      <div class="comments-empty">
+        <div class="big-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        </div>
+        <p>No comments yet — say something first.</p>
+      </div>
+    `;
+  }
 
+  function renderComments(comments) {
+    const list = document.getElementById('commentList');
+    if (!comments || comments.length === 0) {
+      list.innerHTML = emptyCommentsHtml();
+      return;
+    }
+    list.innerHTML = '';
+    comments.forEach((c, i) => {
+      const el = document.createElement('div');
+      el.innerHTML = renderCommentItem(c).trim();
+      const node = el.firstElementChild;
+      node.style.animationDelay = `${Math.min(i, 8) * 0.04}s`;
+      list.appendChild(node);
+    });
+  }
+
+  function updateCommentCounts(postId, count){
+    const btnCount = document.querySelector(`.comment-btn[data-post-id="${postId}"] .comment-count`);
+    if (btnCount) btnCount.textContent = count;
+    const chip = document.getElementById('commentModalCount');
+    if (chip) chip.textContent = count;
+  }
+
+  // guard flag — as long as this is true, the submit handler below refuses
+  // to run again. This is what actually stops "sending 2-3 of the same
+  // comment": previously nothing blocked a fast double-tap / double-Enter
+  // from firing two inserts before the first one finished.
+  let isSubmittingComment = false;
 
   async function openComments(postId) {
     const modal = document.getElementById('commentModal');
     modal.dataset.postId = postId;
-    document.getElementById('commentList').innerHTML = '<div class="feed-status">Loading comments…</div>';
+    document.getElementById('commentList').innerHTML = `<div class="status-state small" style="padding:26px 0;text-align:center;font-family:var(--font-mono);font-size:12px;color:var(--grey);">Loading comments…</div>`;
+    document.getElementById('commentModalCount').textContent = postsById[postId]?.comments?.[0]?.count ?? 0;
     modal.classList.add('show');
+
+    const input = document.getElementById('commentInput');
+    const btn = document.getElementById('commentSubmitBtn');
+    isSubmittingComment = false;
+    input.disabled = false;
+    btn.disabled = false;
+    btn.textContent = 'Post';
+    input.value = '';
+    input.focus();
 
     try {
       const { data: comments, error } = await supabaseClient
@@ -1694,9 +1800,10 @@
         .order('created_at', { ascending: true });
       if (error) throw error;
       renderComments(comments);
+      updateCommentCounts(postId, comments?.length ?? 0);
     } catch (err) {
       console.error('Failed to load comments:', err);
-      document.getElementById('commentList').innerHTML = '<div class="feed-status">Could not load comments.</div>';
+      document.getElementById('commentList').innerHTML = `<div class="status-state small" style="padding:26px 0;text-align:center;font-family:var(--font-mono);font-size:12px;color:var(--grey);">Could not load comments.</div>`;
     }
   }
 
@@ -1712,29 +1819,62 @@
   document.getElementById('commentForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!requireAuth()) return;
+    if (isSubmittingComment) return; // <-- the actual fix: refuse re-entry while a post is already in flight
 
     const modal = document.getElementById('commentModal');
     const postId = modal.dataset.postId;
     const input = document.getElementById('commentInput');
+    const submitBtn = document.getElementById('commentSubmitBtn');
     const body = input.value.trim();
     if (!body || !postId) return;
 
+    isSubmittingComment = true;
+    input.disabled = true;
+    submitBtn.disabled = true;
+    const originalLabel = submitBtn.textContent;
+    submitBtn.innerHTML = `<span class="mini-spinner"></span>`;
+
+    // optimistic bubble so it feels instant while the insert is in flight
+    const list = document.getElementById('commentList');
+    const emptyState = list.querySelector('.comments-empty');
+    if (emptyState) emptyState.remove();
+    const tempEl = document.createElement('div');
+    tempEl.innerHTML = renderCommentItem(
+      { body, profiles: { username: currentUsername, avatar_url: currentAvatarUrl } },
+      { pending: true }
+    ).trim();
+    const tempNode = tempEl.firstElementChild;
+    list.appendChild(tempNode);
+    tempNode.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
     try {
-      const { error } = await supabaseClient.from('comments').insert({ post_id: postId, user_id: currentUser.id, body });
+      const { data: inserted, error } = await supabaseClient
+        .from('comments')
+        .insert({ post_id: postId, user_id: currentUser.id, body })
+        .select('*, profiles(username, avatar_url)')
+        .maybeSingle();
       if (error) throw error;
+
+      tempNode.classList.remove('pending');
+      const timeEl = tempNode.querySelector('.comment-time');
+      if (timeEl) timeEl.textContent = relativeTime(inserted?.created_at) || 'now';
+
       input.value = '';
 
-      const { data: comments } = await supabaseClient
-        .from('comments')
-        .select('*, profiles(username, avatar_url)')
-        .eq('post_id', postId)
-        .order('created_at', { ascending: true });
-      renderComments(comments);
-
-      const countEl = document.querySelector(`.comment-btn[data-post-id="${postId}"] .comment-count`);
-      if (countEl && comments) countEl.textContent = comments.length;
+      const post = postsById[postId];
+      const newCount = (post?.comments?.[0]?.count ?? (list.children.length - 1)) + 1;
+      if (post && post.comments && post.comments[0]) post.comments[0].count = newCount;
+      updateCommentCounts(postId, newCount);
     } catch (err) {
       console.error('Failed to post comment:', err);
+      tempNode.remove();
+      if (!list.children.length) list.innerHTML = emptyCommentsHtml();
+    } finally {
+      isSubmittingComment = false;
+      input.disabled = false;
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalLabel;
+      input.focus();
     }
   });
 
@@ -1781,3 +1921,4 @@
 
 </body>
 </html>
+

@@ -46,6 +46,7 @@ app.get('/create', (req, res) => res.sendFile(path.join(__dirname, 'create.html'
 app.get('/messages', (req, res) => res.sendFile(path.join(__dirname, 'messages.html')));
 app.get('/post', (req, res) => res.sendFile(path.join(__dirname, 'post.html')));
 app.get('/profile', (req, res) => res.sendFile(path.join(__dirname, 'profile.html')));
+app.get('/circles', (req, res) => res.sendFile(path.join(__dirname, 'circles.html')));
 app.get('/auth', (req, res) => res.sendFile(path.join(__dirname, 'auth.html')));
 
 // old bookmarks/links to /inbox still work

@@ -1121,12 +1121,15 @@
 
     const commentInput = document.getElementById('commentInput');
     const commentSubmitBtn = document.getElementById('commentSubmitBtn');
+    let isSubmittingComment = false;
     document.getElementById('commentForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!requireAuth()) return;
+      if (isSubmittingComment) return; // hard stop: ignore repeat submits (double-tap, double Enter, etc.) while one is already in flight
       const text = commentInput.value.trim();
       if (!text) return;
 
+      isSubmittingComment = true;
       commentSubmitBtn.disabled = true;
       commentInput.disabled = true;
       const originalLabel = commentSubmitBtn.textContent;
@@ -1194,6 +1197,7 @@
         tempNode.remove();
         if (!list0.children.length) list0.innerHTML = emptyCommentsHtml();
       } finally {
+        isSubmittingComment = false;
         commentSubmitBtn.disabled = false;
         commentInput.disabled = false;
         commentSubmitBtn.textContent = originalLabel;
