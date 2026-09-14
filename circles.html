@@ -928,6 +928,32 @@
   let lastMyCircles = [];
   let lastDiscoverCircles = [];
 
+  const PRIVATE_CIRCLE_LIMIT = 2;
+
+  function countPrivateCircles(circles) {
+
+    return circles.filter(c => c.is_private).length;
+
+  }
+
+  // turn the raw Postgres trigger error into something readable in the UI
+
+  function friendlyCircleError(err) {
+
+    const msg = err?.message || '';
+
+    if (msg.includes('PRIVATE_CIRCLE_LIMIT')) {
+
+      return `You're already in ${PRIVATE_CIRCLE_LIMIT} private circles — leave one first to join or create another.`;
+
+    }
+
+    return msg || 'Something went wrong';
+
+  }
+
+
+
   // ---- load the circles the current user belongs to, with member previews ----
   async function loadMyCircles(userId) {
     const { data: memberships } = await supabaseClient
@@ -1277,6 +1303,7 @@
         joinBtn.innerHTML = `<span class="mini-spinner"></span>`;
         joinStatus.className = 'circles-join-status';
         joinStatus.textContent = '';
+
         try {
           const { data, error } = await supabaseClient.rpc('redeem_circle_invite', { p_code: code });
           if (error) throw error;
@@ -1285,15 +1312,22 @@
           showToast(`Joined ${data?.name || 'the circle'}`);
           joinInput.value = '';
           renderPage();
-        } catch (err) {
-          joinStatus.className = 'circles-join-status error';
-          joinStatus.textContent = err.message || 'That code did not work.';
-        } finally {
+
+          } catch (err) {
+    joinStatus.className = 'circles-join-status error';
+    joinStatus.textContent = friendlyCircleError(err);
+
+  } finally {
+
+
+
           isJoiningByCode = false;
           joinBtn.disabled = false;
           joinBtn.textContent = 'Join';
         }
+
       };
+      
       joinBtn.addEventListener('click', submitJoin);
       joinInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submitJoin(); } });
       // handle paste explicitly too, so a pasted link is normalized
@@ -1311,14 +1345,20 @@
   }
 
   // ---- wire "Join" buttons in the Discover tab (public circles, no code needed) ----
+
   function wireDiscoverUI() {
+
     document.querySelectorAll('.discover-join-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
+
         if (!requireAuth()) return;
         if (btn.disabled) return; // guard against a double-tap inserting membership twice
         btn.disabled = true;
+
         btn.innerHTML = `<span class="mini-spinner"></span> Joining…`;
+
         try {
+
           const { error } = await supabaseClient
             .from('circle_members')
             .insert({ circle_id: btn.dataset.circleId, user_id: currentUser.id, role: 'member' });
@@ -1327,12 +1367,17 @@
           btn.textContent = 'Joined!';
           showToast('You joined the circle');
           setTimeout(() => renderPage(), 500);
+
         } catch (err) {
-          console.error('Join circle failed:', err);
-          showToast(err.message || 'Could not join circle', 'error');
-          btn.disabled = false;
-          btn.textContent = 'Join';
-        }
+
+            console.error('Join circle failed:', err);
+            showToast(friendlyCircleError(err), 'error');
+            btn.disabled = false;
+            btn.textContent = 'Join';
+
+          }
+
+
       });
     });
   }
@@ -1422,6 +1467,7 @@
 
   // ---- create-circle modal ----
   function openCreateCircleModal() {
+
     if (!requireAuth()) return;
     const overlay = document.createElement('div');
     overlay.className = 'bf-modal-overlay';
@@ -1471,6 +1517,7 @@
     const note = overlay.querySelector('#circlePrivacyNote');
     const icon = overlay.querySelector('#circleModalIcon');
     toggleBtns.forEach(btn => {
+
       btn.addEventListener('click', () => {
         toggleBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
@@ -1511,6 +1558,14 @@
 
       try {
 
+          if (isPrivate && countPrivateCircles(lastMyCircles) >= PRIVATE_CIRCLE_LIMIT) {
+            
+            throw new Error('PRIVATE_CIRCLE_LIMIT');
+
+          }
+
+
+
         const { data: newCircle, error } = await supabaseClient
 
           .from('circles')
@@ -1518,7 +1573,7 @@
           .insert({ name, is_private: isPrivate, created_by: currentUser.id })
 
           .select()
-          
+
           .single();
 
         if (error) throw error;
@@ -1535,7 +1590,7 @@
         btn.disabled = false;
         btn.textContent = 'Create circle';
         overlay.querySelector('#circleModalErrorSlot').innerHTML =
-          `<p class="modal-error">${escapeHtml(err.message || 'Something went wrong')}</p>`;
+          `<p class="modal-error">${escapeHtml(friendlyCircleError(err))}</p>`;
       }
     });
   }
