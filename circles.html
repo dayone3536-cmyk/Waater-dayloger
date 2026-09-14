@@ -944,7 +944,9 @@
 
   // build the URL for a circle's own page — matches what circle.html expects
   function circleHref(circle){
+
     return `/circle?${circle.is_private ? 'private' : 'public'}&ID=${encodeURIComponent(circle.id)}`;
+
   }
 
   // cache of the last loaded lists so the search box can filter instantly
@@ -1237,6 +1239,7 @@
     // tapping the row itself opens the circle — matches circle.html's
     // /circle?private|public&ID=... URL shape
     document.querySelectorAll('.circle-row').forEach(row => {
+
       row.addEventListener('click', () => {
         const id = row.dataset.circleId;
         const isPrivate = row.dataset.private === '1';
@@ -1729,6 +1732,7 @@
     wireTabs();
     wireYourCirclesUI();
     wireDiscoverUI();
+
   }
 
   async function init() {

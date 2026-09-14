@@ -41,13 +41,15 @@ let messages = [];
 
 // ---- page routes (grouped together, all before the SPA fallback) ----------
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
-app.get('/explore', (req, res) => res.sendFile(path.join(__dirname, 'explore.html')));
 app.get('/create', (req, res) => res.sendFile(path.join(__dirname, 'create.html')));
+
 app.get('/messages', (req, res) => res.sendFile(path.join(__dirname, 'messages.html')));
 app.get('/post', (req, res) => res.sendFile(path.join(__dirname, 'post.html')));
 app.get('/profile', (req, res) => res.sendFile(path.join(__dirname, 'profile.html')));
+
 app.get('/circles', (req, res) => res.sendFile(path.join(__dirname, 'circles.html')));
 app.get('/auth', (req, res) => res.sendFile(path.join(__dirname, 'auth.html')));
+app.get('/circle', (req, res) => res.sendFile(path.join(__dirname, 'circle.html')));
 
 // old bookmarks/links to /inbox still work
 app.get('/inbox', (req, res) => res.redirect(301, '/messages'));

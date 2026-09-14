@@ -14,7 +14,7 @@
     --ink-soft:#4a4d55;
     --grey:#8a8d94;
     --line:#ececec;
-    --line-strong:#e0e0e0;
+    --line-strong:#e2e2e2;
     --accent:#ff5a36;
     --accent-soft:#fff1ec;
     --danger:#e0433f;
@@ -47,6 +47,10 @@
 
   @keyframes riseIn{
     from{opacity:0;transform:translateY(12px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+  @keyframes riseInSlow{
+    from{opacity:0;transform:translateY(18px);}
     to{opacity:1;transform:translateY(0);}
   }
 
@@ -88,7 +92,7 @@
   }
   .promo-stats{display:flex;gap:28px;margin-top:36px;}
   .promo-stat b{display:block;font-family:var(--font-display);font-size:22px;font-weight:700;}
-  .promo-stat span{font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.75);}
+  .promo-stat span{font-family:var(--font-mono);font-size:11.5px;color:rgba(255,255,255,.78);}
 
   @media (min-width:900px){
     .promo{display:block;flex:1;max-width:46%;}
@@ -112,44 +116,63 @@
   }
   .wordmark .dot{color:var(--accent);}
   .tagline{
-    text-align:center;font-family:var(--font-mono);font-size:11.5px;
-    color:var(--grey);margin-bottom:30px;
+    text-align:center;font-family:var(--font-serif);font-style:italic;font-size:14.5px;
+    color:var(--ink-soft);margin-bottom:34px;
   }
+
+  .panel-switch{display:none;}
+  .panel-switch.active{display:block;animation:riseIn .35s var(--ease);}
+
+  /* ---------- Google, first and primary ---------- */
+  .google-btn{
+    width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
+    border:1px solid var(--ink);border-radius:12px;padding:14px;
+    font-family:var(--font-display);font-weight:600;font-size:14.5px;color:var(--ink);
+    transition:border-color .15s var(--ease), background .15s var(--ease), transform .12s var(--ease), box-shadow .18s var(--ease);
+  }
+  .google-btn:hover{background:var(--ink);color:#fff;box-shadow:0 10px 24px rgba(0,0,0,.14);}
+  .google-btn:hover svg{filter:none;}
+  .google-btn:active{transform:scale(.98);}
+  .google-btn svg{width:19px;height:19px;flex-shrink:0;}
+
+  .divider{
+    display:flex;align-items:center;gap:12px;margin:22px 0;
+    font-family:var(--font-serif);font-style:italic;font-size:13px;color:var(--grey);
+  }
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--line-strong);}
 
   /* ---------- sliding tab pill ---------- */
   .tabs{
     position:relative;
     display:flex;
-    border:1px solid var(--line-strong);
-    border-radius:12px;
+    background:#f5f5f6;
+    border-radius:11px;
     padding:4px;
-    margin-bottom:24px;
+    margin-bottom:22px;
   }
   .tab-indicator{
     position:absolute;
     top:4px;bottom:4px;left:4px;
     width:calc(50% - 4px);
-    background:var(--ink);
-    border-radius:9px;
+    background:#fff;
+    border-radius:8px;
+    box-shadow:0 1px 3px rgba(20,21,26,.1);
     transition:transform .28s var(--ease-spring);
     z-index:0;
   }
   .tab-btn{
     position:relative;z-index:1;
-    flex:1;padding:10px 0;
+    flex:1;padding:9px 0;
     font-family:var(--font-display);font-weight:600;font-size:13px;
-    color:var(--grey);border-radius:9px;
+    color:var(--grey);border-radius:8px;
     transition:color .2s var(--ease);
   }
-  .tab-btn.active{color:#fff;}
-
-  .panel-switch{display:none;}
-  .panel-switch.active{display:block;animation:riseIn .35s var(--ease);}
+  .tab-btn.active{color:var(--ink);}
 
   .field{margin-bottom:14px;}
   .field label{
-    display:block;font-family:var(--font-mono);font-size:10.5px;
-    letter-spacing:.02em;color:var(--grey);margin-bottom:6px;
+    display:block;font-family:var(--font-display);font-weight:500;font-size:12.5px;
+    color:var(--ink-soft);margin-bottom:6px;
   }
   .field-wrap{position:relative;}
   .field input{
@@ -171,7 +194,7 @@
   .pw-toggle svg{width:17px;height:17px;stroke:currentColor;}
 
   .field-hint{
-    font-family:var(--font-mono);font-size:10px;color:var(--grey);
+    font-family:var(--font-serif);font-size:12px;color:var(--grey);
     margin-top:5px;
   }
 
@@ -198,24 +221,8 @@
   .check-pop path{stroke-dasharray:20;stroke-dashoffset:20;animation:drawCheck .35s var(--ease) forwards;}
   @keyframes drawCheck{to{stroke-dashoffset:0;}}
 
-  .divider{
-    display:flex;align-items:center;gap:12px;margin:22px 0;
-    font-family:var(--font-mono);font-size:10.5px;color:var(--grey);
-  }
-  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--line-strong);}
-
-  .google-btn{
-    width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
-    border:1px solid var(--line-strong);border-radius:10px;padding:12px;
-    font-family:var(--font-display);font-weight:600;font-size:13.5px;color:var(--ink);
-    transition:border-color .15s var(--ease), background .15s var(--ease), transform .12s var(--ease);
-  }
-  .google-btn:hover{border-color:var(--ink);background:#f7f7f8;}
-  .google-btn:active{transform:scale(.98);}
-  .google-btn svg{width:18px;height:18px;}
-
   .status-msg{
-    margin-top:14px;font-family:var(--font-mono);font-size:11.5px;
+    margin-top:14px;font-family:var(--font-serif);font-size:13px;
     padding:10px 12px;border-radius:8px;display:none;
   }
   .status-msg.show{display:flex;align-items:center;gap:7px;animation:statusIn .3s var(--ease);}
@@ -232,22 +239,14 @@
   .status-msg.success{background:var(--success-soft);color:var(--success);}
 
   .hint{
-    text-align:center;font-family:var(--font-mono);font-size:10.5px;
-    color:var(--grey);margin-top:18px;line-height:1.6;
+    text-align:center;font-family:var(--font-serif);font-size:12.5px;
+    color:var(--grey);margin-top:20px;line-height:1.6;
   }
 
   .username-note{
     font-family:var(--font-serif);font-style:italic;font-size:15px;
     color:var(--ink-soft);text-align:center;margin-bottom:22px;line-height:1.55;
   }
-
-  .back-link{
-    display:inline-flex;align-items:center;gap:6px;
-    font-family:var(--font-mono);font-size:11px;color:var(--grey);
-    margin-bottom:18px;transition:color .15s var(--ease);
-  }
-  .back-link:hover{color:var(--ink);}
-  .back-link svg{width:13px;height:13px;stroke:currentColor;}
 </style>
 </head>
 <body>
@@ -264,8 +263,8 @@
       <h1>Your day is worth logging.</h1>
       <p>Post a photo, a clip, or a few words about today. Friends react, you build a streak worth keeping — one day at a time.</p>
       <div class="promo-stats">
-        <div class="promo-stat"><b>10s</b><span>TO YOUR FIRST POST</span></div>
-        <div class="promo-stat"><b>0</b><span>ADS, EVER</span></div>
+        <div class="promo-stat"><b>10s</b><span>to your first post</span></div>
+        <div class="promo-stat"><b>0</b><span>ads, ever</span></div>
       </div>
     </div>
   </aside>
@@ -278,6 +277,14 @@
 
       <!-- STEP 1: sign up / sign in -->
       <div class="panel-switch active" id="authPanel">
+
+        <button type="button" class="google-btn" id="googleBtn">
+          <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.5 29.5 3.5 24 3.5 12.7 3.5 3.5 12.7 3.5 24S12.7 44.5 24 44.5 44.5 35.3 44.5 24c0-1.2-.1-2.4-.3-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.5 5.5 29.5 3.5 24 3.5c-7.6 0-14.1 4.3-17.7 10.5z"/><path fill="#4CAF50" d="M24 44.5c5.4 0 10.3-1.8 14-4.9l-6.5-5.5c-2 1.4-4.6 2.3-7.5 2.3-5.3 0-9.7-3.1-11.3-7.5l-6.6 5.1C9.8 40.1 16.4 44.5 24 44.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.7l6.5 5.5C40.9 36.5 44.5 30.9 44.5 24c0-1.2-.1-2.4-.3-3.5z"/></svg>
+          Continue with Google
+        </button>
+
+        <div class="divider">or use your email</div>
+
         <div class="tabs">
           <div class="tab-indicator" id="tabIndicator"></div>
           <button type="button" class="tab-btn active" id="tabSignUp">Create account</button>
@@ -287,15 +294,15 @@
         <!-- Sign up form (default) -->
         <form id="signUpForm">
           <div class="field">
-            <label for="suUsername">USERNAME</label>
+            <label for="suUsername">Username</label>
             <input type="text" id="suUsername" required minlength="3" maxlength="24" pattern="[a-zA-Z0-9_]+" title="Letters, numbers, and underscores only" autocomplete="username">
           </div>
           <div class="field">
-            <label for="suEmail">EMAIL</label>
+            <label for="suEmail">Email</label>
             <input type="email" id="suEmail" required autocomplete="email">
           </div>
           <div class="field">
-            <label for="suPassword">PASSWORD</label>
+            <label for="suPassword">Password</label>
             <div class="field-wrap">
               <input type="password" id="suPassword" class="has-toggle" required minlength="6" autocomplete="new-password">
               <button type="button" class="pw-toggle" data-target="suPassword" aria-label="Show password">
@@ -312,11 +319,11 @@
         <!-- Sign in form -->
         <form id="signInForm" style="display:none;">
           <div class="field">
-            <label for="siEmail">EMAIL</label>
+            <label for="siEmail">Email</label>
             <input type="email" id="siEmail" required autocomplete="email">
           </div>
           <div class="field">
-            <label for="siPassword">PASSWORD</label>
+            <label for="siPassword">Password</label>
             <div class="field-wrap">
               <input type="password" id="siPassword" class="has-toggle" required autocomplete="current-password">
               <button type="button" class="pw-toggle" data-target="siPassword" aria-label="Show password">
@@ -329,13 +336,6 @@
           </button>
         </form>
 
-        <div class="divider">or</div>
-
-        <button type="button" class="google-btn" id="googleBtn">
-          <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.5 29.5 3.5 24 3.5 12.7 3.5 3.5 12.7 3.5 24S12.7 44.5 24 44.5 44.5 35.3 44.5 24c0-1.2-.1-2.4-.3-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.5 5.5 29.5 3.5 24 3.5c-7.6 0-14.1 4.3-17.7 10.5z"/><path fill="#4CAF50" d="M24 44.5c5.4 0 10.3-1.8 14-4.9l-6.5-5.5c-2 1.4-4.6 2.3-7.5 2.3-5.3 0-9.7-3.1-11.3-7.5l-6.6 5.1C9.8 40.1 16.4 44.5 24 44.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.7l6.5 5.5C40.9 36.5 44.5 30.9 44.5 24c0-1.2-.1-2.4-.3-3.5z"/></svg>
-          Continue with Google
-        </button>
-
         <div class="status-msg" id="authStatus"></div>
         <p class="hint">By continuing you agree to log your day, one clip at a time.</p>
       </div>
@@ -345,7 +345,7 @@
         <p class="username-note">Almost there — pick a username so people know whose day this is.</p>
         <form id="usernameForm">
           <div class="field">
-            <label for="pickUsername">USERNAME</label>
+            <label for="pickUsername">Username</label>
             <input type="text" id="pickUsername" required minlength="3" maxlength="24" pattern="[a-zA-Z0-9_]+" title="Letters, numbers, and underscores only">
           </div>
           <button type="submit" class="primary-btn" id="pickBtn">
