@@ -562,10 +562,29 @@
   async function loadMembers(){
     const { data: mem } = await supabaseClient
       .from('circle_members')
-      .select('user_id, role, joined_at, profiles(id, username, avatar_url)')
+      .select('user_id, role, joined_at')
       .eq('circle_id', circleId)
       .order('joined_at', { ascending: true });
-    return (mem || []).filter(m => m.profiles).map(m => ({ ...m.profiles, role: m.role, joined_at: m.joined_at }));
+
+    const list = mem || [];
+    if (list.length === 0) return [];
+
+    const userIds = list.map(m => m.user_id);
+    const { data: profs } = await supabaseClient
+      .from('profiles')
+      .select('id, username, avatar_url')
+      .in('id', userIds);
+
+    const profileById = {};
+    (profs || []).forEach(p => { profileById[p.id] = p; });
+
+    return list
+      .map(m => {
+        const p = profileById[m.user_id];
+        if (!p) return null;
+        return { ...p, role: m.role, joined_at: m.joined_at };
+      })
+      .filter(Boolean);
   }
 
   // ---- posts ----
@@ -574,7 +593,7 @@
   async function loadPosts(sort){
     let query = supabaseClient
       .from('posts')
-      .select('id, user_id, caption, media_url, media_type, created_at, score, rating_avg, rating_count, profiles(username, avatar_url)')
+      .select('id, user_id, caption, media_url, media_type, created_at, score, rating_avg, rating_count')
       .eq('circle_id', circleId);
 
     if (sort === 'top') query = query.order('score', { ascending: false });
@@ -583,6 +602,15 @@
     const { data, error } = await query.limit(50);
     if (error) { console.error('loadPosts failed', error); return []; }
     let list = data || [];
+
+    if (list.length > 0) {
+      const userIds = [...new Set(list.map(p => p.user_id))];
+      const { data: profs } = await supabaseClient.from('profiles').select('id, username, avatar_url').in('id', userIds);
+      const profileById = {};
+      (profs || []).forEach(p => { profileById[p.id] = p; });
+      list = list.map(p => ({ ...p, profiles: profileById[p.user_id] || null }));
+    }
+
     if (sort === 'hot') {
       // simple recency-weighted score for "hot"
       list = list.map(p => ({ ...p, _hot: (p.score||0) / Math.pow((Date.now()-new Date(p.created_at))/3600000 + 2, 1.3) }))
