@@ -1510,19 +1510,24 @@
       overlay.querySelector('#circleModalErrorSlot').innerHTML = '';
 
       try {
+
         const { data: newCircle, error } = await supabaseClient
+
           .from('circles')
+
           .insert({ name, is_private: isPrivate, created_by: currentUser.id })
+
           .select()
+          
           .single();
+
         if (error) throw error;
 
-        const { error: memberError } = await supabaseClient
-          .from('circle_members')
-          .insert({ circle_id: newCircle.id, user_id: currentUser.id, role: 'owner' });
-        if (memberError) throw memberError;
-
+        // owner membership is created automatically by the on_circle_created trigger
         showToast(`${name} is live`);
+
+
+
         close();
         renderPage();
       } catch (err) {
