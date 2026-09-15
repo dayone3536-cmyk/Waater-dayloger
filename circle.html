@@ -1434,9 +1434,13 @@
     });
 
     document.addEventListener('click', (e) => {
+
       if (!composer.classList.contains('overlay-open')) return;
-      if (composer.contains(e.target) || e.target === fab) return;
+
+      if (composer.contains(e.target) || fab.contains(e.target)) return;
+
       closeComposerOverlay();
+
     });
   }
 
