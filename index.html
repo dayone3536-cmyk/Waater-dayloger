@@ -1496,10 +1496,14 @@
     }
 
     try {
-      const { data: posts, error } = await supabaseClient
+
+        const { data: posts, error } = await supabaseClient
         .from('posts')
         .select('*, profiles(username , avatar_url), likes(count), comments(count)')
+        .is('circle_id', null)
         .order('created_at', { ascending: false });
+
+        
 
       if (error) throw error;
 
