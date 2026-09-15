@@ -268,16 +268,62 @@
   .home-post-media{margin-top:10px;border-radius:14px;overflow:hidden;border:1px solid var(--line);}
   .home-post-media img, .home-post-media video{width:100%;max-height:420px;object-fit:cover;display:block;}
 
-  .home-post-foot{
-    display:flex;align-items:center;justify-content:space-between;
-    padding:10px 16px 14px;border-top:1px solid var(--line);margin-top:2px;
+  .home-hero .home-eyebrow{
+    font-family:var(--font-mono);font-size:10.5px;color:var(--accent);
+    letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;font-weight:500;
   }
-  .home-star-row{display:flex;gap:3px;}
-  .home-star-btn{width:22px;height:22px;display:flex;align-items:center;justify-content:center;transition:transform .12s var(--ease-spring);}
-  .home-star-btn:hover{transform:scale(1.15);}
-  .home-star-btn svg{width:17px;height:17px;stroke:var(--accent);fill:none;transition:fill .15s ease;}
-  .home-star-btn.filled svg{fill:var(--accent);}
-  .home-rating-label{font-family:var(--font-mono);font-size:10.5px;color:var(--grey);margin-left:6px;}
+
+  .home-post-actions{
+    display:flex;align-items:center;gap:18px;
+    padding:10px 16px 12px;border-top:1px solid var(--line);margin-top:2px;
+  }
+  .home-action-btn{
+    display:flex;align-items:center;gap:6px;
+    font-family:var(--font-mono);font-size:12px;color:var(--ink-soft);
+    transition:color .15s ease;
+  }
+  .home-action-btn svg{width:18px;height:18px;stroke:var(--ink-soft);fill:none;transition:fill .15s ease, stroke .15s ease;}
+  .home-action-btn:hover{color:var(--ink);}
+  .home-action-btn:hover svg{stroke:var(--ink);}
+  .home-action-btn.liked{color:var(--accent);}
+  .home-action-btn.liked svg{fill:var(--accent);stroke:var(--accent);}
+  .home-like-btn.pop svg{animation:likePop .35s var(--ease-spring);}
+  @keyframes likePop{ 0%{transform:scale(1);} 45%{transform:scale(1.35);} 100%{transform:scale(1);} }
+
+  .home-comments{
+    display:none;padding:2px 16px 16px;border-top:1px solid var(--line);
+  }
+  .home-comments.open{display:block;animation:riseIn .25s var(--ease) forwards;}
+  .home-comment-list{display:flex;flex-direction:column;gap:12px;margin:14px 0 12px;}
+  .home-comment-item{display:flex;gap:9px;}
+  .home-comment-item .avatar{
+    width:26px;height:26px;border-radius:50%;flex-shrink:0;
+    background:linear-gradient(135deg,#ffd8c9,var(--accent));
+    display:flex;align-items:center;justify-content:center;color:#fff;
+    font-family:var(--font-display);font-weight:700;font-size:10px;overflow:hidden;
+  }
+  .home-comment-item .avatar img{width:100%;height:100%;object-fit:cover;}
+  .home-comment-bubble{background:#f7f7f8;border-radius:14px;padding:8px 13px;flex:1;min-width:0;}
+  .home-comment-bubble b{font-family:var(--font-display);font-size:12.5px;font-weight:600;}
+  .home-comment-bubble p{font-family:var(--font-serif);font-size:13.5px;color:var(--ink);margin-top:2px;line-height:1.45;white-space:pre-wrap;word-break:break-word;}
+  .home-comment-time{font-family:var(--font-mono);font-size:9px;color:var(--grey);margin-top:4px;margin-left:2px;}
+  .home-comment-empty{font-family:var(--font-mono);font-size:11px;color:var(--grey);text-align:center;padding:8px 0 14px;}
+  .home-comment-input-row{display:flex;gap:8px;align-items:center;}
+  .home-comment-input{
+    flex:1;border:1px solid var(--line-strong);border-radius:99px;
+    padding:9px 15px;font-family:var(--font-serif);font-size:13.5px;outline:none;
+    transition:border-color .15s ease;
+  }
+  .home-comment-input:focus{border-color:var(--accent);}
+  .home-comment-send{
+    width:34px;height:34px;border-radius:50%;flex-shrink:0;
+    background:var(--ink);display:flex;align-items:center;justify-content:center;
+    transition:background .15s ease, transform .1s ease, opacity .15s ease;
+  }
+  .home-comment-send:hover:not(:disabled){background:#000;}
+  .home-comment-send:active:not(:disabled){transform:scale(.92);}
+  .home-comment-send:disabled{opacity:.4;}
+  .home-comment-send svg{width:14px;height:14px;stroke:#fff;}
 
   /* =====================================================================
      PUBLIC MODE — subreddit-style
@@ -490,6 +536,13 @@
     if (s<604800) return `${Math.floor(s/86400)}d ago`;
     return new Date(iso).toLocaleDateString();
   }
+  function getGreeting(){
+    const h = new Date().getHours();
+    if (h < 5) return 'Still up';
+    if (h < 12) return 'Good morning';
+    if (h < 18) return 'Good afternoon';
+    return 'Good evening';
+  }
 
   const SUPABASE_URL = 'https://yacrwbpvcqurxsqpmron.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_Any50PwhIupj5rZbez1W4Q_dIx-VRIs';
@@ -589,11 +642,11 @@
 
   // ---- posts ----
   // posts table columns (confirmed): id, user_id, caption, media_url, media_type,
-  // created_at — plus circle_id/score/rating_avg/rating_count added by the migration.
+  // created_at — plus circle_id/score (public votes) and likes_count/comment_count (private) added by the migration.
   async function loadPosts(sort){
     let query = supabaseClient
       .from('posts')
-      .select('id, user_id, caption, media_url, media_type, created_at, score, rating_avg, rating_count')
+      .select('id, user_id, caption, media_url, media_type, created_at, score, likes_count, comment_count')
       .eq('circle_id', circleId);
 
     if (sort === 'top') query = query.order('score', { ascending: false });
@@ -627,30 +680,16 @@
     return m;
   }
 
-  async function loadMyRatings(postIds){
-    if (!currentUser || postIds.length === 0) return {};
-    const { data } = await supabaseClient.from('post_ratings').select('post_id, stars').eq('user_id', currentUser.id).in('post_id', postIds);
-    const m = {};
-    (data||[]).forEach(v => { m[v.post_id] = v.stars; });
-    return m;
+  async function loadMyLikes(postIds){
+    if (!currentUser || postIds.length === 0) return new Set();
+    const { data } = await supabaseClient.from('post_likes').select('post_id').eq('user_id', currentUser.id).in('post_id', postIds);
+    return new Set((data||[]).map(r => r.post_id));
   }
 
   // =========================================================
   // PRIVATE MODE — home feed
   // =========================================================
-  function renderStars(postId, avg, myStars){
-    let html = `<div class="home-star-row" data-post-id="${postId}">`;
-    for (let i=1;i<=5;i++){
-      const filled = myStars ? i <= myStars : i <= Math.round(avg);
-      html += `<button class="home-star-btn ${filled ? 'filled':''}" data-post-id="${postId}" data-star="${i}">
-        <svg viewBox="0 0 24 24" stroke-width="1.6"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.7 7L12 17.3 5.7 20.9l1.7-7L2 9.2l7.1-.6z"/></svg>
-      </button>`;
-    }
-    html += `</div><span class="home-rating-label">${avg > 0 ? avg.toFixed(1) : 'not rated yet'}</span>`;
-    return html;
-  }
-
-  function renderHomePostCard(post, myStars){
+  function renderHomePostCard(post, isLiked){
     const name = post.profiles?.username || 'someone';
     const avatarHtml = post.profiles?.avatar_url ? `<img src="${escapeHtml(post.profiles.avatar_url)}" alt="">` : initials(name);
     const mediaHtml = post.media_url
@@ -659,7 +698,7 @@
           : `<img src="${escapeHtml(post.media_url)}" alt="">`}</div>`
       : '';
     return `
-      <div class="home-post-card">
+      <div class="home-post-card" data-post-id="${post.id}">
         <div class="home-post-head">
           <div class="avatar">${avatarHtml}</div>
           <div class="who"><b>${escapeHtml(name)}</b><span>${timeAgo(post.created_at)}</span></div>
@@ -668,29 +707,135 @@
           ${post.caption ? `<div class="home-post-text">${escapeHtml(post.caption)}</div>` : ''}
           ${mediaHtml}
         </div>
-        <div class="home-post-foot">
-          ${renderStars(post.id, post.rating_avg || 0, myStars)}
+        <div class="home-post-actions">
+          <button class="home-action-btn home-like-btn ${isLiked ? 'liked' : ''}" data-post-id="${post.id}">
+            <svg viewBox="0 0 24 24" stroke-width="2"><path d="M12 21s-6.7-4.35-9.3-8.1C1 10 1.6 6.6 4.4 5.2 6.7 4 9.4 4.7 12 7.5c2.6-2.8 5.3-3.5 7.6-2.3 2.8 1.4 3.4 4.8 1.7 7.7C18.7 16.65 12 21 12 21z"/></svg>
+            <span class="home-like-count">${post.likes_count || 0}</span>
+          </button>
+          <button class="home-action-btn home-comment-toggle" data-post-id="${post.id}">
+            <svg viewBox="0 0 24 24" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            <span class="home-comment-count">${post.comment_count || 0}</span>
+          </button>
+        </div>
+        <div class="home-comments" id="home-comments-${post.id}">
+          <div class="home-comment-list" id="home-comment-list-${post.id}"></div>
+          <div class="home-comment-input-row">
+            <input type="text" class="home-comment-input" id="home-comment-input-${post.id}" placeholder="Say something..." maxlength="500">
+            <button class="home-comment-send" id="home-comment-send-${post.id}" data-post-id="${post.id}" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>
+            </button>
+          </div>
         </div>
       </div>
     `;
   }
 
-  function wireHomeStars(){
-    document.querySelectorAll('.home-star-btn').forEach(btn => {
+  async function loadComments(postId){
+    const { data: rows } = await supabaseClient
+      .from('post_comments')
+      .select('id, user_id, content, created_at')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true });
+    const list = rows || [];
+    if (list.length === 0) return [];
+    const userIds = [...new Set(list.map(c => c.user_id))];
+    const { data: profs } = await supabaseClient.from('profiles').select('id, username, avatar_url').in('id', userIds);
+    const profileById = {};
+    (profs || []).forEach(p => { profileById[p.id] = p; });
+    return list.map(c => ({ ...c, profile: profileById[c.user_id] || null }));
+  }
+
+  function renderCommentItem(c){
+    const name = c.profile?.username || 'someone';
+    const avatarHtml = c.profile?.avatar_url ? `<img src="${escapeHtml(c.profile.avatar_url)}" alt="">` : initials(name);
+    return `
+      <div class="home-comment-item">
+        <div class="avatar">${avatarHtml}</div>
+        <div>
+          <div class="home-comment-bubble"><b>${escapeHtml(name)}</b><p>${escapeHtml(c.content)}</p></div>
+          <div class="home-comment-time">${timeAgo(c.created_at)}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  async function openComments(postId){
+    const panel = document.getElementById(`home-comments-${postId}`);
+    const listEl = document.getElementById(`home-comment-list-${postId}`);
+    const wasOpen = panel.classList.contains('open');
+    if (wasOpen){ panel.classList.remove('open'); return; }
+    panel.classList.add('open');
+    if (!panel.dataset.loaded){
+      listEl.innerHTML = `<div class="home-comment-empty">Loading…</div>`;
+      const comments = await loadComments(postId);
+      listEl.innerHTML = comments.length
+        ? comments.map(renderCommentItem).join('')
+        : `<div class="home-comment-empty">No comments yet — be the first.</div>`;
+      panel.dataset.loaded = '1';
+    }
+  }
+
+  function wireHomeActions(){
+    document.querySelectorAll('.home-like-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (!requireAuth()) return;
+        if (btn.dataset.busy) return;
+        btn.dataset.busy = '1';
         const postId = btn.dataset.postId;
-        const stars = Number(btn.dataset.star);
+        const countEl = btn.querySelector('.home-like-count');
+        const wasLiked = btn.classList.contains('liked');
         try {
-          const { error } = await supabaseClient.rpc('rate_post', { p_post_id: postId, p_stars: stars });
-          if (error) throw error;
-          document.querySelectorAll(`.home-star-btn[data-post-id="${postId}"]`).forEach(b => {
-            b.classList.toggle('filled', Number(b.dataset.star) <= stars);
-          });
+          if (wasLiked){
+            const { error } = await supabaseClient.from('post_likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
+            if (error) throw error;
+            btn.classList.remove('liked');
+            countEl.textContent = Math.max(0, Number(countEl.textContent) - 1);
+          } else {
+            const { error } = await supabaseClient.from('post_likes').insert({ post_id: postId, user_id: currentUser.id });
+            if (error) throw error;
+            btn.classList.add('liked');
+            btn.classList.add('pop');
+            setTimeout(() => btn.classList.remove('pop'), 350);
+            countEl.textContent = Number(countEl.textContent) + 1;
+          }
         } catch (err) {
-          showToast(err.message || 'Could not rate', 'error');
+          showToast(err.message || 'Could not update like', 'error');
+        } finally {
+          delete btn.dataset.busy;
         }
       });
+    });
+
+    document.querySelectorAll('.home-comment-toggle').forEach(btn => {
+      btn.addEventListener('click', () => openComments(btn.dataset.postId));
+    });
+
+    document.querySelectorAll('.home-comment-input').forEach(input => {
+      const postId = input.id.replace('home-comment-input-', '');
+      const sendBtn = document.getElementById(`home-comment-send-${postId}`);
+      input.addEventListener('input', () => { sendBtn.disabled = !input.value.trim(); });
+      const submit = async () => {
+        if (!requireAuth()) return;
+        const text = input.value.trim();
+        if (!text || sendBtn.disabled) return;
+        sendBtn.disabled = true;
+        try {
+          const { error } = await supabaseClient.from('post_comments').insert({ post_id: postId, user_id: currentUser.id, content: text });
+          if (error) throw error;
+          input.value = '';
+          const listEl = document.getElementById(`home-comment-list-${postId}`);
+          const comments = await loadComments(postId);
+          listEl.innerHTML = comments.map(renderCommentItem).join('');
+          const countEl = document.querySelector(`.home-comment-toggle[data-post-id="${postId}"] .home-comment-count`);
+          if (countEl) countEl.textContent = comments.length;
+        } catch (err) {
+          showToast(err.message || 'Could not post comment', 'error');
+        } finally {
+          sendBtn.disabled = !input.value.trim();
+        }
+      };
+      sendBtn.addEventListener('click', submit);
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter'){ e.preventDefault(); submit(); } });
     });
   }
 
@@ -702,8 +847,9 @@
       <div class="home-hero">
         <div class="home-hero-top">
           <div>
+            <div class="home-eyebrow">${getGreeting()}</div>
             <h1>${escapeHtml(circle.name)}</h1>
-            <div class="home-sub">${circle.description ? escapeHtml(circle.description) : `Welcome back — this is just for the ${members.length} of you.`}</div>
+            <div class="home-sub">${circle.description ? escapeHtml(circle.description) : `Just the ${members.length} of you — nothing here leaves this room.`}</div>
           </div>
           ${myRole === 'owner' ? `
           <button class="home-settings-btn" id="homeInviteBtn" title="Invite">
@@ -721,7 +867,7 @@
       </div>
 
       <div class="home-composer" id="homeComposer">
-        <textarea id="homeComposerText" placeholder="What's happening today?" rows="1"></textarea>
+        <textarea id="homeComposerText" placeholder="Tell your circle about your day..." rows="1"></textarea>
         <div class="home-composer-media" id="homeMediaField" style="display:none;">
           <input type="text" id="homeMediaUrl" placeholder="Paste an image or video URL...">
         </div>
@@ -823,9 +969,9 @@
       `;
       return;
     }
-    const myRatings = await loadMyRatings(posts.map(p => p.id));
-    feed.innerHTML = posts.map(p => renderHomePostCard(p, myRatings[p.id])).join('');
-    wireHomeStars();
+    const myLikes = await loadMyLikes(posts.map(p => p.id));
+    feed.innerHTML = posts.map(p => renderHomePostCard(p, myLikes.has(p.id))).join('');
+    wireHomeActions();
   }
 
   // =========================================================
