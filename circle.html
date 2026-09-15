@@ -1000,10 +1000,13 @@
 
         showToast('Posted to the circle');
 
-        closeComposerOverlay();
-
+        if (document.getElementById('homeComposer').classList.contains('overlay')) {
+          closeComposerOverlay();
+        }
 
         await refreshHomeFeed();
+
+
       } catch (err) {
         showToast(err.message || 'Could not post', 'error');
       } finally {
