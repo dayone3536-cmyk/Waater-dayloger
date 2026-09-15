@@ -238,6 +238,66 @@
   .home-post-btn:active:not(:disabled){transform:scale(.96);}
   .home-post-btn:disabled{opacity:.5;cursor:default;}
 
+    /* collapsible composer + floating compose button */
+  .home-composer{
+    max-height:600px;
+    transition:max-height .32s var(--ease), opacity .22s var(--ease), transform .28s var(--ease),
+              margin .32s var(--ease), padding .32s var(--ease), border-color .32s var(--ease);
+    overflow:hidden;
+  }
+  .home-composer.collapsed{
+    max-height:0;
+    opacity:0;
+    transform:translateY(-8px);
+    margin-top:0;
+    padding-top:0;
+    padding-bottom:0;
+    border-color:transparent;
+    pointer-events:none;
+  }
+  .home-composer.overlay{
+    position:fixed;
+    left:50%;
+    top:78px;
+    transform:translate(-50%,-14px);
+    width:calc(100% - 44px);
+    max-width:520px;
+    z-index:50;
+    box-shadow:0 22px 50px rgba(20,21,26,.2);
+    opacity:0;
+    pointer-events:none;
+  }
+  .home-composer.overlay.overlay-open{
+    opacity:1;
+    transform:translate(-50%,0);
+    pointer-events:auto;
+  }
+  @media (min-width:900px){
+    .home-composer.overlay{ top:26px; }
+  }
+
+  .home-fab{
+    position:fixed;
+    right:20px;
+    bottom:96px;
+    width:52px;height:52px;
+    border-radius:50%;
+    background:var(--ink);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 10px 26px rgba(20,21,26,.28);
+    z-index:40;
+    opacity:0;
+    transform:translateY(16px) scale(.8);
+    pointer-events:none;
+    transition:opacity .22s var(--ease), transform .3s var(--ease-spring), background .15s ease;
+  }
+  .home-fab.show{ opacity:1; transform:translateY(0) scale(1); pointer-events:auto; }
+  .home-fab:hover{ background:#000; }
+  .home-fab:active{ transform:scale(.9); }
+  .home-fab svg{ width:22px;height:22px;stroke:#fff; }
+  @media (min-width:900px){ .home-fab{ bottom:34px; } }
+
+
   .home-feed{padding:20px 22px 30px;display:flex;flex-direction:column;gap:16px;}
   .home-empty{
     text-align:center;padding:50px 22px;
@@ -881,6 +941,10 @@
         </div>
       </div>
 
+      <button class="home-fab" id="homeFab" title="New post" aria-label="New post">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+
       <div class="home-feed" id="homeFeed">
         <div class="page-loading">Loading the feed…</div>
       </div>
@@ -907,6 +971,12 @@
     });
     mediaUrl.addEventListener('input', refreshPostBtn);
 
+    textarea.addEventListener('input', resetComposerTimer);
+    mediaUrl.addEventListener('input', resetComposerTimer);
+    textarea.addEventListener('focus', resetComposerTimer);
+
+
+
     let isPosting = false;
     postBtn.addEventListener('click', async () => {
       if (!requireAuth() || isPosting) return;
@@ -927,7 +997,12 @@
         if (error) throw error;
         textarea.value = ''; mediaUrl.value = ''; mediaField.style.display = 'none'; mediaToggle.classList.remove('active');
         textarea.style.height = 'auto';
+
         showToast('Posted to the circle');
+
+        closeComposerOverlay();
+
+
         await refreshHomeFeed();
       } catch (err) {
         showToast(err.message || 'Could not post', 'error');
@@ -953,6 +1028,8 @@
         showToast(err.message || 'Could not create invite', 'error');
       }
     });
+
+    setupComposerBehavior();
 
     await refreshHomeFeed();
   }
@@ -1177,22 +1254,74 @@
     await refreshPubFeed();
   }
 
-  async function refreshPubFeed(){
-    const feed = document.getElementById('pubFeed');
-    const posts = await loadPosts(currentSort);
-    if (posts.length === 0){
-      feed.innerHTML = `
-        <div class="home-empty">
-          <h3>No posts yet</h3>
-          <p>Nothing has been shared here — check back soon, or be first.</p>
-        </div>
-      `;
-      return;
+    async function refreshPubFeed(){
+      const feed = document.getElementById('pubFeed');
+      const posts = await loadPosts(currentSort);
+      if (posts.length === 0){
+        feed.innerHTML = `
+          <div class="home-empty">
+            <h3>No posts yet</h3>
+            <p>Nothing has been shared here — check back soon, or be first.</p>
+          </div>
+        `;
+        return;
+      }
+      const myVotes = await loadMyVotes(posts.map(p => p.id));
+      feed.innerHTML = posts.map(p => renderPubPostCard(p, myVotes[p.id])).join('');
+      wirePubVotes();
     }
-    const myVotes = await loadMyVotes(posts.map(p => p.id));
-    feed.innerHTML = posts.map(p => renderPubPostCard(p, myVotes[p.id])).join('');
-    wirePubVotes();
+
+    let composerTimer = null;
+
+  function setupComposerBehavior(){
+    const fab = document.getElementById('homeFab');
+    const composer = document.getElementById('homeComposer');
+    if (!fab || !composer) return;
+    const THRESHOLD = 40;
+
+    function onScroll(){
+      if (composer.classList.contains('overlay-open')) return; // don't fight an open overlay
+      const scrolled = window.scrollY > THRESHOLD;
+      composer.classList.toggle('collapsed', scrolled);
+      fab.classList.toggle('show', scrolled);
+    }
+    window.addEventListener('scroll', onScroll, { passive:true });
+    onScroll();
+
+    fab.addEventListener('click', () => {
+      composer.classList.remove('collapsed');
+      composer.classList.add('overlay', 'overlay-open');
+      fab.classList.remove('show');
+      document.getElementById('homeComposerText').focus();
+      resetComposerTimer();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!composer.classList.contains('overlay-open')) return;
+      if (composer.contains(e.target) || e.target === fab) return;
+      closeComposerOverlay();
+    });
   }
+
+  function resetComposerTimer(){
+    clearTimeout(composerTimer);
+    composerTimer = setTimeout(() => {
+      const text = document.getElementById('homeComposerText').value.trim();
+      const media = document.getElementById('homeMediaUrl').value.trim();
+      if (!text && !media) closeComposerOverlay();
+    }, 5000);
+  }
+
+  function closeComposerOverlay(){
+    const composer = document.getElementById('homeComposer');
+    clearTimeout(composerTimer);
+    composer.classList.remove('overlay-open');
+    setTimeout(() => composer.classList.remove('overlay'), 260);
+    composer.classList.add('collapsed');
+    if (window.scrollY > 40) document.getElementById('homeFab')?.classList.add('show');
+  }
+
+
 
   // =========================================================
   // MAIN INIT
