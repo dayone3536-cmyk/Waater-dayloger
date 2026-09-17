@@ -224,6 +224,12 @@
   .home-composer-tool svg{width:16px;height:16px;stroke:#c24020;}
   .home-composer-tool.active{background:var(--accent);}
   .home-composer-tool.active svg{stroke:#fff;}
+
+  #homeAnonToggle.active{background:#1a1b1f;}
+
+  #homeAnonToggle.active svg{stroke:#fff;}
+
+
   .home-post-btn{
     display:flex;align-items:center;gap:6px;
     background:var(--ink);color:#fff;font-family:var(--font-display);font-weight:600;font-size:13px;
@@ -312,7 +318,9 @@
     display:flex;align-items:center;justify-content:center;color:#fff;
     font-family:var(--font-display);font-weight:700;font-size:12.5px;overflow:hidden;flex-shrink:0;
   }
-  .home-post-head .avatar.anon-avatar{background:linear-gradient(135deg,#c8cad1,#8a8d94);}
+  .home-post-head .avatar.anon-avatar{background:linear-gradient(135deg,#3a3d47,#1a1b1f);}
+
+
   .home-post-head .avatar img{width:100%;height:100%;object-fit:cover;}
   .home-post-head .who{display:flex;flex-direction:column;line-height:1.25;}
   .home-post-head .who b{font-family:var(--font-display);font-size:13.5px;font-weight:600;}
@@ -762,8 +770,11 @@
   function renderHomePostCard(post, isLiked){
     const isAnonPost = post.is_anonymous;
     const name = isAnonPost ? 'Anonymous' : (post.profiles?.username || 'someone');
+
     const avatarHtml = isAnonPost
-      ? `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="width:60%;height:60%;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>`
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" style="width:70%;height:70%;"><path d="M3 12.5c1-2.5 4-6 9-6s8 3.5 9 6"/><path d="M4 15c0-1.5 3.5-2.5 8-2.5s8 1 8 2.5"/><circle cx="7.5" cy="15.5" r="1.7"/><circle cx="16.5" cy="15.5" r="1.7"/><path d="M9.2 15.5h5.6"/></svg>`
+
+      
       : (post.profiles?.avatar_url ? `<img src="${escapeHtml(post.profiles.avatar_url)}" alt="">` : initials(name));
     const mediaHtml = post.media_url
       ? `<div class="home-post-media">${post.media_type === 'video'
@@ -1054,8 +1065,12 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
             </button>
             <button class="home-composer-tool" id="homeAnonToggle" title="Post anonymously">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 12.5c1-2.5 4-6 9-6s8 3.5 9 6"/><path d="M4 15c0-1.5 3.5-2.5 8-2.5s8 1 8 2.5"/><circle cx="7.5" cy="15.5" r="1.7"/><circle cx="16.5" cy="15.5" r="1.7"/><path d="M9.2 15.5h5.6"/></svg>
+
+
             </button>
+
           </div>
           <button class="home-post-btn" id="homePostBtn" disabled>Post</button>
         </div>
@@ -1358,8 +1373,11 @@
       let pubIsAnon = false;
       pubAnonToggle.addEventListener('click', () => {
         pubIsAnon = !pubIsAnon;
-        pubAnonToggle.style.background = pubIsAnon ? 'var(--accent)' : 'var(--accent-soft)';
+
+        pubAnonToggle.style.background = pubIsAnon ? '#1a1b1f' : 'var(--accent-soft)';
+        
         pubAnonToggle.style.color = pubIsAnon ? '#fff' : '#c24020';
+
         pubAnonToggle.textContent = pubIsAnon ? 'Anon ✓' : 'Anon';
       });
 
@@ -1388,7 +1406,9 @@
           if (error) throw error;
           pubTextarea.value = ''; pubMediaUrl.value = '';
           pubIsAnon = false;
-          pubAnonToggle.style.background = 'var(--accent-soft)';
+
+          pubAnonToggle.style.background = pubIsAnon ? '#1a1b1f' : 'var(--accent-soft)';
+
           pubAnonToggle.style.color = '#c24020';
           pubAnonToggle.textContent = 'Anon';
           pubTextarea.style.height = 'auto';
