@@ -28,7 +28,6 @@
     --font-mono:'JetBrains Mono', monospace;
     --ease:cubic-bezier(.22,.9,.32,1);
     --ease-spring:cubic-bezier(.34,1.56,.64,1);
-    /* public-mode (reddit-ish) accents, layered on top of the same base tokens */
     --pub-up:#ff5a36;
     --pub-down:#7c8cff;
     --pub-bg:#f6f6f4;
@@ -51,7 +50,6 @@
     *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important;}
   }
 
-  /* ---------- shared shell ---------- */
   .app{display:flex;max-width:1180px;margin:0 auto;}
   .main{flex:1;min-width:0;border-left:1px solid var(--line);border-right:1px solid var(--line);}
 
@@ -146,9 +144,6 @@
   .page-error h2{font-family:var(--font-display);font-size:18px;color:var(--ink);margin-bottom:8px;font-weight:700;}
   .page-error a{color:var(--accent);text-decoration:underline;}
 
-  /* =====================================================================
-     PRIVATE MODE — "home" feel: warm, personal, diary-like
-     ===================================================================== */
   .home-hero{
     padding:30px 22px 20px;
     background:linear-gradient(180deg, var(--accent-soft), rgba(255,241,236,0) 70%);
@@ -238,7 +233,6 @@
   .home-post-btn:active:not(:disabled){transform:scale(.96);}
   .home-post-btn:disabled{opacity:.5;cursor:default;}
 
-    /* collapsible composer + floating compose button */
   .home-composer{
     max-height:600px;
     transition:max-height .32s var(--ease), opacity .22s var(--ease), transform .28s var(--ease),
@@ -297,7 +291,6 @@
   .home-fab svg{ width:22px;height:22px;stroke:#fff; }
   @media (min-width:900px){ .home-fab{ bottom:34px; } }
 
-
   .home-feed{padding:20px 22px 30px;display:flex;flex-direction:column;gap:16px;}
   .home-empty{
     text-align:center;padding:50px 22px;
@@ -319,6 +312,7 @@
     display:flex;align-items:center;justify-content:center;color:#fff;
     font-family:var(--font-display);font-weight:700;font-size:12.5px;overflow:hidden;flex-shrink:0;
   }
+  .home-post-head .avatar.anon-avatar{background:linear-gradient(135deg,#c8cad1,#8a8d94);}
   .home-post-head .avatar img{width:100%;height:100%;object-fit:cover;}
   .home-post-head .who{display:flex;flex-direction:column;line-height:1.25;}
   .home-post-head .who b{font-family:var(--font-display);font-size:13.5px;font-weight:600;}
@@ -405,9 +399,6 @@
   .home-voice-bubble b{font-family:var(--font-display);font-size:12.5px;font-weight:600;}
   .home-voice-bubble audio{width:100%;margin-top:6px;height:32px;}
 
-  /* =====================================================================
-     PUBLIC MODE — subreddit-style
-     ===================================================================== */
   .pub-wrap{background:var(--pub-bg);}
   .pub-banner{
     background:linear-gradient(120deg, var(--ink) 0%, #2a2c35 100%);
@@ -466,7 +457,7 @@
     width:100%;margin-top:8px;border:1px dashed var(--line-strong);border-radius:10px;
     padding:8px 10px;font-family:var(--font-mono);font-size:11px;outline:none;
   }
-  .pub-composer-row{display:flex;justify-content:flex-end;margin-top:10px;}
+  .pub-composer-row{display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
   .pub-post-btn{
     background:var(--ink);color:#fff;font-family:var(--font-display);font-weight:600;font-size:12.5px;
     padding:8px 16px;border-radius:99px;transition:background .15s ease;
@@ -496,6 +487,7 @@
   .pub-post-main{flex:1;min-width:0;padding:12px 14px;}
   .pub-post-meta{font-family:var(--font-mono);font-size:10.5px;color:var(--grey);margin-bottom:5px;}
   .pub-post-meta b{color:var(--ink-soft);}
+  .pub-post-meta b.anon-tag{color:var(--grey);font-style:italic;}
   .pub-post-text{font-family:var(--font-serif);font-size:14.5px;line-height:1.55;color:var(--ink);white-space:pre-wrap;}
   .pub-post-media{margin-top:9px;border-radius:10px;overflow:hidden;border:1px solid var(--line);max-height:420px;}
   .pub-post-media img, .pub-post-media video{width:100%;max-height:420px;object-fit:cover;}
@@ -672,15 +664,14 @@
     });
   }
 
-  // ---- read /circle?private|public&ID=xxx ----
   const params = new URLSearchParams(window.location.search);
   const circleId = params.get('ID');
   const urlSaysPrivate = params.has('private');
 
   let circle = null;
-  let myRole = null;       // 'owner' | 'member' | null (not a member)
+  let myRole = null;
   let members = [];
-  let currentSort = 'new'; // public mode: 'hot' | 'new' | 'top'
+  let currentSort = 'new';
 
   async function loadCircle(){
     const { data: c, error } = await supabaseClient
@@ -721,12 +712,12 @@
   }
 
   // ---- posts ----
-  // posts table columns (confirmed): id, user_id, caption, media_url, media_type,
-  // created_at — plus circle_id/score (public votes) and likes_count/comment_count (private) added by the migration.
+  // posts table columns: id, user_id, caption, media_url, media_type, created_at,
+  // circle_id, score, likes_count, comment_count, is_anonymous
   async function loadPosts(sort){
     let query = supabaseClient
       .from('posts')
-      .select('id, user_id, caption, media_url, media_type, created_at, score, likes_count, comment_count')
+      .select('id, user_id, caption, media_url, media_type, created_at, score, likes_count, comment_count, is_anonymous')
       .eq('circle_id', circleId);
 
     if (sort === 'top') query = query.order('score', { ascending: false });
@@ -745,7 +736,6 @@
     }
 
     if (sort === 'hot') {
-      // simple recency-weighted score for "hot"
       list = list.map(p => ({ ...p, _hot: (p.score||0) / Math.pow((Date.now()-new Date(p.created_at))/3600000 + 2, 1.3) }))
                  .sort((a,b) => b._hot - a._hot);
     }
@@ -770,8 +760,11 @@
   // PRIVATE MODE — home feed
   // =========================================================
   function renderHomePostCard(post, isLiked){
-    const name = post.profiles?.username || 'someone';
-    const avatarHtml = post.profiles?.avatar_url ? `<img src="${escapeHtml(post.profiles.avatar_url)}" alt="">` : initials(name);
+    const isAnonPost = post.is_anonymous;
+    const name = isAnonPost ? 'Anonymous' : (post.profiles?.username || 'someone');
+    const avatarHtml = isAnonPost
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="width:60%;height:60%;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>`
+      : (post.profiles?.avatar_url ? `<img src="${escapeHtml(post.profiles.avatar_url)}" alt="">` : initials(name));
     const mediaHtml = post.media_url
       ? `<div class="home-post-media">${post.media_type === 'video'
           ? `<video src="${escapeHtml(post.media_url)}" controls></video>`
@@ -780,8 +773,8 @@
     return `
       <div class="home-post-card" data-post-id="${post.id}">
         <div class="home-post-head">
-          <div class="avatar">${avatarHtml}</div>
-          <div class="who"><b>${escapeHtml(name)}</b><span>${timeAgo(post.created_at)}</span></div>
+          <div class="avatar${isAnonPost ? ' anon-avatar' : ''}">${avatarHtml}</div>
+          <div class="who"><b style="${isAnonPost ? 'color:var(--grey);font-style:italic;' : ''}">${escapeHtml(name)}</b><span>${timeAgo(post.created_at)}</span></div>
         </div>
         <div class="home-post-body">
           ${post.caption ? `<div class="home-post-text">${escapeHtml(post.caption)}</div>` : ''}
@@ -799,9 +792,7 @@
         </div>
         <div class="home-comments" id="home-comments-${post.id}">
           <div class="home-comment-list" id="home-comment-list-${post.id}"></div>
-
               <div class="home-comment-input-row">
-
                 <input type="text" class="home-comment-input" id="home-comment-input-${post.id}" placeholder="Say something..." maxlength="500">
                 <span class="home-comment-rec-timer" id="home-comment-rec-timer-${post.id}" style="display:none;">0:00</span>
                 <button class="home-comment-mic" id="home-comment-mic-${post.id}" data-post-id="${post.id}" title="Record a voice comment">
@@ -811,13 +802,12 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>
                 </button>
               </div>
-
         </div>
       </div>
     `;
   }
 
-    async function loadComments(postId){
+  async function loadComments(postId){
     const [{ data: textRows }, { data: voiceRows }] = await Promise.all([
       supabaseClient.from('post_comments').select('id, user_id, content, created_at').eq('post_id', postId),
       supabaseClient.from('voice_comments').select('id, user_id, audio_url, duration_seconds, created_at').eq('post_id', postId)
@@ -863,9 +853,6 @@
       </div>
     `;
   }
-
-
-
 
   async function openComments(postId){
     const panel = document.getElementById(`home-comments-${postId}`);
@@ -946,91 +933,87 @@
       input.addEventListener('keydown', (e) => { if (e.key === 'Enter'){ e.preventDefault(); submit(); } });
     });
 
-      document.querySelectorAll('.home-comment-mic').forEach(btn => {
-    const postId = btn.dataset.postId;
-    let mediaRecorder = null;
-    let chunks = [];
-    let startTime = null;
-    let timerInterval = null;
-    const timerEl = document.getElementById(`home-comment-rec-timer-${postId}`);
+    document.querySelectorAll('.home-comment-mic').forEach(btn => {
+      const postId = btn.dataset.postId;
+      let mediaRecorder = null;
+      let chunks = [];
+      let startTime = null;
+      let timerInterval = null;
+      const timerEl = document.getElementById(`home-comment-rec-timer-${postId}`);
 
-    btn.addEventListener('click', async () => {
-      if (!requireAuth()) return;
+      btn.addEventListener('click', async () => {
+        if (!requireAuth()) return;
 
-      if (btn.classList.contains('recording')) {
-        mediaRecorder.stop();
-        return;
-      }
+        if (btn.classList.contains('recording')) {
+          mediaRecorder.stop();
+          return;
+        }
 
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        chunks = [];
-        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+          chunks = [];
+          mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
 
-        mediaRecorder.onstop = async () => {
-          stream.getTracks().forEach(t => t.stop());
-          clearInterval(timerInterval);
-          timerEl.style.display = 'none';
-          btn.classList.remove('recording');
+          mediaRecorder.onstop = async () => {
+            stream.getTracks().forEach(t => t.stop());
+            clearInterval(timerInterval);
+            timerEl.style.display = 'none';
+            btn.classList.remove('recording');
 
-          const durationSeconds = (Date.now() - startTime) / 1000;
-          const blob = new Blob(chunks, { type: 'audio/webm' });
-          const path = `${currentUser.id}/${postId}/${Date.now()}.webm`;
+            const durationSeconds = (Date.now() - startTime) / 1000;
+            const blob = new Blob(chunks, { type: 'audio/webm' });
+            const path = `${currentUser.id}/${postId}/${Date.now()}.webm`;
 
-          btn.disabled = true;
-          try {
-            const { error: uploadError } = await supabaseClient.storage
-              .from('voice-comments')
-              .upload(path, blob, { contentType: 'audio/webm' });
-            if (uploadError) throw uploadError;
+            btn.disabled = true;
+            try {
+              const { error: uploadError } = await supabaseClient.storage
+                .from('voice-comments')
+                .upload(path, blob, { contentType: 'audio/webm' });
+              if (uploadError) throw uploadError;
 
-            const { data: { publicUrl } } = supabaseClient.storage.from('voice-comments').getPublicUrl(path);
+              const { data: { publicUrl } } = supabaseClient.storage.from('voice-comments').getPublicUrl(path);
 
-            const { error: insertError } = await supabaseClient.from('voice_comments').insert({
-              post_id: postId,
-              user_id: currentUser.id,
-              audio_url: publicUrl,
-              duration_seconds: durationSeconds
-            });
-            if (insertError) throw insertError;
+              const { error: insertError } = await supabaseClient.from('voice_comments').insert({
+                post_id: postId,
+                user_id: currentUser.id,
+                audio_url: publicUrl,
+                duration_seconds: durationSeconds
+              });
+              if (insertError) throw insertError;
 
-            const listEl = document.getElementById(`home-comment-list-${postId}`);
-            const comments = await loadComments(postId);
-            listEl.innerHTML = comments.map(renderCommentItem).join('');
-            const countEl = document.querySelector(`.home-comment-toggle[data-post-id="${postId}"] .home-comment-count`);
-            if (countEl) countEl.textContent = comments.length;
-            showToast('Voice comment posted');
-          } catch (err) {
-            showToast(err.message || 'Could not post voice comment', 'error');
-          } finally {
-            btn.disabled = false;
-          }
-        };
+              const listEl = document.getElementById(`home-comment-list-${postId}`);
+              const comments = await loadComments(postId);
+              listEl.innerHTML = comments.map(renderCommentItem).join('');
+              const countEl = document.querySelector(`.home-comment-toggle[data-post-id="${postId}"] .home-comment-count`);
+              if (countEl) countEl.textContent = comments.length;
+              showToast('Voice comment posted');
+            } catch (err) {
+              showToast(err.message || 'Could not post voice comment', 'error');
+            } finally {
+              btn.disabled = false;
+            }
+          };
 
-                  const MAX_RECORDING_SECONDS = 60;
+          const MAX_RECORDING_SECONDS = 60;
 
-        mediaRecorder.start();
-        startTime = Date.now();
-        btn.classList.add('recording');
-        timerEl.style.display = 'inline';
-        timerInterval = setInterval(() => {
-          const secs = Math.floor((Date.now() - startTime) / 1000);
-          timerEl.textContent = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
-          if (secs >= MAX_RECORDING_SECONDS) {
-            mediaRecorder.stop();
-          }
-        }, 250);
+          mediaRecorder.start();
+          startTime = Date.now();
+          btn.classList.add('recording');
+          timerEl.style.display = 'inline';
+          timerInterval = setInterval(() => {
+            const secs = Math.floor((Date.now() - startTime) / 1000);
+            timerEl.textContent = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+            if (secs >= MAX_RECORDING_SECONDS) {
+              mediaRecorder.stop();
+            }
+          }, 250);
 
-              
-
-      } catch (err) {
-        showToast('Microphone access denied or unavailable', 'error');
-      }
+        } catch (err) {
+          showToast('Microphone access denied or unavailable', 'error');
+        }
+      });
     });
-  });
-
-
   }
 
   async function renderHomeMode(){
@@ -1070,6 +1053,9 @@
             <button class="home-composer-tool" id="homeMediaToggle" title="Add photo/video">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
             </button>
+            <button class="home-composer-tool" id="homeAnonToggle" title="Post anonymously">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            </button>
           </div>
           <button class="home-post-btn" id="homePostBtn" disabled>Post</button>
         </div>
@@ -1084,7 +1070,6 @@
       </div>
     `;
 
-    // composer wiring
     const textarea = document.getElementById('homeComposerText');
     const postBtn = document.getElementById('homePostBtn');
     const mediaToggle = document.getElementById('homeMediaToggle');
@@ -1109,7 +1094,13 @@
     mediaUrl.addEventListener('input', resetComposerTimer);
     textarea.addEventListener('focus', resetComposerTimer);
 
-
+    const anonToggle = document.getElementById('homeAnonToggle');
+    let isAnon = false;
+    anonToggle.addEventListener('click', () => {
+      isAnon = !isAnon;
+      anonToggle.classList.toggle('active', isAnon);
+      showToast(isAnon ? 'Posting anonymously' : 'Posting as yourself');
+    });
 
     let isPosting = false;
     postBtn.addEventListener('click', async () => {
@@ -1120,6 +1111,7 @@
       isPosting = true;
       postBtn.disabled = true;
       postBtn.innerHTML = `<span class="mini-spinner"></span>`;
+
       try {
         const { error } = await supabaseClient.from('posts').insert({
           circle_id: circleId,
@@ -1127,9 +1119,13 @@
           caption: content || null,
           media_url: url || null,
           media_type: url ? (url.match(/\.(mp4|mov|webm)(\?|$)/i) ? 'video' : 'image') : null,
+          is_anonymous: isAnon,
         });
         if (error) throw error;
+
         textarea.value = ''; mediaUrl.value = ''; mediaField.style.display = 'none'; mediaToggle.classList.remove('active');
+        isAnon = false;
+        anonToggle.classList.remove('active');
         textarea.style.height = 'auto';
 
         showToast('Posted to the circle');
@@ -1139,7 +1135,6 @@
         }
 
         await refreshHomeFeed();
-
 
       } catch (err) {
         showToast(err.message || 'Could not post', 'error');
@@ -1192,7 +1187,8 @@
   // PUBLIC MODE — subreddit style
   // =========================================================
   function renderPubPostCard(post, myVote){
-    const name = post.profiles?.username || 'someone';
+    const isAnonPost = post.is_anonymous;
+    const name = isAnonPost ? 'Anonymous' : (post.profiles?.username || 'someone');
     const mediaHtml = post.media_url
       ? `<div class="pub-post-media">${post.media_type === 'video'
           ? `<video src="${escapeHtml(post.media_url)}" controls></video>`
@@ -1210,7 +1206,7 @@
           </button>
         </div>
         <div class="pub-post-main">
-          <div class="pub-post-meta"><b>${escapeHtml(name)}</b> · ${timeAgo(post.created_at)}</div>
+          <div class="pub-post-meta"><b class="${isAnonPost ? 'anon-tag' : ''}">${escapeHtml(name)}</b> · ${timeAgo(post.created_at)}</div>
           ${post.caption ? `<div class="pub-post-text">${escapeHtml(post.caption)}</div>` : ''}
           ${mediaHtml}
         </div>
@@ -1277,6 +1273,7 @@
                 <textarea id="pubComposerText" placeholder="Share something with this circle..." rows="1"></textarea>
                 <input type="text" id="pubMediaUrl" placeholder="Optional image/video URL">
                 <div class="pub-composer-row">
+                  <button class="pub-post-btn" id="pubAnonToggle" style="background:var(--accent-soft);color:#c24020;">Anon</button>
                   <button class="pub-post-btn" id="pubPostBtn" disabled>Post</button>
                 </div>
               </div>
@@ -1345,15 +1342,27 @@
     });
 
     const pubTextarea = document.getElementById('pubComposerText');
+
     if (pubTextarea){
       const pubPostBtn = document.getElementById('pubPostBtn');
       const pubMediaUrl = document.getElementById('pubMediaUrl');
       const refresh = () => { pubPostBtn.disabled = !pubTextarea.value.trim() && !pubMediaUrl.value.trim(); };
+
       pubTextarea.addEventListener('input', () => {
         pubTextarea.style.height = 'auto';
         pubTextarea.style.height = Math.min(pubTextarea.scrollHeight, 160) + 'px';
         refresh();
       });
+
+      const pubAnonToggle = document.getElementById('pubAnonToggle');
+      let pubIsAnon = false;
+      pubAnonToggle.addEventListener('click', () => {
+        pubIsAnon = !pubIsAnon;
+        pubAnonToggle.style.background = pubIsAnon ? 'var(--accent)' : 'var(--accent-soft)';
+        pubAnonToggle.style.color = pubIsAnon ? '#fff' : '#c24020';
+        pubAnonToggle.textContent = pubIsAnon ? 'Anon ✓' : 'Anon';
+      });
+
       pubMediaUrl.addEventListener('input', refresh);
 
       let isPosting = false;
@@ -1365,6 +1374,7 @@
         isPosting = true;
         pubPostBtn.disabled = true;
         pubPostBtn.innerHTML = `<span class="mini-spinner"></span>`;
+
         try {
           const { error } = await supabaseClient.from('posts').insert({
             circle_id: circleId,
@@ -1372,9 +1382,15 @@
             caption: content || null,
             media_url: url || null,
             media_type: url ? (url.match(/\.(mp4|mov|webm)(\?|$)/i) ? 'video' : 'image') : null,
+            is_anonymous: pubIsAnon,
           });
+
           if (error) throw error;
           pubTextarea.value = ''; pubMediaUrl.value = '';
+          pubIsAnon = false;
+          pubAnonToggle.style.background = 'var(--accent-soft)';
+          pubAnonToggle.style.color = '#c24020';
+          pubAnonToggle.textContent = 'Anon';
           pubTextarea.style.height = 'auto';
           showToast('Posted');
           await refreshPubFeed();
@@ -1391,24 +1407,24 @@
     await refreshPubFeed();
   }
 
-    async function refreshPubFeed(){
-      const feed = document.getElementById('pubFeed');
-      const posts = await loadPosts(currentSort);
-      if (posts.length === 0){
-        feed.innerHTML = `
-          <div class="home-empty">
-            <h3>No posts yet</h3>
-            <p>Nothing has been shared here — check back soon, or be first.</p>
-          </div>
-        `;
-        return;
-      }
-      const myVotes = await loadMyVotes(posts.map(p => p.id));
-      feed.innerHTML = posts.map(p => renderPubPostCard(p, myVotes[p.id])).join('');
-      wirePubVotes();
+  async function refreshPubFeed(){
+    const feed = document.getElementById('pubFeed');
+    const posts = await loadPosts(currentSort);
+    if (posts.length === 0){
+      feed.innerHTML = `
+        <div class="home-empty">
+          <h3>No posts yet</h3>
+          <p>Nothing has been shared here — check back soon, or be first.</p>
+        </div>
+      `;
+      return;
     }
+    const myVotes = await loadMyVotes(posts.map(p => p.id));
+    feed.innerHTML = posts.map(p => renderPubPostCard(p, myVotes[p.id])).join('');
+    wirePubVotes();
+  }
 
-    let composerTimer = null;
+  let composerTimer = null;
 
   function setupComposerBehavior(){
     const fab = document.getElementById('homeFab');
@@ -1417,7 +1433,7 @@
     const THRESHOLD = 40;
 
     function onScroll(){
-      if (composer.classList.contains('overlay-open')) return; // don't fight an open overlay
+      if (composer.classList.contains('overlay-open')) return;
       const scrolled = window.scrollY > THRESHOLD;
       composer.classList.toggle('collapsed', scrolled);
       fab.classList.toggle('show', scrolled);
@@ -1434,13 +1450,9 @@
     });
 
     document.addEventListener('click', (e) => {
-
       if (!composer.classList.contains('overlay-open')) return;
-
       if (composer.contains(e.target) || fab.contains(e.target)) return;
-
       closeComposerOverlay();
-
     });
   }
 
@@ -1461,8 +1473,6 @@
     composer.classList.add('collapsed');
     if (window.scrollY > 40) document.getElementById('homeFab')?.classList.add('show');
   }
-
-
 
   // =========================================================
   // MAIN INIT
@@ -1491,7 +1501,6 @@
       return;
     }
 
-    // the URL's private/public flag is cosmetic — the DB row is the source of truth
     if (urlSaysPrivate !== circle.is_private){
       const correctUrl = `/circle?${circle.is_private ? 'private' : 'public'}&ID=${encodeURIComponent(circle.id)}`;
       window.history.replaceState(null, '', correctUrl);
