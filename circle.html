@@ -224,6 +224,8 @@
   .home-composer-tool svg{width:16px;height:16px;stroke:#c24020;}
   .home-composer-tool.active{background:var(--accent);}
   .home-composer-tool.active svg{stroke:#fff;}
+  .home-composer-tool.recording{background:var(--danger);animation:micPulse 1.1s ease-in-out infinite;}
+  .home-composer-tool.recording svg{stroke:#fff;}
 
   #homeAnonToggle{background:#1a1b1f;}
     #homeAnonToggle:hover{background:#000;}
@@ -971,7 +973,7 @@
   async function loadPosts(sort){
     let query = supabaseClient
       .from('posts')
-      .select('id, user_id, caption, media_url, media_type, created_at, score, likes_count, comment_count, is_anonymous')
+      .select('id, user_id, caption, media_url, media_type, duration_seconds, created_at, score, likes_count, comment_count, is_anonymous')
       .eq('circle_id', circleId);
 
     if (sort === 'top') query = query.order('score', { ascending: false });
@@ -1027,9 +1029,13 @@
       
       : (post.profiles?.avatar_url ? `<img src="${escapeHtml(post.profiles.avatar_url)}" alt="">` : initials(name));
     const mediaHtml = post.media_url
-      ? `<div class="home-post-media">${post.media_type === 'video'
-          ? `<video src="${escapeHtml(post.media_url)}" controls></video>`
-          : `<img src="${escapeHtml(post.media_url)}" alt="">`}</div>`
+      ? `<div class="home-post-media">${
+          post.media_type === 'voice'
+            ? `<div class="home-voice-bubble"><b>🎙️ Voice post${post.duration_seconds ? ` · ${Math.round(post.duration_seconds)}s` : ''}</b><audio src="${escapeHtml(post.media_url)}" controls></audio></div>`
+          : post.media_type === 'video'
+            ? `<video src="${escapeHtml(post.media_url)}" controls></video>`
+            : `<img src="${escapeHtml(post.media_url)}" alt="">`
+        }</div>`
       : '';
     return `
       <div class="home-post-card" data-post-id="${post.id}">
@@ -1334,6 +1340,10 @@
 
 
             </button>
+            <button class="home-composer-tool" id="homeVoiceBtn" title="Record a voice post">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </button>
+            <span class="home-comment-rec-timer" id="homeVoiceTimer" style="display:none;">0:00</span>
 
           </div>
           <button class="home-post-btn" id="homePostBtn" disabled>Post</button>
@@ -1379,6 +1389,90 @@
       isAnon = !isAnon;
       anonToggle.classList.toggle('active', isAnon);
       showToast(isAnon ? 'Posting anonymously' : 'Posting as yourself');
+    });
+
+    const voiceBtn = document.getElementById('homeVoiceBtn');
+    const voiceTimer = document.getElementById('homeVoiceTimer');
+    let voiceRecorder = null;
+    let voiceChunks = [];
+    let voiceStartTime = null;
+    let voiceTimerInterval = null;
+    const MAX_VOICE_SECONDS = 120;
+
+    voiceBtn.addEventListener('click', async () => {
+      if (!requireAuth()) return;
+
+      if (voiceBtn.classList.contains('recording')) {
+        voiceRecorder.stop();
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        voiceRecorder = new MediaRecorder(stream);
+        voiceChunks = [];
+        voiceRecorder.ondataavailable = (e) => voiceChunks.push(e.data);
+
+        voiceRecorder.onstop = async () => {
+          stream.getTracks().forEach(t => t.stop());
+          clearInterval(voiceTimerInterval);
+          voiceTimer.style.display = 'none';
+          voiceBtn.classList.remove('recording');
+
+          const durationSeconds = (Date.now() - voiceStartTime) / 1000;
+          const blob = new Blob(voiceChunks, { type: 'audio/webm' });
+          const path = `${currentUser.id}/${circleId}/${Date.now()}.webm`;
+
+          voiceBtn.disabled = true;
+          try {
+            const { error: uploadError } = await supabaseClient.storage
+              .from('voice-posts')
+              .upload(path, blob, { contentType: 'audio/webm' });
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabaseClient.storage.from('voice-posts').getPublicUrl(path);
+
+            const { error: insertError } = await supabaseClient.from('posts').insert({
+              circle_id: circleId,
+              user_id: currentUser.id,
+              caption: textarea.value.trim() || null,
+              media_url: publicUrl,
+              media_type: 'voice',
+              duration_seconds: durationSeconds,
+              is_anonymous: isAnon,
+            });
+            if (insertError) throw insertError;
+
+            textarea.value = ''; textarea.style.height = 'auto';
+            isAnon = false;
+            anonToggle.classList.remove('active');
+            refreshPostBtn();
+
+            showToast('Voice post shared');
+            if (document.getElementById('homeComposer').classList.contains('overlay')) {
+              closeComposerOverlay();
+            }
+            await refreshHomeFeed();
+          } catch (err) {
+            showToast(err.message || 'Could not post voice recording', 'error');
+          } finally {
+            voiceBtn.disabled = false;
+          }
+        };
+
+        voiceRecorder.start();
+        voiceStartTime = Date.now();
+        voiceBtn.classList.add('recording');
+        voiceTimer.style.display = 'inline';
+        voiceTimerInterval = setInterval(() => {
+          const secs = Math.floor((Date.now() - voiceStartTime) / 1000);
+          voiceTimer.textContent = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+          if (secs >= MAX_VOICE_SECONDS) voiceRecorder.stop();
+        }, 250);
+
+      } catch (err) {
+        showToast('Microphone access denied or unavailable', 'error');
+      }
     });
 
     let isPosting = false;
