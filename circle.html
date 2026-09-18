@@ -1428,7 +1428,9 @@
         const { data, error } = rpcResult;
         if (error) throw error;
         try {
-          await navigator.clipboard.writeText(`${window.location.origin}/circle/join?code=${encodeURIComponent(data.code)}`);
+
+          await navigator.clipboard.writeText(`${window.location.origin}/circle?code=${encodeURIComponent(data.code)}`);
+          
           showToast('Invite link copied — works for 10 minutes');
         } catch (e) {
           showToast(`Invite code: ${data.code}`);
@@ -1770,6 +1772,23 @@
   // =========================================================
   async function init(){
     await renderSidebar();
+
+      const inviteCode = params.get('code');
+      if (inviteCode && !circleId){
+        if (!requireAuth(`/circle?code=${encodeURIComponent(inviteCode)}`)) return;
+        document.getElementById('pageBody').innerHTML = `<div class="page-loading">Joining circle…</div>`;
+        const { data, error } = await supabaseClient.rpc('redeem_circle_invite', { p_code: inviteCode });
+        if (error || !data?.circle_id){
+          document.getElementById('pageBody').innerHTML = `
+            <div class="page-error">
+              <h2>Invite invalid or expired</h2>
+              <p>${error?.message || ''} <a href="/circles">Back to your circles</a></p>
+            </div>`;
+          return;
+        }
+        window.location.replace(`/circle?private&ID=${encodeURIComponent(data.circle_id)}`);
+        return;
+      }
 
     if (!circleId){
       document.getElementById('pageBody').innerHTML = `

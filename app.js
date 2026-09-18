@@ -68,9 +68,6 @@ app.get('/api/users', (req, res) => res.json(users));
 app.get('/api/users/me', (req, res) => res.json(req.user));
 app.get('/api/inbox', (req, res) => res.json(messages)); // kept as-is; DMs live in Supabase now, not this in-memory array
 
-
-
-
 app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 
 // ---- SPA fallback (catch anything else non-/api) ---------------------------
