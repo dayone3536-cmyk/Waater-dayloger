@@ -648,6 +648,87 @@
   .invite-modal-skip:hover{background:#f7f7f8;}
   .invite-modal-send{background:var(--ink);color:#fff;font-family:var(--font-display);font-weight:600;font-size:12.5px;padding:9px 16px;border-radius:99px;}
   .invite-modal-send:hover{background:#000;}
+
+  /* ---- Circle Album ---- */
+  .home-album{margin:18px 22px 0;}
+  .home-album-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;}
+  .home-album-head h3{font-family:var(--font-display);font-weight:700;font-size:15px;}
+  .home-album-sub{font-family:var(--font-mono);font-size:10px;color:var(--grey);}
+  .home-album-strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;-ms-overflow-style:none;scrollbar-width:none;}
+  .home-album-strip::-webkit-scrollbar{display:none;}
+  .home-album-tile{
+    flex-shrink:0;width:88px;height:88px;border-radius:14px;overflow:hidden;position:relative;
+    background:#f6f6f4;border:1px solid var(--line);
+  }
+  .home-album-tile img{width:100%;height:100%;object-fit:cover;}
+  .home-album-tile .cap{
+    position:absolute;bottom:0;left:0;right:0;padding:5px 6px;
+    background:linear-gradient(0deg,rgba(0,0,0,.55),transparent);
+    color:#fff;font-family:var(--font-mono);font-size:8.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .home-album-add{
+    flex-shrink:0;width:88px;height:88px;border-radius:14px;border:1.5px dashed var(--line-strong);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+    color:var(--accent);background:var(--accent-soft);
+  }
+  .home-album-add svg{width:20px;height:20px;stroke:var(--accent);}
+  .home-album-add span{font-family:var(--font-mono);font-size:9px;color:var(--ink-soft);}
+  .home-album-empty{font-family:var(--font-mono);font-size:11px;color:var(--grey);padding:8px 0;}
+
+  .album-modal-backdrop{
+    position:fixed;inset:0;background:rgba(20,21,26,.6);z-index:200;
+    display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .2s ease;
+  }
+  @media (min-width:640px){ .album-modal-backdrop{align-items:center;} }
+  .album-modal-backdrop.show{opacity:1;}
+  .album-modal{
+    background:#fff;border-radius:22px 22px 0 0;padding:20px;width:100%;max-width:420px;max-height:92vh;overflow-y:auto;
+    transform:translateY(16px);transition:transform .24s var(--ease-spring);
+  }
+  @media (min-width:640px){ .album-modal{border-radius:22px;} }
+  .album-modal-backdrop.show .album-modal{transform:translateY(0);}
+  .album-modal h3{font-family:var(--font-display);font-weight:700;font-size:16px;margin-bottom:4px;}
+  .album-modal p.hint{font-family:var(--font-serif);font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;}
+  .album-canvas-wrap{
+    width:100%;aspect-ratio:1;border-radius:16px;overflow:hidden;background:#111;
+    display:flex;align-items:center;justify-content:center;margin-bottom:12px;position:relative;
+  }
+  .album-canvas-wrap canvas{width:100%;height:100%;object-fit:cover;}
+  .album-canvas-placeholder{color:#7c7f88;font-family:var(--font-mono);font-size:11px;text-align:center;padding:20px;}
+  .album-pick-row{display:flex;gap:8px;margin-bottom:14px;}
+  .album-pick-btn{
+    flex:1;border:1px solid var(--line-strong);border-radius:12px;padding:10px;
+    font-family:var(--font-display);font-weight:600;font-size:12.5px;color:var(--ink-soft);
+    display:flex;align-items:center;justify-content:center;gap:6px;
+  }
+  .album-pick-btn svg{width:15px;height:15px;}
+  .album-filter-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;-ms-overflow-style:none;scrollbar-width:none;}
+  .album-filter-row::-webkit-scrollbar{display:none;}
+  .album-filter-swatch{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .album-filter-swatch .sw{width:46px;height:46px;border-radius:50%;border:2px solid transparent;overflow:hidden;background:#eee;}
+  .album-filter-swatch.active .sw{border-color:var(--accent);}
+  .album-filter-swatch span{font-family:var(--font-mono);font-size:8.5px;color:var(--ink-soft);}
+  .album-modal textarea{
+    width:100%;border:1px solid var(--line-strong);border-radius:12px;padding:10px 12px;
+    font-family:var(--font-serif);font-size:13.5px;resize:none;min-height:52px;outline:none;margin-bottom:14px;
+  }
+  .album-modal-row{display:flex;justify-content:flex-end;gap:8px;}
+  .album-modal-cancel{font-family:var(--font-display);font-weight:600;font-size:12.5px;color:var(--ink-soft);padding:9px 14px;border-radius:99px;}
+  .album-modal-cancel:hover{background:#f7f7f8;}
+  .album-modal-post{background:var(--ink);color:#fff;font-family:var(--font-display);font-weight:600;font-size:12.5px;padding:9px 18px;border-radius:99px;display:flex;align-items:center;gap:6px;}
+  .album-modal-post:disabled{opacity:.5;}
+  .album-modal-post:hover:not(:disabled){background:#000;}
+
+  .album-lightbox-backdrop{
+    position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:210;
+    display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s ease;
+  }
+  .album-lightbox-backdrop.show{opacity:1;}
+  .album-lightbox{max-width:min(92vw,480px);width:100%;position:relative;}
+  .album-lightbox img{width:100%;border-radius:14px;display:block;}
+  .album-lightbox-info{color:#fff;padding:12px 4px 0;font-family:var(--font-mono);font-size:11px;display:flex;justify-content:space-between;align-items:center;}
+  .album-lightbox-close{position:absolute;top:18px;right:18px;color:#fff;width:36px;height:36px;display:flex;align-items:center;justify-content:center;z-index:2;}
+  .album-lightbox-close svg{width:22px;height:22px;stroke:#fff;}
 </style>
 </head>
 <body>
@@ -1300,6 +1381,257 @@
     });
   }
 
+  // =========================================================
+  // CIRCLE ALBUM — permanent, private photo memories
+  // Filter presets are our own canvas-based looks (not Snapchat's actual
+  // Lens filters — those run on Snap's closed AR SDK and aren't something
+  // we can pull into a webpage). Chosen filter is baked into the pixels
+  // before upload, so it's permanent, not just a CSS overlay.
+  // =========================================================
+  const ALBUM_FILTERS = [
+    { id: 'original', label: 'Original', css: 'none' },
+    { id: 'warm',     label: 'Warm',     css: 'saturate(1.35) sepia(.18) contrast(1.05) brightness(1.03)' },
+    { id: 'cool',     label: 'Cool',     css: 'saturate(1.1) hue-rotate(-12deg) contrast(1.05) brightness(1.02)' },
+    { id: 'mono',     label: 'Mono',     css: 'grayscale(1) contrast(1.1)' },
+    { id: 'vintage',  label: 'Vintage',  css: 'sepia(.35) saturate(.85) contrast(.95) brightness(1.05)' },
+    { id: 'vivid',    label: 'Vivid',    css: 'saturate(1.6) contrast(1.12)' },
+    { id: 'fade',     label: 'Fade',     css: 'saturate(.6) contrast(.9) brightness(1.08)' },
+  ];
+
+  let albumId = null;
+
+  async function getOrCreateAlbum(){
+    const { data: existing } = await supabaseClient
+      .from('albums')
+      .select('id')
+      .eq('circle_id', circleId)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (existing) return existing.id;
+
+    const { data: created, error } = await supabaseClient
+      .from('albums')
+      .insert({ circle_id: circleId, name: 'Memories', created_by: currentUser.id })
+      .select('id')
+      .single();
+    if (error){ console.error('could not create album', error); return null; }
+    return created.id;
+  }
+
+  async function loadAlbumPhotos(){
+    if (!albumId) return [];
+    const { data, error } = await supabaseClient
+      .from('album_photos')
+      .select('id, user_id, photo_url, filter_applied, caption, created_at')
+      .eq('album_id', albumId)
+      .order('created_at', { ascending: false })
+      .limit(30);
+    if (error){ console.error('loadAlbumPhotos failed', error); return []; }
+    return data || [];
+  }
+
+  function renderAlbumStrip(photos){
+    const addTile = `
+      <button class="home-album-add" id="homeAlbumAddBtn" title="Add a photo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+        <span>add</span>
+      </button>`;
+    if (photos.length === 0){
+      return `<div class="home-album-strip" id="homeAlbumStrip">${addTile}<div class="home-album-empty" style="align-self:center;">No photos yet — start the memories.</div></div>`;
+    }
+    const tiles = photos.map(ph => `
+      <button class="home-album-tile" data-photo-id="${ph.id}">
+        <img src="${escapeHtml(ph.photo_url)}" alt="" loading="lazy">
+        ${ph.caption ? `<div class="cap">${escapeHtml(ph.caption)}</div>` : ''}
+      </button>
+    `).join('');
+    return `<div class="home-album-strip" id="homeAlbumStrip">${addTile}${tiles}</div>`;
+  }
+
+  async function refreshAlbumStrip(){
+    const container = document.getElementById('homeAlbumStrip');
+    if (!container) return;
+    const photos = await loadAlbumPhotos();
+    container.outerHTML = renderAlbumStrip(photos);
+    wireAlbumActions(photos);
+  }
+
+  function wireAlbumActions(photos){
+    const addBtn = document.getElementById('homeAlbumAddBtn');
+    if (addBtn) addBtn.addEventListener('click', () => {
+      if (!requireAuth()) return;
+      openAlbumCaptureModal();
+    });
+    document.querySelectorAll('.home-album-tile').forEach(tile => {
+      tile.addEventListener('click', () => {
+        const ph = photos.find(p => p.id === tile.dataset.photoId);
+        if (ph) openAlbumLightbox(ph);
+      });
+    });
+  }
+
+  function openAlbumLightbox(photo){
+    const overlay = document.createElement('div');
+    overlay.className = 'album-lightbox-backdrop';
+    overlay.innerHTML = `
+      <button class="album-lightbox-close" id="albumLbClose">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="album-lightbox">
+        <img src="${escapeHtml(photo.photo_url)}" alt="">
+        <div class="album-lightbox-info">
+          <span>${photo.caption ? escapeHtml(photo.caption) : ''}</span>
+          <span>${timeAgo(photo.created_at)}</span>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('show'));
+    const close = () => { overlay.classList.remove('show'); setTimeout(() => overlay.remove(), 200); };
+    overlay.querySelector('#albumLbClose').addEventListener('click', close);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  }
+
+  function openAlbumCaptureModal(){
+    const modal = document.createElement('div');
+    modal.className = 'album-modal-backdrop';
+    modal.innerHTML = `
+      <div class="album-modal">
+        <h3>Add to the album</h3>
+        <p class="hint">Stays private to this circle, forever.</p>
+        <div class="album-canvas-wrap" id="albumCanvasWrap">
+          <div class="album-canvas-placeholder">Take a photo or choose one from your gallery</div>
+        </div>
+        <div class="album-pick-row">
+          <button class="album-pick-btn" id="albumTakePhoto" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7l1.5-3h5L16 7"/><circle cx="12" cy="13.5" r="3.5"/></svg>
+            Camera
+          </button>
+          <button class="album-pick-btn" id="albumPickPhoto" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            Gallery
+          </button>
+        </div>
+        <input type="file" accept="image/*" capture="environment" id="albumFileCamera" style="display:none;">
+        <input type="file" accept="image/*" id="albumFileGallery" style="display:none;">
+        <div class="album-filter-row" id="albumFilterRow" style="display:none;"></div>
+        <textarea id="albumCaptionInput" maxlength="140" placeholder="Say something about this one... (optional)"></textarea>
+        <div class="album-modal-row">
+          <button class="album-modal-cancel" type="button" id="albumModalCancel">Cancel</button>
+          <button class="album-modal-post" type="button" id="albumModalPost" disabled>Post to album</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    requestAnimationFrame(() => modal.classList.add('show'));
+
+    const canvasWrap = modal.querySelector('#albumCanvasWrap');
+    const filterRow = modal.querySelector('#albumFilterRow');
+    const postBtn = modal.querySelector('#albumModalPost');
+    const captionInput = modal.querySelector('#albumCaptionInput');
+    let sourceImg = null;
+    let activeFilterId = 'original';
+    let canvas = null;
+
+    function drawWithFilter(filterCss){
+      if (!sourceImg) return;
+      if (!canvas){
+        canvas = document.createElement('canvas');
+        canvasWrap.innerHTML = '';
+        canvasWrap.appendChild(canvas);
+      }
+      const size = 900;
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.filter = filterCss;
+      const scale = Math.max(size / sourceImg.width, size / sourceImg.height);
+      const w = sourceImg.width * scale, h = sourceImg.height * scale;
+      ctx.drawImage(sourceImg, (size - w) / 2, (size - h) / 2, w, h);
+    }
+
+    function renderFilterSwatches(){
+      filterRow.style.display = 'flex';
+      filterRow.innerHTML = ALBUM_FILTERS.map(f => `
+        <button class="album-filter-swatch${f.id === activeFilterId ? ' active' : ''}" data-filter="${f.id}" type="button">
+          <span class="sw" style="filter:${f.css === 'none' ? '' : f.css};background-image:url('${sourceImg.src}');background-size:cover;background-position:center;"></span>
+          <span>${f.label}</span>
+        </button>
+      `).join('');
+      filterRow.querySelectorAll('.album-filter-swatch').forEach(btn => {
+        btn.addEventListener('click', () => {
+          activeFilterId = btn.dataset.filter;
+          filterRow.querySelectorAll('.album-filter-swatch').forEach(b => b.classList.toggle('active', b === btn));
+          const f = ALBUM_FILTERS.find(x => x.id === activeFilterId);
+          drawWithFilter(f.css === 'none' ? 'none' : f.css);
+        });
+      });
+    }
+
+    function handleFile(file){
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          sourceImg = img;
+          drawWithFilter('none');
+          renderFilterSwatches();
+          postBtn.disabled = false;
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    modal.querySelector('#albumTakePhoto').addEventListener('click', () => modal.querySelector('#albumFileCamera').click());
+    modal.querySelector('#albumPickPhoto').addEventListener('click', () => modal.querySelector('#albumFileGallery').click());
+    modal.querySelector('#albumFileCamera').addEventListener('change', (e) => handleFile(e.target.files[0]));
+    modal.querySelector('#albumFileGallery').addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+    const close = () => { modal.classList.remove('show'); setTimeout(() => modal.remove(), 220); };
+    modal.querySelector('#albumModalCancel').addEventListener('click', close);
+    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+    postBtn.addEventListener('click', async () => {
+      if (!canvas || !albumId) return;
+      postBtn.disabled = true;
+      postBtn.innerHTML = `<span class="mini-spinner"></span> Posting...`;
+      try {
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.9));
+        const path = `${albumId}/${Date.now()}-${currentUser.id}.jpg`;
+        const { error: uploadError } = await supabaseClient.storage
+          .from('album-photos')
+          .upload(path, blob, { contentType: 'image/jpeg' });
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabaseClient.storage.from('album-photos').getPublicUrl(path);
+
+        const { error: insertError } = await supabaseClient.from('album_photos').insert({
+          album_id: albumId,
+          user_id: currentUser.id,
+          photo_url: publicUrl,
+          filter_applied: activeFilterId,
+          caption: captionInput.value.trim() || null,
+        });
+        if (insertError) throw insertError;
+
+        showToast('Added to the album 📸');
+        close();
+        await refreshAlbumStrip();
+      } catch (err) {
+        showToast(err.message || 'Could not post photo', 'error');
+        postBtn.disabled = false;
+        postBtn.textContent = 'Post to album';
+      }
+    });
+  }
+
+  async function initAlbum(){
+    albumId = await getOrCreateAlbum();
+    await refreshAlbumStrip();
+  }
+
   async function renderHomeMode(){
     const body = document.getElementById('pageBody');
     const meRow = members.find(m => m.id === currentUser.id);
@@ -1334,6 +1666,16 @@
           </button>` : ''}
         </div>
         ${renderPeopleRow()}
+      </div>
+
+      <div class="home-album" id="homeAlbum">
+        <div class="home-album-head">
+          <h3>📸 Circle Album</h3>
+          <span class="home-album-sub">private &amp; permanent</span>
+        </div>
+        <div class="home-album-strip" id="homeAlbumStrip">
+          <div class="page-loading" style="padding:20px 0;">Loading album…</div>
+        </div>
       </div>
 
       <div class="home-composer" id="homeComposer">
@@ -1569,6 +1911,7 @@
     setupComposerBehavior();
 
     await refreshHomeFeed();
+    initAlbum();
     subscribeToCircleActivity();
 
     // Play the ceremony without blocking the feed load beneath it.

@@ -47,6 +47,7 @@ app.get('/messages', (req, res) => res.sendFile(path.join(__dirname, 'messages.h
 app.get('/post', (req, res) => res.sendFile(path.join(__dirname, 'post.html')));
 app.get('/profile', (req, res) => res.sendFile(path.join(__dirname, 'profile.html')));
 
+
 app.get('/circles', (req, res) => res.sendFile(path.join(__dirname, 'circles.html')));
 app.get('/auth', (req, res) => res.sendFile(path.join(__dirname, 'auth.html')));
 app.get('/circle', (req, res) => res.sendFile(path.join(__dirname, 'circle.html')));
