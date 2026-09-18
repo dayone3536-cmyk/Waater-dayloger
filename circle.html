@@ -761,13 +761,23 @@
     try{
       const { data, error } = await supabaseClient
         .from('circle_members')
-        .select('welcome_note')
+        .select('welcome_note, invited_by')
         .eq('circle_id', circleId)
         .eq('user_id', currentUser.id)
         .maybeSingle();
-      if (error) return null;
-      return data?.welcome_note || null;
-    } catch(e){ return null; }
+      if (error || !data) return { note: null, inviter: null };
+
+      let inviter = null;
+      if (data.invited_by){
+        const { data: prof } = await supabaseClient
+          .from('profiles')
+          .select('username, avatar_url')
+          .eq('id', data.invited_by)
+          .maybeSingle();
+        inviter = prof || null;
+      }
+      return { note: data.welcome_note || null, inviter };
+    } catch(e){ return { note: null, inviter: null }; }
   }
 
   function renderPeopleRow(){
@@ -785,8 +795,9 @@
 
   // Full-screen, one-time "you're in" moment. Plays over the feed while it
   // loads underneath — the moment the person sees the second they land.
-  async function playWelcomeCeremony(note){
+  async function playWelcomeCeremony(note, inviter){
     return new Promise(resolve => {
+      const inviterName = inviter?.username || null;
       const overlay = document.createElement('div');
       overlay.className = 'welcome-overlay';
       overlay.innerHTML = `
@@ -801,12 +812,12 @@
           `).join('')}
         </div>
         <div class="welcome-text">
-          <div class="welcome-eyebrow">you're in</div>
-          <h1 class="welcome-title">${escapeHtml(circle.name)}</h1>
+          <div class="welcome-eyebrow">you're special</div>
+          <h1 class="welcome-title">${inviterName ? `That's why ${escapeHtml(inviterName)} invited you` : `You're in ${escapeHtml(circle.name)}`}</h1>
           <p class="welcome-sub">${members.length} of you now. What gets shared here stays inside this circle — always.</p>
           ${note ? `
             <div class="welcome-note">
-              <b>a note for you</b>
+              <b>${inviterName ? `a note from ${escapeHtml(inviterName)}` : 'a note for you'}</b>
               <p>${escapeHtml(note)}</p>
             </div>
           ` : ''}
@@ -1273,9 +1284,12 @@
     // Decide once per circle-session whether this visit deserves the ceremony.
     const shouldWelcome = justJoined(meRow) && !sessionStorage.getItem(`welcomed_${circleId}`);
     let welcomeNote = null;
+    let welcomeInviter = null;
     if (shouldWelcome){
       sessionStorage.setItem(`welcomed_${circleId}`, '1');
-      welcomeNote = await loadMyWelcomeNote();
+      const w = await loadMyWelcomeNote();
+      welcomeNote = w.note;
+      welcomeInviter = w.inviter;
     }
 
     body.innerHTML = `
@@ -1446,7 +1460,7 @@
     subscribeToCircleActivity();
 
     // Play the ceremony without blocking the feed load beneath it.
-    if (shouldWelcome) playWelcomeCeremony(welcomeNote);
+    if (shouldWelcome) playWelcomeCeremony(welcomeNote, welcomeInviter);
   }
 
   async function refreshHomeFeed(){
