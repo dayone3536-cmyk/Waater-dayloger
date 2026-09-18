@@ -534,6 +534,101 @@
   .waater-toast.error{background:var(--danger);}
   .waater-toast svg{width:15px;height:15px;stroke:#fff;flex-shrink:0;}
   @media (min-width:900px){ .waater-toast{bottom:34px;} }
+
+  /* ============================================================
+     PRIVACY BADGE — always-visible reassurance in the circle header
+  ============================================================ */
+  .privacy-badge{
+    display:inline-flex;align-items:center;gap:6px;
+    background:#fff;border:1px solid var(--line-strong);
+    padding:6px 11px 6px 9px;border-radius:99px;margin-top:11px;
+  }
+  .privacy-badge svg{width:12px;height:12px;stroke:var(--accent);flex-shrink:0;}
+  .privacy-badge span{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-soft);}
+  .privacy-badge b{color:var(--ink);font-family:var(--font-display);font-weight:600;font-style:normal;}
+
+  /* ============================================================
+     WELCOME CEREMONY — first-time entry into a private circle
+  ============================================================ */
+  .welcome-overlay{
+    position:fixed;inset:0;z-index:500;
+    background:linear-gradient(135deg,var(--ink),#2a2c35);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
+    padding:32px;text-align:center;
+    opacity:0;transition:opacity .4s var(--ease);
+  }
+  .welcome-overlay.show{opacity:1;}
+  .welcome-lock{
+    width:46px;height:46px;border-radius:50%;
+    background:rgba(255,90,54,.16);border:1px solid rgba(255,90,54,.35);
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;transform:scale(.6);animation:welcomePop .4s var(--ease-spring) forwards;
+    animation-delay:.05s;
+  }
+  .welcome-lock svg{width:20px;height:20px;stroke:var(--accent-2);}
+  .welcome-ring{display:flex;flex-wrap:wrap;justify-content:center;max-width:360px;}
+  .welcome-avatar{
+    margin:0 -14px 8px;opacity:0;transform:translateY(20px) scale(.6);
+    animation:welcomeIn .5s var(--ease-spring) forwards;
+  }
+  .welcome-avatar .avatar{
+    width:56px;height:56px;border-radius:50%;border:3px solid var(--ink);
+    background:linear-gradient(135deg,#ffd8c9,var(--accent));
+    display:flex;align-items:center;justify-content:center;color:#fff;
+    font-family:var(--font-display);font-weight:700;overflow:hidden;
+  }
+  @keyframes welcomeIn{to{opacity:1;transform:translateY(0) scale(1);}}
+  @keyframes welcomePop{to{opacity:1;transform:scale(1);}}
+  .welcome-text{color:#fff;max-width:420px;}
+  .welcome-eyebrow{font-family:var(--font-mono);font-size:12px;color:var(--accent-2);letter-spacing:.08em;text-transform:uppercase;}
+  .welcome-title{font-family:var(--font-display);font-weight:700;font-size:clamp(26px,6vw,34px);margin-top:8px;letter-spacing:-.01em;}
+  .welcome-sub{font-family:var(--font-serif);font-size:15px;color:rgba(255,255,255,.72);margin-top:10px;line-height:1.55;}
+  .welcome-note{
+    margin-top:16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);
+    border-radius:16px;padding:14px 16px;text-align:left;
+  }
+  .welcome-note b{font-family:var(--font-display);font-size:11.5px;color:var(--accent-2);letter-spacing:.03em;text-transform:uppercase;}
+  .welcome-note p{font-family:var(--font-serif);font-size:14.5px;color:#fff;margin-top:6px;line-height:1.5;}
+  .welcome-privacy-line{
+    display:flex;align-items:center;gap:8px;margin-top:18px;justify-content:center;
+    font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.55);
+  }
+  .welcome-privacy-line svg{width:13px;height:13px;stroke:rgba(255,255,255,.55);flex-shrink:0;}
+  .welcome-enter{
+    background:var(--accent);color:#fff;font-family:var(--font-display);font-weight:600;font-size:14px;
+    padding:13px 30px;border-radius:99px;transition:transform .15s var(--ease), background .15s ease;
+    margin-top:4px;
+  }
+  .welcome-enter:hover{background:#e64a27;}
+  .welcome-enter:active{transform:scale(.95);}
+
+  /* ============================================================
+     INVITE MODAL — personal note attached to an invite link
+  ============================================================ */
+  .invite-modal-backdrop{
+    position:fixed;inset:0;z-index:400;background:rgba(20,21,26,.5);
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    opacity:0;transition:opacity .2s ease;
+  }
+  .invite-modal-backdrop.show{opacity:1;}
+  .invite-modal{
+    background:#fff;border-radius:20px;padding:22px;max-width:360px;width:100%;
+    transform:translateY(10px) scale(.97);transition:transform .22s var(--ease-spring);
+  }
+  .invite-modal-backdrop.show .invite-modal{transform:translateY(0) scale(1);}
+  .invite-modal h3{font-family:var(--font-display);font-weight:700;font-size:16px;}
+  .invite-modal p{font-family:var(--font-serif);font-size:13px;color:var(--ink-soft);margin-top:6px;line-height:1.45;}
+  .invite-modal textarea{
+    width:100%;margin-top:12px;border:1px solid var(--line-strong);border-radius:12px;
+    padding:10px 12px;font-family:var(--font-serif);font-size:13.5px;resize:none;min-height:64px;outline:none;
+    transition:border-color .15s ease;
+  }
+  .invite-modal textarea:focus{border-color:var(--accent);}
+  .invite-modal-row{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}
+  .invite-modal-skip{font-family:var(--font-display);font-weight:600;font-size:12.5px;color:var(--ink-soft);padding:9px 14px;border-radius:99px;}
+  .invite-modal-skip:hover{background:#f7f7f8;}
+  .invite-modal-send{background:var(--ink);color:#fff;font-family:var(--font-display);font-weight:600;font-size:12.5px;padding:9px 16px;border-radius:99px;}
+  .invite-modal-send:hover{background:#000;}
 </style>
 </head>
 <body>
@@ -647,6 +742,146 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
   }
+
+  // ============================================================
+  // PRIVACY / BELONGING HELPERS
+  // ============================================================
+
+  // Was this member's join timestamp within the last minute? Used to decide
+  // whether to play the welcome ceremony (vs. just navigating back later).
+  function justJoined(meRow){
+    if (!meRow || !meRow.joined_at) return false;
+    return (Date.now() - new Date(meRow.joined_at).getTime()) < 60000;
+  }
+
+  // Best-effort fetch of a personal note left by whoever invited this user.
+  // Expects an optional `welcome_note` text column on circle_members.
+  // If that column doesn't exist yet, this quietly returns null — nothing breaks.
+  async function loadMyWelcomeNote(){
+    try{
+      const { data, error } = await supabaseClient
+        .from('circle_members')
+        .select('welcome_note')
+        .eq('circle_id', circleId)
+        .eq('user_id', currentUser.id)
+        .maybeSingle();
+      if (error) return null;
+      return data?.welcome_note || null;
+    } catch(e){ return null; }
+  }
+
+  function renderPeopleRow(){
+    return `
+      <div class="home-people-row">
+        ${members.map(m => `
+          <div class="home-person">
+            <div class="ring"><div class="ring-inner"><div class="avatar">${m.avatar_url ? `<img src="${escapeHtml(m.avatar_url)}" alt="">` : initials(m.username||'?')}</div></div></div>
+            <span>${escapeHtml((m.username||'?').split(' ')[0])}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  // Full-screen, one-time "you're in" moment. Plays over the feed while it
+  // loads underneath — the moment the person sees the second they land.
+  async function playWelcomeCeremony(note){
+    return new Promise(resolve => {
+      const overlay = document.createElement('div');
+      overlay.className = 'welcome-overlay';
+      overlay.innerHTML = `
+        <div class="welcome-lock">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+        </div>
+        <div class="welcome-ring">
+          ${members.map((m,i) => `
+            <div class="welcome-avatar" style="animation-delay:${(i*0.08).toFixed(2)}s">
+              <div class="avatar">${m.avatar_url ? `<img src="${escapeHtml(m.avatar_url)}" alt="">` : initials(m.username||'?')}</div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="welcome-text">
+          <div class="welcome-eyebrow">you're in</div>
+          <h1 class="welcome-title">${escapeHtml(circle.name)}</h1>
+          <p class="welcome-sub">${members.length} of you now. What gets shared here stays inside this circle — always.</p>
+          ${note ? `
+            <div class="welcome-note">
+              <b>a note for you</b>
+              <p>${escapeHtml(note)}</p>
+            </div>
+          ` : ''}
+          <div class="welcome-privacy-line">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+            Private circle — only these ${members.length} people can ever see what's posted here
+          </div>
+        </div>
+        <button class="welcome-enter">Enter circle</button>
+      `;
+      document.body.appendChild(overlay);
+      requestAnimationFrame(() => overlay.classList.add('show'));
+      const finish = () => {
+        overlay.classList.remove('show');
+        setTimeout(() => { overlay.remove(); resolve(); }, 350);
+      };
+      overlay.querySelector('.welcome-enter').addEventListener('click', finish);
+    });
+  }
+
+  // Small modal so the person inviting someone can attach a personal note.
+  // Resolves to the note string, or null if skipped/closed.
+  function openInviteModal(){
+    return new Promise(resolve => {
+      const modal = document.createElement('div');
+      modal.className = 'invite-modal-backdrop';
+      modal.innerHTML = `
+        <div class="invite-modal">
+          <h3>Invite someone to ${escapeHtml(circle.name)}</h3>
+          <p>Add a personal note — it'll be the first thing they see when they arrive.</p>
+          <textarea id="inviteNoteInput" maxlength="140" placeholder="e.g. finally got you in here 🎉"></textarea>
+          <div class="invite-modal-row">
+            <button class="invite-modal-skip" type="button">Skip note</button>
+            <button class="invite-modal-send" type="button">Create invite</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      requestAnimationFrame(() => modal.classList.add('show'));
+      const close = (note) => {
+        modal.classList.remove('show');
+        setTimeout(() => modal.remove(), 220);
+        resolve(note);
+      };
+      modal.querySelector('.invite-modal-skip').addEventListener('click', () => close(null));
+      modal.querySelector('.invite-modal-send').addEventListener('click', () => {
+        const val = modal.querySelector('#inviteNoteInput').value.trim();
+        close(val || null);
+      });
+      modal.addEventListener('click', (e) => { if (e.target === modal) close(null); });
+    });
+  }
+
+  // Live "someone just joined" broadcast via Supabase Realtime — makes the
+  // circle feel alive and lets everyone currently inside see arrivals happen.
+  // Requires Realtime enabled on the circle_members table in Supabase.
+  let circleChannel = null;
+  function subscribeToCircleActivity(){
+    if (circleChannel || !circle?.is_private) return;
+    circleChannel = supabaseClient
+      .channel(`circle-activity-${circleId}`)
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'circle_members', filter: `circle_id=eq.${circleId}` },
+        async (payload) => {
+          if (!payload.new || payload.new.user_id === currentUser?.id) return;
+          const { data: prof } = await supabaseClient.from('profiles').select('username, avatar_url').eq('id', payload.new.user_id).maybeSingle();
+          showToast(`${prof?.username || 'someone'} just joined the circle 👋`);
+          members = await loadMembers();
+          const row = document.querySelector('.home-people-row');
+          if (row) row.outerHTML = renderPeopleRow();
+        }
+      )
+      .subscribe();
+  }
+  window.addEventListener('beforeunload', () => { if (circleChannel) supabaseClient.removeChannel(circleChannel); });
 
   async function renderSidebar(){
     const { data } = await supabaseClient.auth.getSession();
@@ -1033,7 +1268,15 @@
 
   async function renderHomeMode(){
     const body = document.getElementById('pageBody');
-    const meProfile = members.find(m => m.id === currentUser.id);
+    const meRow = members.find(m => m.id === currentUser.id);
+
+    // Decide once per circle-session whether this visit deserves the ceremony.
+    const shouldWelcome = justJoined(meRow) && !sessionStorage.getItem(`welcomed_${circleId}`);
+    let welcomeNote = null;
+    if (shouldWelcome){
+      sessionStorage.setItem(`welcomed_${circleId}`, '1');
+      welcomeNote = await loadMyWelcomeNote();
+    }
 
     body.innerHTML = `
       <div class="home-hero">
@@ -1042,24 +1285,21 @@
             <div class="home-eyebrow">${getGreeting()}</div>
             <h1>${escapeHtml(circle.name)}</h1>
             <div class="home-sub">${circle.description ? escapeHtml(circle.description) : `Just the ${members.length} of you — nothing here leaves this room.`}</div>
+            <div class="privacy-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+              <span><b>Private</b> · visible only to ${members.length} member${members.length===1?'':'s'}</span>
+            </div>
           </div>
           ${myRole === 'owner' ? `
           <button class="home-settings-btn" id="homeInviteBtn" title="Invite">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
           </button>` : ''}
         </div>
-        <div class="home-people-row">
-          ${members.map(m => `
-            <div class="home-person">
-              <div class="ring"><div class="ring-inner"><div class="avatar">${m.avatar_url ? `<img src="${escapeHtml(m.avatar_url)}" alt="">` : initials(m.username||'?')}</div></div></div>
-              <span>${escapeHtml((m.username||'?').split(' ')[0])}</span>
-            </div>
-          `).join('')}
-        </div>
+        ${renderPeopleRow()}
       </div>
 
       <div class="home-composer" id="homeComposer">
-        <textarea id="homeComposerText" placeholder="Tell your circle about your day..." rows="1"></textarea>
+        <textarea id="homeComposerText" placeholder="Tell your circle about your day — just between you all..." rows="1"></textarea>
         <div class="home-composer-media" id="homeMediaField" style="display:none;">
           <input type="text" id="homeMediaUrl" placeholder="Paste an image or video URL...">
         </div>
@@ -1171,8 +1411,21 @@
 
     const inviteBtn = document.getElementById('homeInviteBtn');
     if (inviteBtn) inviteBtn.addEventListener('click', async () => {
+      const note = await openInviteModal();
       try {
-        const { data, error } = await supabaseClient.rpc('create_circle_invite', { p_circle_id: circleId });
+        // Try passing the note through to the RPC. If the backend hasn't
+        // been updated to accept p_note yet, fall back to the plain call
+        // so invites never break because of this feature.
+        let rpcResult;
+        if (note) {
+          rpcResult = await supabaseClient.rpc('create_circle_invite', { p_circle_id: circleId, p_note: note });
+          if (rpcResult.error) {
+            rpcResult = await supabaseClient.rpc('create_circle_invite', { p_circle_id: circleId });
+          }
+        } else {
+          rpcResult = await supabaseClient.rpc('create_circle_invite', { p_circle_id: circleId });
+        }
+        const { data, error } = rpcResult;
         if (error) throw error;
         try {
           await navigator.clipboard.writeText(`${window.location.origin}/circle/join?code=${encodeURIComponent(data.code)}`);
@@ -1188,6 +1441,10 @@
     setupComposerBehavior();
 
     await refreshHomeFeed();
+    subscribeToCircleActivity();
+
+    // Play the ceremony without blocking the feed load beneath it.
+    if (shouldWelcome) playWelcomeCeremony(welcomeNote);
   }
 
   async function refreshHomeFeed(){
