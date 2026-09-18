@@ -371,6 +371,69 @@
   .home-like-btn.pop svg{animation:likePop .35s var(--ease-spring);}
   @keyframes likePop{ 0%{transform:scale(1);} 45%{transform:scale(1.35);} 100%{transform:scale(1);} }
 
+  /* ============================================================
+     LIKE BUTTON — universe.io-style heart: fill-in, bounce, a
+     checkmark-draw confirmation ring, and a hover tooltip that
+     flips the like count from old → new. Scoped to fit inline
+     in the post action row rather than a standalone pill button.
+  ============================================================ */
+  .li-trigger{
+    --li-cl:var(--accent);--li-bg:#fff;--li-sz:19px;
+    position:relative;
+  }
+  .li-heart-wrap{position:relative;width:var(--li-sz);height:var(--li-sz);display:flex;align-items:center;justify-content:center;}
+  .li-heart-wrap .li-heart{
+    width:var(--li-sz);height:var(--li-sz);color:var(--ink-soft);
+    transition:transform .15s ease, color .15s ease;
+  }
+  .li-trigger .li-heart-wrap .li-heart path{fill:currentColor;}
+  .li-heart-wrap .li-heart .li-fill{opacity:0;transition:opacity .2s ease;}
+  .li-trigger.liked .li-heart-wrap .li-heart{color:var(--li-cl);}
+  .li-trigger.liked .li-heart-wrap .li-heart .li-fill{opacity:.35;}
+
+  .li-trigger:hover .li-heart-wrap .li-heart{
+    --scale-1:1.14;--scale-2:1.24;
+    animation:liScale .9s ease infinite;
+  }
+  @keyframes liScale{
+    0%{transform:scale(1);}
+    20%,90%{transform:scale(var(--scale-1));}
+    50%{transform:scale(var(--scale-2));}
+  }
+
+  .li-trigger .li-heart-wrap .li-check{
+    position:absolute;inset:-5px;fill:none;stroke:var(--li-cl);
+    stroke-width:3;stroke-linecap:round;stroke-linejoin:round;
+    stroke-dashoffset:162.6;stroke-dasharray:0 330 158 134.6;
+    rotate:130deg;opacity:0;pointer-events:none;
+  }
+  .li-trigger.just-liked .li-heart-wrap .li-check{
+    opacity:.7;
+    animation:liStroke .6s linear forwards, liCheckHide .35s linear .6s forwards;
+  }
+  @keyframes liStroke{ to{stroke-dasharray:0 163 158 134.6;} }
+  @keyframes liCheckHide{ to{stroke:var(--li-bg);opacity:0;} }
+
+  .li-tooltip{
+    position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%) scale(.85);
+    background:var(--ink);color:#fff;font-family:var(--font-display);font-weight:600;font-size:11px;
+    padding:6px 11px;border-radius:99px;white-space:nowrap;pointer-events:none;
+    display:inline-flex;align-items:center;
+    opacity:0;transition:opacity .2s ease, transform .2s ease, bottom .2s ease;z-index:6;
+  }
+  .li-tooltip::after{
+    content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+    border:5px solid transparent;border-top-color:var(--ink);
+  }
+  .li-trigger:hover .li-tooltip{opacity:1;transform:translateX(-50%) scale(1);bottom:calc(100% + 12px);}
+
+  .li-tooltip .flip{position:relative;height:13px;overflow:hidden;display:inline-flex;flex-direction:column;align-items:flex-start;margin-left:3px;}
+  .li-tooltip .flip::before,.li-tooltip .flip::after{position:relative;transform:translateY(7px);transition:transform .4s ease;line-height:1;}
+  .li-tooltip .flip::before{content:attr(data-from);}
+  .li-tooltip .flip::after{content:attr(data-to);}
+  .li-trigger.liked .li-tooltip .flip::before,
+  .li-trigger.liked .li-tooltip .flip::after{transform:translateY(-7px);}
+
   .home-comments{
     display:none;padding:2px 16px 16px;border-top:1px solid var(--line);
   }
@@ -1258,9 +1321,18 @@
           ${mediaHtml}
         </div>
         <div class="home-post-actions">
-          <button class="home-action-btn home-like-btn ${isLiked ? 'liked' : ''}" data-post-id="${post.id}">
-            <svg viewBox="0 0 24 24" stroke-width="2"><path d="M12 21s-6.7-4.35-9.3-8.1C1 10 1.6 6.6 4.4 5.2 6.7 4 9.4 4.7 12 7.5c2.6-2.8 5.3-3.5 7.6-2.3 2.8 1.4 3.4 4.8 1.7 7.7C18.7 16.65 12 21 12 21z"/></svg>
+          <button class="home-action-btn home-like-btn li-trigger ${isLiked ? 'liked' : ''}" data-post-id="${post.id}">
+            <span class="li-heart-wrap">
+              <svg class="li-heart" viewBox="0 0 256 256">
+                <path class="li-fill" opacity="0.2" d="M232,102c0,66-104,122-104,122S24,168,24,102A54,54,0,0,1,78,48c22.59,0,41.94,12.31,50,32,8.06-19.69,27.41-32,50-32A54,54,0,0,1,232,102Z"></path>
+                <path d="M178,40c-20.65,0-38.73,8.88-50,23.89C116.73,48.88,98.65,40,78,40a62.07,62.07,0,0,0-62,62c0,70,103.79,126.66,108.21,129a8,8,0,0,0,7.58,0C136.21,228.66,240,172,240,102A62.07,62.07,0,0,0,178,40ZM128,214.8C109.74,204.16,32,155.69,32,102A46.06,46.06,0,0,1,78,56c19.45,0,35.78,10.36,42.6,27a8,8,0,0,0,14.8,0c6.82-16.67,23.15-27,42.6-27a46.06,46.06,0,0,1,46,46C224,155.61,146.24,204.15,128,214.8Z"></path>
+              </svg>
+              <svg class="li-check" viewBox="0 0 44 44">
+                <path transform="translate(-2,-2)" d="M 39.7428882,11.5937758 C35.2809627,6.53125861 30.0333333,4 24,4 C12.95,4 4,12.95 4,24 C4,35.05 12.95,44 24,44 C35.05,44 44,35.05 44,24 C44,19.3 42.5809627,15.1645919 39.7428882,11.5937758"></path>
+              </svg>
+            </span>
             <span class="home-like-count">${post.likes_count || 0}</span>
+            <span class="li-tooltip">Like <span class="flip" data-from="${post.likes_count || 0}" data-to="${(post.likes_count || 0) + 1}"></span></span>
           </button>
           <button class="home-action-btn home-comment-toggle" data-post-id="${post.id}">
             <svg viewBox="0 0 24 24" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
@@ -1355,20 +1427,27 @@
         btn.dataset.busy = '1';
         const postId = btn.dataset.postId;
         const countEl = btn.querySelector('.home-like-count');
+        const flipEl = btn.querySelector('.flip');
         const wasLiked = btn.classList.contains('liked');
         try {
           if (wasLiked){
             const { error } = await supabaseClient.from('post_likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
             if (error) throw error;
+            const fromCount = Number(countEl.textContent);
+            const toCount = Math.max(0, fromCount - 1);
+            if (flipEl){ flipEl.dataset.from = fromCount; flipEl.dataset.to = toCount; }
             btn.classList.remove('liked');
-            countEl.textContent = Math.max(0, Number(countEl.textContent) - 1);
+            countEl.textContent = toCount;
           } else {
             const { error } = await supabaseClient.from('post_likes').insert({ post_id: postId, user_id: currentUser.id });
             if (error) throw error;
+            const fromCount = Number(countEl.textContent);
+            const toCount = fromCount + 1;
+            if (flipEl){ flipEl.dataset.from = fromCount; flipEl.dataset.to = toCount; }
             btn.classList.add('liked');
-            btn.classList.add('pop');
-            setTimeout(() => btn.classList.remove('pop'), 350);
-            countEl.textContent = Number(countEl.textContent) + 1;
+            btn.classList.add('pop', 'just-liked');
+            setTimeout(() => btn.classList.remove('pop', 'just-liked'), 700);
+            countEl.textContent = toCount;
           }
         } catch (err) {
           showToast(err.message || 'Could not update like', 'error');
