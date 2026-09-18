@@ -751,7 +751,7 @@
   // whether to play the welcome ceremony (vs. just navigating back later).
   function justJoined(meRow){
     if (!meRow || !meRow.joined_at) return false;
-    return (Date.now() - new Date(meRow.joined_at).getTime()) < 60000;
+    return (Date.now() - new Date(meRow.joined_at).getTime()) < 300000; // 5 min window
   }
 
   // Best-effort fetch of a personal note left by whoever invited this user.
@@ -1283,6 +1283,7 @@
 
     // Decide once per circle-session whether this visit deserves the ceremony.
     const shouldWelcome = justJoined(meRow) && !sessionStorage.getItem(`welcomed_${circleId}`);
+    console.log('[welcome debug]', { meRow, shouldWelcome, alreadyFlagged: !!sessionStorage.getItem(`welcomed_${circleId}`) });
     let welcomeNote = null;
     let welcomeInviter = null;
     if (shouldWelcome){
