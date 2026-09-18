@@ -649,32 +649,8 @@
   .invite-modal-send{background:var(--ink);color:#fff;font-family:var(--font-display);font-weight:600;font-size:12.5px;padding:9px 16px;border-radius:99px;}
   .invite-modal-send:hover{background:#000;}
 
-  /* ---- Circle Album ---- */
-  .home-album{margin:18px 22px 0;}
-  .home-album-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;}
-  .home-album-head h3{font-family:var(--font-display);font-weight:700;font-size:15px;}
-  .home-album-sub{font-family:var(--font-mono);font-size:10px;color:var(--grey);}
-  .home-album-strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;-ms-overflow-style:none;scrollbar-width:none;}
-  .home-album-strip::-webkit-scrollbar{display:none;}
-  .home-album-tile{
-    flex-shrink:0;width:88px;height:88px;border-radius:14px;overflow:hidden;position:relative;
-    background:#f6f6f4;border:1px solid var(--line);
-  }
-  .home-album-tile img{width:100%;height:100%;object-fit:cover;}
-  .home-album-tile .cap{
-    position:absolute;bottom:0;left:0;right:0;padding:5px 6px;
-    background:linear-gradient(0deg,rgba(0,0,0,.55),transparent);
-    color:#fff;font-family:var(--font-mono);font-size:8.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  }
-  .home-album-add{
-    flex-shrink:0;width:88px;height:88px;border-radius:14px;border:1.5px dashed var(--line-strong);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
-    color:var(--accent);background:var(--accent-soft);
-  }
-  .home-album-add svg{width:20px;height:20px;stroke:var(--accent);}
-  .home-album-add span{font-family:var(--font-mono);font-size:9px;color:var(--ink-soft);}
-  .home-album-empty{font-family:var(--font-mono);font-size:11px;color:var(--grey);padding:8px 0;}
-
+  /* ---- Circle Album (capture modal — the gallery itself lives in the
+     Album tab, styled further down) ---- */
   .album-modal-backdrop{
     position:fixed;inset:0;background:rgba(20,21,26,.6);z-index:200;
     display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .2s ease;
@@ -729,6 +705,142 @@
   .album-lightbox-info{color:#fff;padding:12px 4px 0;font-family:var(--font-mono);font-size:11px;display:flex;justify-content:space-between;align-items:center;}
   .album-lightbox-close{position:absolute;top:18px;right:18px;color:#fff;width:36px;height:36px;display:flex;align-items:center;justify-content:center;z-index:2;}
   .album-lightbox-close svg{width:22px;height:22px;stroke:#fff;}
+  .album-lightbox-nav{
+    position:absolute;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:50%;
+    background:rgba(0,0,0,.4);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;
+    z-index:3;transition:background .15s ease, transform .15s ease;
+  }
+  .album-lightbox-nav:hover{background:rgba(0,0,0,.6);}
+  .album-lightbox-nav:active{transform:translateY(-50%) scale(.88);}
+  .album-lightbox-nav svg{width:19px;height:19px;stroke:#fff;}
+  .album-lightbox-prev{left:10px;}
+  .album-lightbox-next{right:10px;}
+
+  /* ============================================================
+     VIEW TABS — Feed / Album switcher, lives inside the circle page
+     (no route change — just swaps which panel is visible)
+  ============================================================ */
+  .view-tabs{
+    display:flex;gap:4px;margin:16px 22px 0;padding:4px;
+    background:#f3f3f1;border-radius:14px;position:relative;z-index:5;
+  }
+  .view-tab{
+    flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
+    padding:9px 10px;border-radius:11px;font-family:var(--font-display);font-weight:600;font-size:13px;
+    color:var(--ink-soft);transition:background .18s var(--ease),color .18s var(--ease),box-shadow .18s var(--ease);
+  }
+  .view-tab svg{width:15px;height:15px;stroke:currentColor;flex-shrink:0;}
+  .view-tab:hover{color:var(--ink);}
+  .view-tab.active{background:#fff;color:var(--ink);box-shadow:0 3px 10px rgba(20,21,26,.09);}
+  .view-tab .count{font-family:var(--font-mono);font-size:10.5px;color:var(--grey);}
+  .view-tab.active .count{color:var(--accent);}
+
+  .view-panel{display:none;}
+  .view-panel.active{display:block;animation:riseIn .34s var(--ease);}
+
+  /* ============================================================
+     ALBUM GALLERY — the magical full album view inside the Album tab
+  ============================================================ */
+  .gallery-wrap{padding:22px 22px 40px;position:relative;}
+
+  .gallery-glow{
+    position:absolute;top:-10px;left:0;right:0;height:220px;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(240px 150px at 12% 15%, rgba(255,90,54,.16), transparent 70%),
+      radial-gradient(220px 150px at 88% 5%, rgba(124,140,255,.13), transparent 70%);
+    filter:blur(8px);
+    animation:galleryDrift 9s ease-in-out infinite alternate;
+  }
+  @keyframes galleryDrift{ from{transform:translateY(0) scale(1);} to{transform:translateY(12px) scale(1.04);} }
+
+  .gallery-head{position:relative;z-index:1;}
+  .gallery-eyebrow{
+    display:inline-flex;align-items:center;gap:6px;
+    font-family:var(--font-mono);font-size:10.5px;color:var(--accent);letter-spacing:.06em;text-transform:uppercase;
+  }
+  .gallery-title{
+    font-family:var(--font-display);font-weight:700;font-size:25px;letter-spacing:-.01em;margin-top:5px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .gallery-title .sparkle{display:inline-block;animation:sparkleSpin 3.4s ease-in-out infinite;}
+  @keyframes sparkleSpin{ 0%,100%{transform:rotate(0) scale(1);} 50%{transform:rotate(16deg) scale(1.15);} }
+  .gallery-sub{font-family:var(--font-serif);font-size:14px;color:var(--ink-soft);margin-top:6px;}
+  .gallery-meta{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap;}
+  .gallery-facepile{display:flex;}
+  .gallery-facepile .fp{
+    width:26px;height:26px;border-radius:50%;border:2px solid #fff;margin-left:-8px;
+    background:linear-gradient(135deg,#ffd8c9,var(--accent));display:flex;align-items:center;justify-content:center;
+    color:#fff;font-family:var(--font-display);font-weight:700;font-size:9.5px;overflow:hidden;flex-shrink:0;
+  }
+  .gallery-facepile .fp:first-child{margin-left:0;}
+  .gallery-facepile .fp img{width:100%;height:100%;object-fit:cover;}
+  .gallery-meta-text{font-family:var(--font-mono);font-size:10.5px;color:var(--grey);}
+
+  .gallery-add-btn{
+    margin-top:16px;display:inline-flex;align-items:center;gap:8px;
+    background:var(--ink);color:#fff!important;font-family:var(--font-display);font-weight:600;font-size:13px;
+    padding:10px 18px;border-radius:99px;transition:transform .15s var(--ease),background .15s ease,box-shadow .2s ease;
+    box-shadow:0 8px 20px rgba(20,21,26,.16);
+  }
+  .gallery-add-btn:hover{background:#000;transform:translateY(-1px);}
+  .gallery-add-btn:active{transform:scale(.96);}
+  .gallery-add-btn svg{width:15px;height:15px;stroke:#fff;}
+
+  .gallery-group{position:relative;z-index:1;margin-top:26px;}
+  .gallery-group-label{
+    font-family:var(--font-mono);font-size:10.5px;color:var(--grey);text-transform:uppercase;letter-spacing:.07em;
+    margin-bottom:10px;padding-left:2px;
+  }
+  .gallery-grid{columns:2 140px;column-gap:10px;}
+  @media (min-width:640px){ .gallery-grid{columns:3 160px;} }
+  @media (min-width:900px){ .gallery-grid{columns:3 180px;} }
+
+  .gallery-tile{
+    break-inside:avoid;margin-bottom:10px;border-radius:16px;overflow:hidden;position:relative;
+    background:#f6f6f4;border:1px solid var(--line);cursor:pointer;width:100%;display:block;
+    opacity:0;transform:translateY(14px) scale(.97);animation:galleryTileIn .5s var(--ease-spring) forwards;
+    transition:box-shadow .2s ease, transform .2s var(--ease);
+  }
+  .gallery-tile:hover{box-shadow:0 14px 34px rgba(20,21,26,.16);transform:translateY(-3px) scale(1.01);}
+  .gallery-tile img{width:100%;display:block;}
+  @keyframes galleryTileIn{ to{opacity:1;transform:translateY(0) scale(1);} }
+
+  .gallery-tile .overlay{
+    position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.6),transparent 55%);
+    opacity:0;transition:opacity .2s ease;display:flex;flex-direction:column;justify-content:flex-end;padding:10px;
+    text-align:left;
+  }
+  .gallery-tile:hover .overlay{opacity:1;}
+  .gallery-tile .overlay .who{display:flex;align-items:center;gap:6px;}
+  .gallery-tile .overlay .who .mini{
+    width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#ffd8c9,var(--accent));
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:8px;font-family:var(--font-display);font-weight:700;overflow:hidden;flex-shrink:0;
+  }
+  .gallery-tile .overlay .who .mini img{width:100%;height:100%;object-fit:cover;}
+  .gallery-tile .overlay span{font-family:var(--font-mono);font-size:9px;color:#fff;}
+  .gallery-tile .overlay .cap{
+    font-family:var(--font-serif);font-size:11.5px;color:#fff;margin-top:4px;line-height:1.3;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+
+  .gallery-cover{column-span:all;margin-bottom:14px;border-radius:20px;aspect-ratio:16/9;}
+  .gallery-cover .overlay{opacity:1;background:linear-gradient(0deg,rgba(0,0,0,.62),transparent 65%);padding:16px;}
+  .gallery-cover .overlay .cap{font-size:13.5px;-webkit-line-clamp:1;}
+
+  .gallery-empty{
+    position:relative;z-index:1;text-align:center;padding:56px 20px;margin-top:20px;
+    border:1.5px dashed var(--line-strong);border-radius:22px;background:var(--accent-soft);
+  }
+  .gallery-empty .ic{
+    width:52px;height:52px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;
+    margin:0 auto 14px;box-shadow:0 6px 18px rgba(20,21,26,.08);
+    animation:galleryFloat 2.6s ease-in-out infinite;
+  }
+  @keyframes galleryFloat{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-7px);} }
+  .gallery-empty .ic svg{width:22px;height:22px;stroke:var(--accent);}
+  .gallery-empty h3{font-family:var(--font-display);font-weight:700;font-size:16px;}
+  .gallery-empty p{font-family:var(--font-serif);font-size:13.5px;color:var(--ink-soft);margin-top:6px;max-width:260px;margin-left:auto;margin-right:auto;line-height:1.5;}
+  .gallery-empty .gallery-add-btn{margin-top:18px;}
 </style>
 </head>
 <body>
@@ -1431,65 +1543,167 @@
     return data || [];
   }
 
-  function renderAlbumStrip(photos){
-    const addTile = `
-      <button class="home-album-add" id="homeAlbumAddBtn" title="Add a photo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
-        <span>add</span>
-      </button>`;
-    if (photos.length === 0){
-      return `<div class="home-album-strip" id="homeAlbumStrip">${addTile}<div class="home-album-empty" style="align-self:center;">No photos yet — start the memories.</div></div>`;
-    }
-    const tiles = photos.map(ph => `
-      <button class="home-album-tile" data-photo-id="${ph.id}">
+  function groupPhotosByMonth(photos){
+    const groups = new Map();
+    photos.forEach(p => {
+      const d = new Date(p.created_at);
+      const key = isNaN(d) ? 'Earlier' : d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(p);
+    });
+    return groups;
+  }
+
+  function renderGalleryHeader(photos){
+    const contributorIds = [...new Set(photos.map(p => p.user_id))];
+    const facepile = contributorIds.slice(0, 5).map(uid => {
+      const m = members.find(x => x.id === uid);
+      const av = m?.avatar_url;
+      return `<div class="fp">${av ? `<img src="${escapeHtml(av)}" alt="">` : initials(m?.username || '?')}</div>`;
+    }).join('');
+    return `
+      <div class="gallery-head">
+        <div class="gallery-eyebrow">private &amp; permanent</div>
+        <h2 class="gallery-title"><span class="sparkle">✨</span> The Album</h2>
+        <div class="gallery-sub">Every little moment this circle wants to keep.</div>
+        ${photos.length ? `
+        <div class="gallery-meta">
+          <div class="gallery-facepile">${facepile}</div>
+          <span class="gallery-meta-text">${photos.length} memor${photos.length === 1 ? 'y' : 'ies'} from ${contributorIds.length} of you</span>
+        </div>` : ''}
+        <button class="gallery-add-btn" id="galleryAddBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+          Add a memory
+        </button>
+      </div>
+    `;
+  }
+
+  function renderGalleryTile(ph, idx, isCover){
+    const m = members.find(x => x.id === ph.user_id);
+    const name = m?.username || 'Someone';
+    const avatarHtml = m?.avatar_url ? `<img src="${escapeHtml(m.avatar_url)}" alt="">` : initials(name);
+    return `
+      <button class="gallery-tile${isCover ? ' gallery-cover' : ''}" data-photo-id="${ph.id}" style="animation-delay:${Math.min(idx * 45, 480)}ms;" type="button">
         <img src="${escapeHtml(ph.photo_url)}" alt="" loading="lazy">
-        ${ph.caption ? `<div class="cap">${escapeHtml(ph.caption)}</div>` : ''}
+        <div class="overlay">
+          <div class="who"><span class="mini">${avatarHtml}</span><span>${escapeHtml(name)} · ${timeAgo(ph.created_at)}</span></div>
+          ${ph.caption ? `<div class="cap">${escapeHtml(ph.caption)}</div>` : ''}
+        </div>
       </button>
-    `).join('');
-    return `<div class="home-album-strip" id="homeAlbumStrip">${addTile}${tiles}</div>`;
+    `;
   }
 
-  async function refreshAlbumStrip(){
-    const container = document.getElementById('homeAlbumStrip');
-    if (!container) return;
-    const photos = await loadAlbumPhotos();
-    container.outerHTML = renderAlbumStrip(photos);
-    wireAlbumActions(photos);
+  function renderAlbumGallery(photos){
+    if (photos.length === 0){
+      return `
+        <div class="gallery-glow"></div>
+        ${renderGalleryHeader(photos)}
+        <div class="gallery-empty">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
+          <h3>No memories yet</h3>
+          <p>Be the first to drop a photo into this circle's private album.</p>
+        </div>
+      `;
+    }
+    const groups = groupPhotosByMonth(photos);
+    let idx = 0;
+    let first = true;
+    const groupsHtml = [...groups.entries()].map(([label, groupPhotos]) => {
+      const tiles = groupPhotos.map(ph => {
+        const html = renderGalleryTile(ph, idx, first);
+        idx++; first = false;
+        return html;
+      }).join('');
+      return `
+        <div class="gallery-group">
+          <div class="gallery-group-label">${label}</div>
+          <div class="gallery-grid">${tiles}</div>
+        </div>
+      `;
+    }).join('');
+    return `
+      <div class="gallery-glow"></div>
+      ${renderGalleryHeader(photos)}
+      ${groupsHtml}
+    `;
   }
 
-  function wireAlbumActions(photos){
-    const addBtn = document.getElementById('homeAlbumAddBtn');
+  function wireGalleryActions(photos){
+    const addBtn = document.getElementById('galleryAddBtn');
     if (addBtn) addBtn.addEventListener('click', () => {
       if (!requireAuth()) return;
       openAlbumCaptureModal();
     });
-    document.querySelectorAll('.home-album-tile').forEach(tile => {
+    document.querySelectorAll('#galleryWrap .gallery-tile').forEach(tile => {
       tile.addEventListener('click', () => {
-        const ph = photos.find(p => p.id === tile.dataset.photoId);
-        if (ph) openAlbumLightbox(ph);
+        const idx = photos.findIndex(p => p.id === tile.dataset.photoId);
+        if (idx > -1) openGalleryLightbox(photos, idx);
       });
     });
   }
 
-  function openAlbumLightbox(photo){
+  async function refreshAlbumGallery(){
+    const wrap = document.getElementById('galleryWrap');
+    if (!wrap) return;
+    const photos = await loadAlbumPhotos();
+    wrap.innerHTML = renderAlbumGallery(photos);
+    wireGalleryActions(photos);
+    const countEl = document.getElementById('albumTabCount');
+    if (countEl) countEl.textContent = photos.length ? `· ${photos.length}` : '';
+  }
+
+  function openGalleryLightbox(photos, startIndex){
+    let idx = startIndex;
     const overlay = document.createElement('div');
     overlay.className = 'album-lightbox-backdrop';
-    overlay.innerHTML = `
-      <button class="album-lightbox-close" id="albumLbClose">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button>
-      <div class="album-lightbox">
-        <img src="${escapeHtml(photo.photo_url)}" alt="">
-        <div class="album-lightbox-info">
-          <span>${photo.caption ? escapeHtml(photo.caption) : ''}</span>
-          <span>${timeAgo(photo.created_at)}</span>
+
+    const close = () => {
+      overlay.classList.remove('show');
+      document.removeEventListener('keydown', onKey);
+      setTimeout(() => overlay.remove(), 200);
+    };
+
+    function render(){
+      const photo = photos[idx];
+      const m = members.find(x => x.id === photo.user_id);
+      const name = m?.username || 'Someone';
+      overlay.innerHTML = `
+        <button class="album-lightbox-close" id="albumLbClose">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+        <div class="album-lightbox">
+          ${photos.length > 1 ? `
+          <button class="album-lightbox-nav album-lightbox-prev" id="albumLbPrev" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <button class="album-lightbox-nav album-lightbox-next" id="albumLbNext" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
+          </button>` : ''}
+          <img src="${escapeHtml(photo.photo_url)}" alt="">
+          <div class="album-lightbox-info">
+            <span>${escapeHtml(name)}${photo.caption ? ' · ' + escapeHtml(photo.caption) : ''}</span>
+            <span>${timeAgo(photo.created_at)}</span>
+          </div>
         </div>
-      </div>
-    `;
+      `;
+      overlay.querySelector('#albumLbClose').addEventListener('click', close);
+      const prevBtn = overlay.querySelector('#albumLbPrev');
+      const nextBtn = overlay.querySelector('#albumLbNext');
+      if (prevBtn) prevBtn.addEventListener('click', (e) => { e.stopPropagation(); idx = (idx - 1 + photos.length) % photos.length; render(); });
+      if (nextBtn) nextBtn.addEventListener('click', (e) => { e.stopPropagation(); idx = (idx + 1) % photos.length; render(); });
+    }
+
+    function onKey(e){
+      if (e.key === 'Escape') close();
+      else if (e.key === 'ArrowLeft' && photos.length > 1){ idx = (idx - 1 + photos.length) % photos.length; render(); }
+      else if (e.key === 'ArrowRight' && photos.length > 1){ idx = (idx + 1) % photos.length; render(); }
+    }
+
+    render();
     document.body.appendChild(overlay);
+    document.addEventListener('keydown', onKey);
     requestAnimationFrame(() => overlay.classList.add('show'));
-    const close = () => { overlay.classList.remove('show'); setTimeout(() => overlay.remove(), 200); };
-    overlay.querySelector('#albumLbClose').addEventListener('click', close);
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
   }
 
@@ -1618,7 +1832,7 @@
 
         showToast('Added to the album 📸');
         close();
-        await refreshAlbumStrip();
+        await refreshAlbumGallery();
       } catch (err) {
         showToast(err.message || 'Could not post photo', 'error');
         postBtn.disabled = false;
@@ -1629,7 +1843,15 @@
 
   async function initAlbum(){
     albumId = await getOrCreateAlbum();
-    await refreshAlbumStrip();
+    await refreshAlbumGallery();
+  }
+
+  function switchHomeView(view){
+    document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('active', t.dataset.view === view));
+    const feedPanel = document.getElementById('viewFeed');
+    const albumPanel = document.getElementById('viewAlbum');
+    if (feedPanel) feedPanel.classList.toggle('active', view === 'feed');
+    if (albumPanel) albumPanel.classList.toggle('active', view === 'album');
   }
 
   async function renderHomeMode(){
@@ -1668,53 +1890,62 @@
         ${renderPeopleRow()}
       </div>
 
-      <div class="home-album" id="homeAlbum">
-        <div class="home-album-head">
-          <h3>📸 Circle Album</h3>
-          <span class="home-album-sub">private &amp; permanent</span>
-        </div>
-        <div class="home-album-strip" id="homeAlbumStrip">
-          <div class="page-loading" style="padding:20px 0;">Loading album…</div>
-        </div>
+      <div class="view-tabs" id="homeViewTabs">
+        <button class="view-tab active" data-view="feed" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+          Feed
+        </button>
+        <button class="view-tab" data-view="album" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          Album <span class="count" id="albumTabCount"></span>
+        </button>
       </div>
 
-      <div class="home-composer" id="homeComposer">
-        <textarea id="homeComposerText" placeholder="Tell your circle about your day — just between you all..." rows="1"></textarea>
-        <div class="home-composer-media" id="homeMediaField" style="display:none;">
-          <input type="text" id="homeMediaUrl" placeholder="Paste an image or video URL...">
-        </div>
-        <div class="home-composer-row">
-          <div class="home-composer-tools">
-            <button class="home-composer-tool" id="homeMediaToggle" title="Add photo/video">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-            </button>
-            <button class="home-composer-tool" id="homeAnonToggle" title="Post anonymously">
-              
-              <svg viewBox="0 0 32 32" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
-                <path fill="#fff" d="M16 3C8.8 3 2.9 8.3 1.9 15.2c-.2 1.6 1 3 2.6 3h1.2l-1.5 2.8a1 1 0 001.8.9l1.9-3.7h16.2l1.9 3.7a1 1 0 001.8-.9L26.3 18.2h1.2c1.6 0 2.8-1.4 2.6-3C29.1 8.3 23.2 3 16 3z"/>
-                <circle cx="10.5" cy="15.5" r="2.8" fill="#14151a"/>
-                <circle cx="21.5" cy="15.5" r="2.8" fill="#14151a"/>
-                <rect x="13.5" y="14.5" width="5" height="2" fill="#14151a"/>
-              </svg>
-
-
-            </button>
-            <button class="home-composer-tool" id="homeVoiceBtn" title="Record a voice post">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-            </button>
-            <span class="home-comment-rec-timer" id="homeVoiceTimer" style="display:none;">0:00</span>
-
+      <div class="view-panel active" id="viewFeed">
+        <div class="home-composer" id="homeComposer">
+          <textarea id="homeComposerText" placeholder="Tell your circle about your day — just between you all..." rows="1"></textarea>
+          <div class="home-composer-media" id="homeMediaField" style="display:none;">
+            <input type="text" id="homeMediaUrl" placeholder="Paste an image or video URL...">
           </div>
-          <button class="home-post-btn" id="homePostBtn" disabled>Post</button>
+          <div class="home-composer-row">
+            <div class="home-composer-tools">
+              <button class="home-composer-tool" id="homeMediaToggle" title="Add photo/video">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              </button>
+              <button class="home-composer-tool" id="homeAnonToggle" title="Post anonymously">
+                
+                <svg viewBox="0 0 32 32" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+                  <path fill="#fff" d="M16 3C8.8 3 2.9 8.3 1.9 15.2c-.2 1.6 1 3 2.6 3h1.2l-1.5 2.8a1 1 0 001.8.9l1.9-3.7h16.2l1.9 3.7a1 1 0 001.8-.9L26.3 18.2h1.2c1.6 0 2.8-1.4 2.6-3C29.1 8.3 23.2 3 16 3z"/>
+                  <circle cx="10.5" cy="15.5" r="2.8" fill="#14151a"/>
+                  <circle cx="21.5" cy="15.5" r="2.8" fill="#14151a"/>
+                  <rect x="13.5" y="14.5" width="5" height="2" fill="#14151a"/>
+                </svg>
+
+
+              </button>
+              <button class="home-composer-tool" id="homeVoiceBtn" title="Record a voice post">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+              </button>
+              <span class="home-comment-rec-timer" id="homeVoiceTimer" style="display:none;">0:00</span>
+
+            </div>
+            <button class="home-post-btn" id="homePostBtn" disabled>Post</button>
+          </div>
+        </div>
+
+        <button class="home-fab" id="homeFab" title="New post" aria-label="New post">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+
+        <div class="home-feed" id="homeFeed">
+          <div class="page-loading">Loading the feed…</div>
         </div>
       </div>
 
-      <button class="home-fab" id="homeFab" title="New post" aria-label="New post">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
-      </button>
-
-      <div class="home-feed" id="homeFeed">
-        <div class="page-loading">Loading the feed…</div>
+      <div class="view-panel" id="viewAlbum">
+        <div class="gallery-wrap" id="galleryWrap">
+          <div class="page-loading">Loading your memories…</div>
+        </div>
       </div>
     `;
 
@@ -1906,6 +2137,10 @@
       } catch (err) {
         showToast(err.message || 'Could not create invite', 'error');
       }
+    });
+
+    document.querySelectorAll('.view-tab').forEach(tab => {
+      tab.addEventListener('click', () => switchHomeView(tab.dataset.view));
     });
 
     setupComposerBehavior();
