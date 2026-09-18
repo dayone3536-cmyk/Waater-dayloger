@@ -5,230 +5,229 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sign up — Waater</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,650&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
-    --white:#ffffff;
-    --ink:#14151a;
-    --ink-soft:#4a4d55;
-    --grey:#8a8d94;
-    --line:#ececec;
-    --line-strong:#e2e2e2;
-    --accent:#ff5a36;
-    --accent-soft:#fff1ec;
-    --danger:#e0433f;
-    --success:#1c9c62;
-    --success-soft:#eafbf2;
-    --font-display:'Space Grotesk', sans-serif;
-    --font-serif:'Newsreader', serif;
-    --font-mono:'JetBrains Mono', monospace;
+    --paper:#f6f9fa;
+    --ink:#0d1b1e;
+    --ink-soft:#4d6167;
+    --grey:#93a3a7;
+    --line:#dbe6e8;
+    --accent:#0f7a8c;
+    --accent-deep:#0b5c6a;
+    --accent-soft:#e3f4f6;
+    --danger:#c1483b;
+    --danger-soft:#fbebe8;
+    --success:#1f8f6b;
+    --success-soft:#e7f6ef;
+    --font-display:'Fraunces', serif;
+    --font-body:'Inter', sans-serif;
     --ease:cubic-bezier(.22,.9,.32,1);
-    --ease-spring:cubic-bezier(.34,1.56,.64,1);
+    --ease-spring:cubic-bezier(.34,1.45,.4,1);
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   html,body{height:100%;}
   body{
-    background:var(--white);
+    background:var(--paper);
     color:var(--ink);
-    font-family:var(--font-serif);
+    font-family:var(--font-body);
     -webkit-font-smoothing:antialiased;
     min-height:100vh;
     overflow-x:hidden;
+    position:relative;
   }
   a{color:inherit;text-decoration:none;}
   button{font-family:inherit;border:none;background:none;cursor:pointer;}
-  ::selection{background:var(--accent-soft);color:var(--accent);}
-  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px;}
+  ::selection{background:var(--accent-soft);color:var(--accent-deep);}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px;}
 
   @media (prefers-reduced-motion: reduce){
     *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;}
   }
 
-  @keyframes riseIn{
-    from{opacity:0;transform:translateY(12px);}
-    to{opacity:1;transform:translateY(0);}
+  /* ---------- ambient backdrop: one slow, quiet drift ---------- */
+  .glow{
+    position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:radial-gradient(560px 460px at 22% 20%, rgba(15,122,140,.10), transparent 60%),
+               radial-gradient(620px 520px at 82% 86%, rgba(15,122,140,.07), transparent 65%);
+    animation:drift 26s ease-in-out infinite alternate;
   }
-  @keyframes riseInSlow{
-    from{opacity:0;transform:translateY(18px);}
-    to{opacity:1;transform:translateY(0);}
+  @keyframes drift{
+    from{transform:translate(0,0);}
+    to{transform:translate(-14px,10px);}
   }
 
-  /* ---------- layout: split screen on desktop ---------- */
-  .shell{
-    display:flex;
+  .stage{
+    position:relative;z-index:1;
     min-height:100vh;
-  }
-
-  /* ---------- left promo panel (desktop only) ---------- */
-  .promo{
-    display:none;
-    position:relative;
-    flex:1;
-    overflow:hidden;
-    background:
-      radial-gradient(520px 420px at 18% 82%, rgba(255,255,255,.16), transparent 60%),
-      radial-gradient(600px 500px at 85% 8%, rgba(255,255,255,.14), transparent 55%),
-      linear-gradient(160deg, #ff8a5c 0%, var(--accent) 46%, #d63d8f 100%);
-  }
-  .promo-blob{position:absolute;border-radius:50%;filter:blur(2px);opacity:.5;}
-  .promo-blob.b1{width:260px;height:260px;background:#ffd27a;top:-70px;right:-70px;}
-  .promo-blob.b2{width:190px;height:190px;background:#7fe0c9;bottom:80px;left:-60px;opacity:.4;}
-  .promo-blob.b3{width:130px;height:130px;background:#fff;bottom:260px;right:40px;opacity:.18;}
-  .promo-content{
-    position:relative;height:100%;
-    display:flex;flex-direction:column;justify-content:center;
-    padding:60px;color:#fff;max-width:480px;
-  }
-  .promo-badge{font-family:var(--font-display);font-weight:700;font-size:24px;letter-spacing:-.02em;margin-bottom:32px;}
-  .promo-badge .dot{color:#fff2;-webkit-text-stroke:1px #fff;}
-  .promo-content h1{
-    font-family:var(--font-display);font-weight:600;font-size:34px;
-    line-height:1.2;letter-spacing:-.01em;margin-bottom:16px;
-  }
-  .promo-content p{
-    font-family:var(--font-serif);font-size:17px;line-height:1.6;
-    color:rgba(255,255,255,.9);margin-bottom:8px;
-  }
-  .promo-stats{display:flex;gap:28px;margin-top:36px;}
-  .promo-stat b{display:block;font-family:var(--font-display);font-size:22px;font-weight:700;}
-  .promo-stat span{font-family:var(--font-mono);font-size:11.5px;color:rgba(255,255,255,.78);}
-
-  @media (min-width:900px){
-    .promo{display:block;flex:1;max-width:46%;}
-  }
-
-  /* ---------- right auth panel ---------- */
-  .auth-side{
-    flex:1;
     display:flex;align-items:center;justify-content:center;
-    padding:24px;
+    padding:32px 24px;
   }
 
   .card{
-    width:100%;max-width:380px;
-    opacity:0;animation:riseIn .5s var(--ease) .05s forwards;
+    width:100%;max-width:378px;
   }
+
+  /* ---------- masthead ---------- */
+  .mast{
+    text-align:center;
+    margin-bottom:8px;
+    opacity:0;
+    animation:riseIn .6s var(--ease) .05s forwards;
+  }
+  @keyframes riseIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
   .wordmark{
-    font-family:var(--font-display);font-weight:700;font-size:24px;
-    letter-spacing:-0.02em;display:flex;align-items:baseline;gap:2px;
-    justify-content:center;margin-bottom:6px;
+    font-family:var(--font-display);
+    font-optical-sizing:auto;
+    font-weight:600;
+    font-size:32px;
+    letter-spacing:-0.01em;
+    color:var(--ink);
   }
-  .wordmark .dot{color:var(--accent);}
+  .wordmark .drop{color:var(--accent);}
+
   .tagline{
-    text-align:center;font-family:var(--font-serif);font-style:italic;font-size:14.5px;
-    color:var(--ink-soft);margin-bottom:34px;
+    font-family:var(--font-body);
+    font-size:14px;
+    color:var(--ink-soft);
+    margin-top:6px;
   }
+
+  .wave{
+    display:block;
+    width:132px;height:14px;
+    margin:18px auto 30px;
+    opacity:0;
+    animation:riseIn .5s var(--ease) .3s forwards;
+  }
+  .wave path{
+    stroke:var(--accent);
+    stroke-width:1.6;
+    fill:none;
+    stroke-linecap:round;
+    stroke-dasharray:170;
+    stroke-dashoffset:170;
+    animation:draw 1s var(--ease) .45s forwards;
+  }
+  @keyframes draw{to{stroke-dashoffset:0;}}
 
   .panel-switch{display:none;}
-  .panel-switch.active{display:block;animation:riseIn .35s var(--ease);}
+  .panel-switch.active{
+    display:block;
+    opacity:0;
+    animation:riseIn .45s var(--ease) forwards;
+  }
 
-  /* ---------- Google, first and primary ---------- */
+  /* ---------- google, first and plain ---------- */
   .google-btn{
     width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
-    border:1px solid var(--ink);border-radius:12px;padding:14px;
-    font-family:var(--font-display);font-weight:600;font-size:14.5px;color:var(--ink);
-    transition:border-color .15s var(--ease), background .15s var(--ease), transform .12s var(--ease), box-shadow .18s var(--ease);
+    border:1px solid var(--ink);border-radius:9px;padding:13px;
+    font-family:var(--font-body);font-weight:600;font-size:14px;color:var(--ink);
+    transition:background .18s var(--ease), color .18s var(--ease), border-color .18s var(--ease);
   }
-  .google-btn:hover{background:var(--ink);color:#fff;box-shadow:0 10px 24px rgba(0,0,0,.14);}
-  .google-btn:hover svg{filter:none;}
-  .google-btn:active{transform:scale(.98);}
-  .google-btn svg{width:19px;height:19px;flex-shrink:0;}
+  .google-btn:hover{background:var(--ink);color:#fff;}
+  .google-btn:active{transform:scale(.99);}
+  .google-btn svg{width:18px;height:18px;flex-shrink:0;}
 
   .divider{
     display:flex;align-items:center;gap:12px;margin:22px 0;
-    font-family:var(--font-serif);font-style:italic;font-size:13px;color:var(--grey);
+    font-size:13px;color:var(--grey);
   }
-  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--line-strong);}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--line);}
 
-  /* ---------- sliding tab pill ---------- */
+  /* ---------- text tabs with a liquid underline ---------- */
   .tabs{
     position:relative;
-    display:flex;
-    background:#f5f5f6;
-    border-radius:11px;
-    padding:4px;
-    margin-bottom:22px;
-  }
-  .tab-indicator{
-    position:absolute;
-    top:4px;bottom:4px;left:4px;
-    width:calc(50% - 4px);
-    background:#fff;
-    border-radius:8px;
-    box-shadow:0 1px 3px rgba(20,21,26,.1);
-    transition:transform .28s var(--ease-spring);
-    z-index:0;
+    display:flex;gap:22px;
+    margin-bottom:26px;
+    border-bottom:1px solid var(--line);
   }
   .tab-btn{
-    position:relative;z-index:1;
-    flex:1;padding:9px 0;
-    font-family:var(--font-display);font-weight:600;font-size:13px;
-    color:var(--grey);border-radius:8px;
+    padding:0 0 12px;
+    font-family:var(--font-body);font-weight:600;font-size:14.5px;
+    color:var(--grey);
     transition:color .2s var(--ease);
   }
   .tab-btn.active{color:var(--ink);}
+  .tab-underline{
+    position:absolute;bottom:-1px;height:2px;
+    background:var(--accent);
+    border-radius:2px;
+    transition:transform .4s var(--ease-spring), width .4s var(--ease-spring);
+    transform-origin:left;
+  }
 
-  .field{margin-bottom:14px;}
+  .field{margin-bottom:16px;}
   .field label{
-    display:block;font-family:var(--font-display);font-weight:500;font-size:12.5px;
+    display:block;font-weight:500;font-size:12.5px;
     color:var(--ink-soft);margin-bottom:6px;
   }
   .field-wrap{position:relative;}
   .field input{
-    width:100%;border:1px solid var(--line-strong);border-radius:10px;
-    padding:12px 14px;font-family:var(--font-serif);font-size:15px;
+    width:100%;border:none;border-bottom:1.5px solid var(--line);
+    background:transparent;
+    padding:9px 2px 10px;font-family:var(--font-body);font-size:15px;
     color:var(--ink);outline:none;
-    transition:border-color .18s var(--ease), box-shadow .18s var(--ease);
+    transition:border-color .2s var(--ease);
   }
-  .field input:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft);}
-  .field input.has-toggle{padding-right:44px;}
+  .field input.has-toggle{padding-right:32px;}
+  .field-wrap::after{
+    content:'';position:absolute;left:0;bottom:0;height:1.5px;width:0;
+    background:var(--accent);
+    transition:width .35s var(--ease-spring);
+  }
+  .field-wrap:focus-within::after{width:100%;}
 
   .pw-toggle{
-    position:absolute;right:10px;top:50%;transform:translateY(-50%);
-    width:28px;height:28px;border-radius:8px;
+    position:absolute;right:0;bottom:8px;
+    width:22px;height:22px;
     display:flex;align-items:center;justify-content:center;
-    color:var(--grey);transition:color .15s var(--ease), background .15s var(--ease);
+    color:var(--grey);transition:color .15s var(--ease);
   }
-  .pw-toggle:hover{color:var(--ink);background:#f7f7f8;}
-  .pw-toggle svg{width:17px;height:17px;stroke:currentColor;}
+  .pw-toggle:hover{color:var(--ink);}
+  .pw-toggle svg{width:16px;height:16px;stroke:currentColor;}
 
   .field-hint{
-    font-family:var(--font-serif);font-size:12px;color:var(--grey);
-    margin-top:5px;
+    font-size:12px;color:var(--grey);
+    margin-top:6px;
   }
 
   .primary-btn{
     width:100%;background:var(--ink);color:#fff;
-    font-family:var(--font-display);font-weight:600;font-size:14.5px;
-    padding:14px;border-radius:10px;margin-top:8px;
-    display:flex;align-items:center;justify-content:center;gap:8px;
-    transition:background .18s var(--ease), opacity .18s var(--ease), transform .12s var(--ease), box-shadow .2s var(--ease);
-    position:relative;
+    font-family:var(--font-body);font-weight:600;font-size:14.5px;
+    padding:13px;border-radius:9px;margin-top:6px;
+    display:flex;align-items:center;justify-content:center;gap:9px;
+    transition:background .18s var(--ease), opacity .18s var(--ease);
+    position:relative;overflow:hidden;
   }
-  .primary-btn:hover:not(:disabled){background:#000;box-shadow:0 10px 24px rgba(0,0,0,.18);transform:translateY(-1px);}
-  .primary-btn:active:not(:disabled){transform:scale(.98);}
-  .primary-btn:disabled{opacity:.75;cursor:not-allowed;}
+  .primary-btn:hover:not(:disabled){background:var(--accent-deep);}
+  .primary-btn:active:not(:disabled){transform:scale(.99);}
+  .primary-btn:disabled{opacity:.8;cursor:not-allowed;}
   .primary-btn.is-success{background:var(--success);}
 
-  .spinner{
-    width:15px;height:15px;border-radius:50%;
-    border:2px solid rgba(255,255,255,.35);border-top-color:#fff;
-    animation:spin .7s linear infinite;flex-shrink:0;
+  /* droplet loading indicator: fills instead of spinning */
+  .droplet{width:15px;height:19px;flex-shrink:0;}
+  .droplet .outline{fill:none;stroke:rgba(255,255,255,.55);stroke-width:1.4;}
+  .droplet .fill{fill:#fff;transform-origin:50% 100%;animation:fillDrop 1.1s ease-in-out infinite;}
+  @keyframes fillDrop{
+    0%,100%{transform:scaleY(.15);}
+    50%{transform:scaleY(.85);}
   }
-  @keyframes spin{to{transform:rotate(360deg);}}
+
   .check-pop{width:16px;height:16px;flex-shrink:0;}
-  .check-pop path{stroke-dasharray:20;stroke-dashoffset:20;animation:drawCheck .35s var(--ease) forwards;}
+  .check-pop path{stroke-dasharray:20;stroke-dashoffset:20;animation:drawCheck .4s var(--ease) forwards;}
   @keyframes drawCheck{to{stroke-dashoffset:0;}}
 
   .status-msg{
-    margin-top:14px;font-family:var(--font-serif);font-size:13px;
+    margin-top:14px;font-size:13px;
     padding:10px 12px;border-radius:8px;display:none;
   }
-  .status-msg.show{display:flex;align-items:center;gap:7px;animation:statusIn .3s var(--ease);}
-  @keyframes statusIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
-  .status-msg.error{background:#fdeceb;color:var(--danger);}
-  .status-msg.error.shake{animation:statusIn .3s var(--ease), shakeX .4s var(--ease);}
+  .status-msg.show{display:flex;align-items:center;gap:7px;animation:riseIn .3s var(--ease);}
+  .status-msg.error{background:var(--danger-soft);color:var(--danger);}
+  .status-msg.error.shake{animation:riseIn .3s var(--ease), shakeX .4s var(--ease);}
   @keyframes shakeX{
     0%,100%{transform:translateX(0);}
     20%{transform:translateX(-4px);}
@@ -239,124 +238,120 @@
   .status-msg.success{background:var(--success-soft);color:var(--success);}
 
   .hint{
-    text-align:center;font-family:var(--font-serif);font-size:12.5px;
-    color:var(--grey);margin-top:20px;line-height:1.6;
+    text-align:center;font-size:12.5px;
+    color:var(--grey);margin-top:24px;line-height:1.6;
   }
 
   .username-note{
-    font-family:var(--font-serif);font-style:italic;font-size:15px;
-    color:var(--ink-soft);text-align:center;margin-bottom:22px;line-height:1.55;
+    font-family:var(--font-display);font-weight:500;font-size:17px;
+    color:var(--ink);text-align:center;margin-bottom:24px;line-height:1.5;
   }
 </style>
 </head>
 <body>
 
-<div class="shell">
+<div class="glow"></div>
 
-  <!-- Desktop promo panel -->
-  <aside class="promo">
-    <div class="promo-blob b1"></div>
-    <div class="promo-blob b2"></div>
-    <div class="promo-blob b3"></div>
-    <div class="promo-content">
-      <div class="promo-badge">waater<span class="dot">.</span></div>
-      <h1>Your day is worth logging.</h1>
-      <p>Post a photo, a clip, or a few words about today. Friends react, you build a streak worth keeping — one day at a time.</p>
-      <div class="promo-stats">
-        <div class="promo-stat"><b>10s</b><span>to your first post</span></div>
-        <div class="promo-stat"><b>0</b><span>ads, ever</span></div>
-      </div>
-    </div>
-  </aside>
+<div class="stage">
+  <div class="card">
 
-  <!-- Auth card -->
-  <div class="auth-side">
-    <div class="card">
-      <div class="wordmark">waater<span class="dot">.</span></div>
+    <div class="mast">
+      <div class="wordmark">waater<span class="drop">.</span></div>
       <p class="tagline">your day, one clip at a time</p>
+    </div>
 
-      <!-- STEP 1: sign up / sign in -->
-      <div class="panel-switch active" id="authPanel">
+    <svg class="wave" viewBox="0 0 132 14" aria-hidden="true">
+      <path d="M2 8 C 14 -2, 24 18, 36 8 S 58 -2, 70 8 S 92 18, 104 8 S 126 -2, 130 8"/>
+    </svg>
 
-        <button type="button" class="google-btn" id="googleBtn">
-          <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.5 29.5 3.5 24 3.5 12.7 3.5 3.5 12.7 3.5 24S12.7 44.5 24 44.5 44.5 35.3 44.5 24c0-1.2-.1-2.4-.3-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.5 5.5 29.5 3.5 24 3.5c-7.6 0-14.1 4.3-17.7 10.5z"/><path fill="#4CAF50" d="M24 44.5c5.4 0 10.3-1.8 14-4.9l-6.5-5.5c-2 1.4-4.6 2.3-7.5 2.3-5.3 0-9.7-3.1-11.3-7.5l-6.6 5.1C9.8 40.1 16.4 44.5 24 44.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.7l6.5 5.5C40.9 36.5 44.5 30.9 44.5 24c0-1.2-.1-2.4-.3-3.5z"/></svg>
-          Continue with Google
-        </button>
+    <!-- STEP 1: sign up / sign in -->
+    <div class="panel-switch active" id="authPanel">
 
-        <div class="divider">or use your email</div>
+      <button type="button" class="google-btn" id="googleBtn">
+        <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.5 29.5 3.5 24 3.5 12.7 3.5 3.5 12.7 3.5 24S12.7 44.5 24 44.5 44.5 35.3 44.5 24c0-1.2-.1-2.4-.3-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.5 5.5 29.5 3.5 24 3.5c-7.6 0-14.1 4.3-17.7 10.5z"/><path fill="#4CAF50" d="M24 44.5c5.4 0 10.3-1.8 14-4.9l-6.5-5.5c-2 1.4-4.6 2.3-7.5 2.3-5.3 0-9.7-3.1-11.3-7.5l-6.6 5.1C9.8 40.1 16.4 44.5 24 44.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.7l6.5 5.5C40.9 36.5 44.5 30.9 44.5 24c0-1.2-.1-2.4-.3-3.5z"/></svg>
+        Continue with Google
+      </button>
 
-        <div class="tabs">
-          <div class="tab-indicator" id="tabIndicator"></div>
-          <button type="button" class="tab-btn active" id="tabSignUp">Create account</button>
-          <button type="button" class="tab-btn" id="tabSignIn">Sign in</button>
-        </div>
+      <div class="divider">or continue with email</div>
 
-        <!-- Sign up form (default) -->
-        <form id="signUpForm">
-          <div class="field">
-            <label for="suUsername">Username</label>
+      <div class="tabs">
+        <button type="button" class="tab-btn active" id="tabSignUp">Join</button>
+        <button type="button" class="tab-btn" id="tabSignIn">Sign in</button>
+        <div class="tab-underline" id="tabUnderline"></div>
+      </div>
+
+      <!-- Sign up form (default) -->
+      <form id="signUpForm">
+        <div class="field">
+          <label for="suUsername">Username</label>
+          <div class="field-wrap">
             <input type="text" id="suUsername" required minlength="3" maxlength="24" pattern="[a-zA-Z0-9_]+" title="Letters, numbers, and underscores only" autocomplete="username">
           </div>
-          <div class="field">
-            <label for="suEmail">Email</label>
+        </div>
+        <div class="field">
+          <label for="suEmail">Email</label>
+          <div class="field-wrap">
             <input type="email" id="suEmail" required autocomplete="email">
           </div>
-          <div class="field">
-            <label for="suPassword">Password</label>
-            <div class="field-wrap">
-              <input type="password" id="suPassword" class="has-toggle" required minlength="6" autocomplete="new-password">
-              <button type="button" class="pw-toggle" data-target="suPassword" aria-label="Show password">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
-              </button>
-            </div>
-            <div class="field-hint">At least 6 characters</div>
+        </div>
+        <div class="field">
+          <label for="suPassword">Password</label>
+          <div class="field-wrap">
+            <input type="password" id="suPassword" class="has-toggle" required minlength="6" autocomplete="new-password">
+            <button type="button" class="pw-toggle" data-target="suPassword" aria-label="Show password">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
           </div>
-          <button type="submit" class="primary-btn" id="suBtn">
-            <span id="suBtnLabel">Create account</span>
-          </button>
-        </form>
+          <div class="field-hint">At least 6 characters</div>
+        </div>
+        <button type="submit" class="primary-btn" id="suBtn">
+          <span id="suBtnLabel">Create account</span>
+        </button>
+      </form>
 
-        <!-- Sign in form -->
-        <form id="signInForm" style="display:none;">
-          <div class="field">
-            <label for="siEmail">Email</label>
+      <!-- Sign in form -->
+      <form id="signInForm" style="display:none;">
+        <div class="field">
+          <label for="siEmail">Email</label>
+          <div class="field-wrap">
             <input type="email" id="siEmail" required autocomplete="email">
           </div>
-          <div class="field">
-            <label for="siPassword">Password</label>
-            <div class="field-wrap">
-              <input type="password" id="siPassword" class="has-toggle" required autocomplete="current-password">
-              <button type="button" class="pw-toggle" data-target="siPassword" aria-label="Show password">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
-              </button>
-            </div>
+        </div>
+        <div class="field">
+          <label for="siPassword">Password</label>
+          <div class="field-wrap">
+            <input type="password" id="siPassword" class="has-toggle" required autocomplete="current-password">
+            <button type="button" class="pw-toggle" data-target="siPassword" aria-label="Show password">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
           </div>
-          <button type="submit" class="primary-btn" id="siBtn">
-            <span id="siBtnLabel">Sign in</span>
-          </button>
-        </form>
+        </div>
+        <button type="submit" class="primary-btn" id="siBtn">
+          <span id="siBtnLabel">Sign in</span>
+        </button>
+      </form>
 
-        <div class="status-msg" id="authStatus"></div>
-        <p class="hint">By continuing you agree to log your day, one clip at a time.</p>
-      </div>
+      <div class="status-msg" id="authStatus"></div>
+      <p class="hint">By continuing you agree to log your day, one clip at a time.</p>
+    </div>
 
-      <!-- STEP 2: pick a username (Google sign-ins land here) -->
-      <div class="panel-switch" id="usernamePanel">
-        <p class="username-note">Almost there — pick a username so people know whose day this is.</p>
-        <form id="usernameForm">
-          <div class="field">
-            <label for="pickUsername">Username</label>
+    <!-- STEP 2: pick a username (Google sign-ins land here) -->
+    <div class="panel-switch" id="usernamePanel">
+      <p class="username-note">Almost there — pick a username so people know whose day this is.</p>
+      <form id="usernameForm">
+        <div class="field">
+          <label for="pickUsername">Username</label>
+          <div class="field-wrap">
             <input type="text" id="pickUsername" required minlength="3" maxlength="24" pattern="[a-zA-Z0-9_]+" title="Letters, numbers, and underscores only">
           </div>
-          <button type="submit" class="primary-btn" id="pickBtn">
-            <span id="pickBtnLabel">Continue</span>
-          </button>
-        </form>
-        <div class="status-msg" id="usernameStatus"></div>
-      </div>
+        </div>
+        <button type="submit" class="primary-btn" id="pickBtn">
+          <span id="pickBtnLabel">Continue</span>
+        </button>
+      </form>
+      <div class="status-msg" id="usernameStatus"></div>
     </div>
   </div>
-
 </div>
 
 <script>
@@ -377,19 +372,22 @@
     return params.get('next') || '/';
   }
 
-  // ---- button loading/success states ----
+  // ---- button loading/success states (droplet fill, then a drawn check) ----
+  const dropletSVG = `<svg class="droplet" viewBox="0 0 16 20"><path class="outline" d="M8 1.5C8 1.5 14.5 10 14.5 14a6.5 6.5 0 0 1-13 0C1.5 10 8 1.5 8 1.5z"/><clipPath id="clip"><path d="M8 1.5C8 1.5 14.5 10 14.5 14a6.5 6.5 0 0 1-13 0C1.5 10 8 1.5 8 1.5z"/></clipPath><rect class="fill" x="1" y="8" width="14" height="12" clip-path="url(#clip)"/></svg>`;
+
   function setBtnState(btn, labelSpan, state, idleText) {
     if (state === 'loading') {
       btn.disabled = true;
       labelSpan.textContent = '';
-      const spinner = document.createElement('span');
-      spinner.className = 'spinner';
-      spinner.id = btn.id + 'Spinner';
-      btn.insertBefore(spinner, labelSpan);
+      const wrap = document.createElement('span');
+      wrap.className = 'btn-droplet';
+      wrap.id = btn.id + 'Droplet';
+      wrap.innerHTML = dropletSVG;
+      btn.insertBefore(wrap, labelSpan);
     } else if (state === 'success') {
       btn.classList.add('is-success');
-      const spinner = document.getElementById(btn.id + 'Spinner');
-      if (spinner) spinner.remove();
+      const droplet = document.getElementById(btn.id + 'Droplet');
+      if (droplet) droplet.remove();
       labelSpan.textContent = '';
       const check = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       check.setAttribute('viewBox', '0 0 24 24');
@@ -402,8 +400,8 @@
     } else {
       btn.disabled = false;
       btn.classList.remove('is-success');
-      const spinner = document.getElementById(btn.id + 'Spinner');
-      if (spinner) spinner.remove();
+      const droplet = document.getElementById(btn.id + 'Droplet');
+      if (droplet) droplet.remove();
       const check = btn.querySelector('.check-pop');
       if (check) check.remove();
       labelSpan.textContent = idleText;
@@ -423,27 +421,33 @@
     });
   });
 
-  // ---- sliding tab switcher (Create account is default) ----
-  const tabIndicator = document.getElementById('tabIndicator');
+  // ---- text tabs with a liquid underline that measures each label ----
+  const tabUnderline = document.getElementById('tabUnderline');
   const tabSignUp = document.getElementById('tabSignUp');
   const tabSignIn = document.getElementById('tabSignIn');
   const signInForm = document.getElementById('signInForm');
   const signUpForm = document.getElementById('signUpForm');
 
+  function moveUnderlineTo(btn) {
+    tabUnderline.style.width = btn.offsetWidth + 'px';
+    tabUnderline.style.transform = `translateX(${btn.offsetLeft}px)`;
+  }
+
   tabSignUp.addEventListener('click', () => {
     tabSignUp.classList.add('active');
     tabSignIn.classList.remove('active');
-    tabIndicator.style.transform = 'translateX(0)';
+    moveUnderlineTo(tabSignUp);
     signUpForm.style.display = 'block';
     signInForm.style.display = 'none';
   });
   tabSignIn.addEventListener('click', () => {
     tabSignIn.classList.add('active');
     tabSignUp.classList.remove('active');
-    tabIndicator.style.transform = 'translateX(100%)';
+    moveUnderlineTo(tabSignIn);
     signInForm.style.display = 'block';
     signUpForm.style.display = 'none';
   });
+  window.addEventListener('load', () => moveUnderlineTo(tabSignUp));
 
   // ---- routing after auth ----
   async function routeAfterAuth(user) {
