@@ -876,6 +876,42 @@
   .gallery-empty h3{font-family:var(--font-display);font-weight:700;font-size:16px;}
   .gallery-empty p{font-family:var(--font-serif);font-size:13.5px;color:var(--ink-soft);margin-top:6px;max-width:260px;margin-left:auto;margin-right:auto;line-height:1.5;}
   .gallery-empty .gallery-add-btn{margin-top:18px;}
+
+  /* ============================================================
+     SCREENSHOT GUARD — deterrent layer for private circles
+  ============================================================ */
+  body.sg-active{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+  body.sg-active input, body.sg-active textarea{-webkit-user-select:text;user-select:text;}
+  body.sg-active img, body.sg-active video{-webkit-user-drag:none;}
+  body > *{transition:filter .12s ease;}
+  body.sg-hidden > *:not(.sg-backdrop):not(.sg-watermark):not(script){filter:blur(22px) saturate(.6);}
+  @media print{ body.sg-active{display:none!important;} }
+
+  .sg-watermark{position:fixed;inset:0;z-index:590;pointer-events:none;background-repeat:repeat;}
+
+  .sg-backdrop{
+    position:fixed;inset:0;z-index:600;background:rgba(20,21,26,.62);
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    opacity:0;transition:opacity .18s ease;
+  }
+  .sg-backdrop.show{opacity:1;}
+  .sg-card{
+    background:#fff;border-radius:22px;padding:28px 22px 20px;max-width:340px;width:100%;text-align:center;
+    transform:translateY(14px) scale(.94) rotate(-2deg);
+    transition:transform .34s var(--ease-spring);
+  }
+  .sg-backdrop.show .sg-card{transform:none;}
+  .sg-emoji{display:block;font-size:46px;line-height:1;margin-bottom:12px;}
+  .sg-card h3{font-family:var(--font-display);font-weight:700;font-size:21px;letter-spacing:-0.01em;}
+  .sg-card p{font-family:var(--font-serif);font-size:14.5px;color:var(--ink-soft);margin-top:8px;line-height:1.5;}
+  .sg-btn{
+    margin-top:18px;background:var(--accent);color:#fff;
+    font-family:var(--font-display);font-weight:600;font-size:13.5px;
+    padding:11px 22px;border-radius:99px;transition:background .15s ease, transform .1s ease;
+  }
+  .sg-btn:hover{background:#e64a27;}
+  .sg-btn:active{transform:scale(.95);}
+  .sg-btn:focus-visible{outline:2px solid var(--ink);outline-offset:3px;}
 </style>
 </head>
 <body>
@@ -1459,8 +1495,13 @@
           const listEl = document.getElementById(`home-comment-list-${postId}`);
           const comments = await loadComments(postId);
           listEl.innerHTML = comments.map(renderCommentItem).join('');
+
           const countEl = document.querySelector(`.home-comment-toggle[data-post-id="${postId}"] .home-comment-count`);
+
+
           if (countEl) countEl.textContent = comments.length;
+
+          
         } catch (err) {
           showToast(err.message || 'Could not post comment', 'error');
         } finally {
@@ -2586,6 +2627,121 @@
   }
 
   // =========================================================
+  // SCREENSHOT GUARD — deterrent layer for private circles
+  //
+  // Be honest with yourself about what this is: a web page can NOT
+  // truly block screenshots. Phone screenshots and photos of a screen
+  // fire no browser event at all. This layer does what a browser can:
+  //   1. blurs the page whenever the tab/window loses focus
+  //      (snipping tools, app switcher previews, screen-share pickers)
+  //   2. catches desktop screenshot shortcuts and shows the popup
+  //   3. blocks print / save-page / right-click + drag on media
+  //   4. stamps each viewer's username as a faint watermark, so a
+  //      leaked screenshot can be traced back to who took it
+  // For real blocking you'd need a native app (Android FLAG_SECURE).
+  // =========================================================
+  const SG_WATERMARK = true;   // set false to remove the faint username watermark
+
+  const SG_CAUGHT_LINES = [
+    { emoji:'📸', title:'You got caught!',            body:'You can\u2019t screenshot here. Everything stays inside the circle.',            button:'ok, I\u2019m sorry' },
+    { emoji:'🚨', title:'The circle police are here.', body:'Whatever you just tried to take out of here \u2014 put it back. This place is for us only.', button:'fine, I\u2019ll behave' },
+    { emoji:'🕵️', title:'Nice try, paparazzi.',        body:'Your friends said those things because they trust you. What\u2019s said here stays here.', button:'my bad' },
+    { emoji:'🙈', title:'Nope.',                        body:'Screenshots don\u2019t live here. Memories do \u2014 add it to the album instead.',       button:'ok ok' },
+  ];
+
+  let sgPopup = null;
+
+  function showCaughtPopup(){
+    if (sgPopup) return;
+    const line = SG_CAUGHT_LINES[Math.floor(Math.random() * SG_CAUGHT_LINES.length)];
+    const el = document.createElement('div');
+    el.className = 'sg-backdrop';
+    el.setAttribute('role', 'alertdialog');
+    el.setAttribute('aria-modal', 'true');
+    // static strings only (no user input), so innerHTML is safe here
+    el.innerHTML = `
+      <div class="sg-card">
+        <span class="sg-emoji">${line.emoji}</span>
+        <h3>${line.title}</h3>
+        <p>${line.body}</p>
+        <button class="sg-btn" type="button">${line.button}</button>
+      </div>`;
+    document.body.appendChild(el);
+    sgPopup = el;
+    requestAnimationFrame(() => el.classList.add('show'));
+
+    const btn = el.querySelector('.sg-btn');
+    const close = () => {
+      el.classList.remove('show');
+      setTimeout(() => { el.remove(); sgPopup = null; }, 200);
+      if (!document.hidden) document.body.classList.remove('sg-hidden');
+    };
+    btn.addEventListener('click', close);
+    btn.focus();
+  }
+
+  function addScreenshotWatermark(){
+    const me = members.find(m => m.id === currentUser.id);
+    const name = (me && me.username) ? me.username : 'member';
+    const safe = name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="150">`
+      + `<text x="20" y="90" transform="rotate(-22 120 75)" font-family="Arial, sans-serif" `
+      + `font-size="14" font-weight="600" fill="#14151a" fill-opacity="0.07">${safe}</text></svg>`;
+    const mark = document.createElement('div');
+    mark.className = 'sg-watermark';
+    mark.setAttribute('aria-hidden', 'true');
+    mark.style.backgroundImage = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+    document.body.appendChild(mark);
+  }
+
+  function enableScreenshotGuard(){
+    if (window.__sgOn) return;
+    window.__sgOn = true;
+    const body = document.body;
+    body.classList.add('sg-active');
+
+    // 1. hide everything whenever the page is not actively in front
+    const hide = () => body.classList.add('sg-hidden');
+    const show = () => { if (!document.hidden && !sgPopup) body.classList.remove('sg-hidden'); };
+    window.addEventListener('blur', hide);
+    window.addEventListener('focus', show);
+    document.addEventListener('visibilitychange', () => (document.hidden ? hide() : show()));
+
+    // 2. desktop screenshot shortcuts (Windows: PrintScreen, Win+Shift+S;
+    //    macOS: Cmd+Shift+3/4/5). Best effort: the OS may swallow the keys.
+    const isShotShortcut = (e) =>
+      e.key === 'PrintScreen' ||
+      (e.metaKey && e.shiftKey && ['Digit3', 'Digit4', 'Digit5', 'KeyS'].includes(e.code));
+
+    const onShot = () => {
+      hide();
+      // Windows puts PrintScreen images on the clipboard; overwrite it.
+      // (This replaces whatever the user had copied, only on this shortcut.)
+      try { navigator.clipboard.writeText(' ').catch(() => {}); } catch (_) {}
+      showCaughtPopup();
+    };
+    window.addEventListener('keydown', (e) => { if (isShotShortcut(e)) onShot(); });
+    window.addEventListener('keyup',   (e) => { if (isShotShortcut(e)) onShot(); });
+
+    // 3. print / save page, right-click and drag on media
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && ['p', 's'].includes((e.key || '').toLowerCase())){
+        e.preventDefault();
+        showCaughtPopup();
+      }
+    });
+    document.addEventListener('contextmenu', (e) => {
+      if (e.target.closest && e.target.closest('img, video')) e.preventDefault();
+    });
+    document.addEventListener('dragstart', (e) => {
+      if (e.target.tagName === 'IMG') e.preventDefault();
+    });
+
+    // 4. traceable watermark
+    if (SG_WATERMARK) addScreenshotWatermark();
+  }
+
+  // =========================================================
   // MAIN INIT
   // =========================================================
   async function init(){
@@ -2651,6 +2807,7 @@
         `;
         return;
       }
+      enableScreenshotGuard();
       await renderHomeMode();
     } else {
       await renderPublicMode();
