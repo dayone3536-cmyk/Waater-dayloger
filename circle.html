@@ -233,6 +233,24 @@
     #homeAnonToggle:hover{background:#000;}
     #homeAnonToggle.active{background:#000;box-shadow:inset 0 0 0 2px #555;}
 
+  /* WHISPER MODE — the composer's own hush when you're about to say
+     the thing you don't tell other people. Triggered by the anon
+     toggle: the whole composer dims and leans in, like the room
+     just got quieter. */
+  .home-composer.whisper-on{
+    background:#14151a;border-color:#2a2b30;
+  }
+  .home-composer.whisper-on textarea{color:#eee;}
+  .home-composer.whisper-on textarea::placeholder{color:#7d7f86;}
+  .home-composer.whisper-on .home-composer-media input{border-color:#3a3b42;color:#eee;}
+  .whisper-banner{
+    display:none;align-items:center;gap:6px;margin-bottom:10px;
+    font-family:var(--font-mono);font-size:10.5px;letter-spacing:.02em;color:#a9abb2;
+  }
+  .home-composer.whisper-on .whisper-banner{display:flex;animation:riseIn .2s var(--ease);}
+  .whisper-banner svg{width:12px;height:12px;stroke:#a9abb2;flex-shrink:0;}
+  .home-composer.whisper-on .home-post-btn{background:#fff;color:#14151a;}
+  .home-composer.whisper-on .home-post-btn:hover:not(:disabled){background:#eee;}
 
   .home-post-btn{
     display:flex;align-items:center;gap:6px;
@@ -341,6 +359,33 @@
   }
   .home-post-head .avatar.anon-avatar{background:linear-gradient(135deg,#3a3d47,#1a1b1f);}
 
+  /* WHISPER CARD — a post that was shared "for the backbench only"
+     doesn't look like every other post. It reads as held, not shouted:
+     dim, blurred until someone actually leans in and taps it open. */
+  .home-post-card.whisper{
+    background:linear-gradient(165deg,#1a1b1f,#111214);border-color:#26272c;
+  }
+  .home-post-card.whisper .home-post-head .who b{color:#d6d7db;}
+  .home-post-card.whisper .home-post-head .who span{color:#7d7f86;}
+  .home-post-card.whisper .home-post-text{color:#eceded;}
+  .home-post-card.whisper .home-post-actions{border-top-color:#26272c;}
+  .home-post-card.whisper .home-action-btn{color:#9a9ca3;}
+  .home-post-card.whisper .home-action-btn svg{stroke:#9a9ca3;}
+  .home-post-card.whisper .home-comments{border-top-color:#26272c;}
+  .home-post-card.whisper .home-comment-input{background:#1e1f24;border-color:#2e2f35;color:#eee;}
+  .home-post-card.whisper:not(.revealed) .home-post-text,
+  .home-post-card.whisper:not(.revealed) .home-post-media{
+    filter:blur(9px);user-select:none;transition:filter .4s var(--ease);
+  }
+  .home-post-card.whisper:not(.revealed) .home-post-body{cursor:pointer;}
+  .whisper-hint{
+    display:none;align-items:center;gap:6px;margin:0 16px 14px;
+    font-family:var(--font-mono);font-size:10.5px;letter-spacing:.03em;color:#8a8d94;cursor:pointer;
+  }
+  .home-post-card.whisper:not(.revealed) .whisper-hint{display:flex;}
+  .whisper-hint svg{width:13px;height:13px;stroke:#8a8d94;flex-shrink:0;}
+  .home-post-card.whisper.revealed .home-post-text,
+  .home-post-card.whisper.revealed .home-post-media{filter:none;}
 
   .home-post-head .avatar img{width:100%;height:100%;object-fit:cover;}
   .home-post-head .who{display:flex;flex-direction:column;line-height:1.25;}
@@ -1339,15 +1384,20 @@
         }</div>`
       : '';
     return `
-      <div class="home-post-card" data-post-id="${post.id}">
+      <div class="home-post-card${isAnonPost ? ' whisper' : ''}" data-post-id="${post.id}">
         <div class="home-post-head">
           <div class="avatar${isAnonPost ? ' anon-avatar' : ''}">${avatarHtml}</div>
           <div class="who"><b style="${isAnonPost ? 'color:var(--grey);font-style:italic;' : ''}">${escapeHtml(name)}</b><span>${timeAgo(post.created_at)}</span></div>
         </div>
-        <div class="home-post-body">
+        <div class="home-post-body${isAnonPost ? ' whisper-reveal' : ''}">
           ${post.caption ? `<div class="home-post-text">${escapeHtml(post.caption)}</div>` : ''}
           ${mediaHtml}
         </div>
+        ${isAnonPost ? `
+        <div class="whisper-hint whisper-reveal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+          <span>said quietly — tap to hear it</span>
+        </div>` : ''}
         <div class="home-post-actions">
           <button class="home-action-btn home-like-btn li-trigger ${isLiked ? 'liked' : ''}" data-post-id="${post.id}">
             <span class="li-heart-wrap">
@@ -1367,7 +1417,7 @@
         <div class="home-comments" id="home-comments-${post.id}">
           <div class="home-comment-list" id="home-comment-list-${post.id}"></div>
               <div class="home-comment-input-row">
-                <input type="text" class="home-comment-input" id="home-comment-input-${post.id}" placeholder="Say something..." maxlength="500">
+                <input type="text" class="home-comment-input" id="home-comment-input-${post.id}" placeholder="Whisper back..." maxlength="500">
                 <span class="home-comment-rec-timer" id="home-comment-rec-timer-${post.id}" style="display:none;">0:00</span>
                 <button class="home-comment-mic" id="home-comment-mic-${post.id}" data-post-id="${post.id}" title="Record a voice comment">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
@@ -1445,6 +1495,13 @@
   }
 
   function wireHomeActions(){
+    document.querySelectorAll('.whisper-reveal').forEach(el => {
+      el.addEventListener('click', () => {
+        const card = el.closest('.home-post-card');
+        if (card) card.classList.add('revealed');
+      });
+    });
+
     document.querySelectorAll('.home-like-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (!requireAuth()) return;
@@ -2018,6 +2075,10 @@
 
       <div class="view-panel active" id="viewFeed">
         <div class="home-composer" id="homeComposer">
+          <div class="whisper-banner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+            <span>whisper mode — no name attached, blurred until someone taps it open</span>
+          </div>
           <textarea id="homeComposerText" placeholder="Tell your circle about your day — just between you all..." rows="1"></textarea>
           <div class="home-composer-media" id="homeMediaField" style="display:none;">
             <input type="text" id="homeMediaUrl" placeholder="Paste an image or video URL...">
@@ -2089,11 +2150,19 @@
     textarea.addEventListener('focus', resetComposerTimer);
 
     const anonToggle = document.getElementById('homeAnonToggle');
+    const homeComposerEl = document.getElementById('homeComposer');
+    const WHISPER_PLACEHOLDER = "Say the thing you don't tell anyone else...";
+    const NORMAL_PLACEHOLDER = "Tell your circle about your day — just between you all...";
     let isAnon = false;
+    const setWhisperMode = (on) => {
+      isAnon = on;
+      anonToggle.classList.toggle('active', on);
+      homeComposerEl.classList.toggle('whisper-on', on);
+      textarea.placeholder = on ? WHISPER_PLACEHOLDER : NORMAL_PLACEHOLDER;
+    };
     anonToggle.addEventListener('click', () => {
-      isAnon = !isAnon;
-      anonToggle.classList.toggle('active', isAnon);
-      showToast(isAnon ? 'Posting anonymously' : 'Posting as yourself');
+      setWhisperMode(!isAnon);
+      showToast(isAnon ? 'Whisper mode — this one stays unsigned' : 'Posting as yourself');
     });
 
     const voiceBtn = document.getElementById('homeVoiceBtn');
@@ -2149,8 +2218,7 @@
             if (insertError) throw insertError;
 
             textarea.value = ''; textarea.style.height = 'auto';
-            isAnon = false;
-            anonToggle.classList.remove('active');
+            setWhisperMode(false);
             refreshPostBtn();
 
             showToast('Voice post shared');
@@ -2189,6 +2257,7 @@
       isPosting = true;
       postBtn.disabled = true;
       postBtn.innerHTML = `<span class="mini-spinner"></span>`;
+      const wasWhisper = isAnon;
 
       try {
         const { error } = await supabaseClient.from('posts').insert({
@@ -2197,16 +2266,15 @@
           caption: content || null,
           media_url: url || null,
           media_type: url ? (url.match(/\.(mp4|mov|webm)(\?|$)/i) ? 'video' : 'image') : null,
-          is_anonymous: isAnon,
+          is_anonymous: wasWhisper,
         });
         if (error) throw error;
 
         textarea.value = ''; mediaUrl.value = ''; mediaField.style.display = 'none'; mediaToggle.classList.remove('active');
-        isAnon = false;
-        anonToggle.classList.remove('active');
+        setWhisperMode(false);
         textarea.style.height = 'auto';
 
-        showToast('Posted to the circle');
+        showToast(wasWhisper ? 'Posted to the circle — quietly' : 'Posted to the circle');
 
         if (document.getElementById('homeComposer').classList.contains('overlay')) {
           closeComposerOverlay();
@@ -2299,8 +2367,8 @@
     if (posts.length === 0){
       feed.innerHTML = `
         <div class="home-empty">
-          <h3>Nothing here yet</h3>
-          <p>Be the first to share something with this circle.</p>
+          <h3>The backbench is empty</h3>
+          <p>Say the first thing — this is just your five, no one else is reading.</p>
         </div>
       `;
       return;
