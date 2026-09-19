@@ -233,24 +233,6 @@
     #homeAnonToggle:hover{background:#000;}
     #homeAnonToggle.active{background:#000;box-shadow:inset 0 0 0 2px #555;}
 
-  /* WHISPER MODE — the composer's own hush when you're about to say
-     the thing you don't tell other people. Triggered by the anon
-     toggle: the whole composer dims and leans in, like the room
-     just got quieter. */
-  .home-composer.whisper-on{
-    background:#14151a;border-color:#2a2b30;
-  }
-  .home-composer.whisper-on textarea{color:#eee;}
-  .home-composer.whisper-on textarea::placeholder{color:#7d7f86;}
-  .home-composer.whisper-on .home-composer-media input{border-color:#3a3b42;color:#eee;}
-  .whisper-banner{
-    display:none;align-items:center;gap:6px;margin-bottom:10px;
-    font-family:var(--font-mono);font-size:10.5px;letter-spacing:.02em;color:#a9abb2;
-  }
-  .home-composer.whisper-on .whisper-banner{display:flex;animation:riseIn .2s var(--ease);}
-  .whisper-banner svg{width:12px;height:12px;stroke:#a9abb2;flex-shrink:0;}
-  .home-composer.whisper-on .home-post-btn{background:#fff;color:#14151a;}
-  .home-composer.whisper-on .home-post-btn:hover:not(:disabled){background:#eee;}
 
   .home-post-btn{
     display:flex;align-items:center;gap:6px;
@@ -391,6 +373,13 @@
   .home-post-head .who{display:flex;flex-direction:column;line-height:1.25;}
   .home-post-head .who b{font-family:var(--font-display);font-size:13.5px;font-weight:600;}
   .home-post-head .who span{font-family:var(--font-mono);font-size:10px;color:var(--grey);}
+  .home-post-delete{
+    margin-left:auto;flex-shrink:0;width:30px;height:30px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;color:var(--grey);
+    transition:background .15s ease,color .15s ease;
+  }
+  .home-post-delete:hover{background:#fdecea;color:var(--danger);}
+  .home-post-delete svg{width:16px;height:16px;stroke:currentColor;fill:none;}
   .home-post-body{padding:0 16px 14px;}
   .home-post-text{font-family:var(--font-serif);font-size:15px;line-height:1.55;color:var(--ink);white-space:pre-wrap;}
   .home-post-media{margin-top:10px;border-radius:14px;overflow:hidden;border:1px solid var(--line);}
@@ -467,7 +456,9 @@
   .home-comment-bubble{background:#f7f7f8;border-radius:14px;padding:8px 13px;flex:1;min-width:0;}
   .home-comment-bubble b{font-family:var(--font-display);font-size:12.5px;font-weight:600;}
   .home-comment-bubble p{font-family:var(--font-serif);font-size:13.5px;color:var(--ink);margin-top:2px;line-height:1.45;white-space:pre-wrap;word-break:break-word;}
-  .home-comment-time{font-family:var(--font-mono);font-size:9px;color:var(--grey);margin-top:4px;margin-left:2px;}
+  .home-comment-time{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:9px;color:var(--grey);margin-top:4px;margin-left:2px;}
+  .home-comment-delete{font-family:var(--font-mono);font-size:9px;color:var(--grey);text-decoration:underline;}
+  .home-comment-delete:hover{color:var(--danger);}
   .home-comment-empty{font-family:var(--font-mono);font-size:11px;color:var(--grey);text-align:center;padding:8px 0 14px;}
   .home-comment-input-row{display:flex;gap:8px;align-items:center;}
   .home-comment-input{
@@ -1383,11 +1374,16 @@
             : `<img src="${escapeHtml(post.media_url)}" alt="">`
         }</div>`
       : '';
+    const isOwnPost = currentUser && post.user_id === currentUser.id;
     return `
       <div class="home-post-card${isAnonPost ? ' whisper' : ''}" data-post-id="${post.id}">
         <div class="home-post-head">
           <div class="avatar${isAnonPost ? ' anon-avatar' : ''}">${avatarHtml}</div>
           <div class="who"><b style="${isAnonPost ? 'color:var(--grey);font-style:italic;' : ''}">${escapeHtml(name)}</b><span>${timeAgo(post.created_at)}</span></div>
+          ${isOwnPost ? `
+          <button class="home-post-delete" data-post-id="${post.id}" title="Delete post">
+            <svg viewBox="0 0 24 24" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+          </button>` : ''}
         </div>
         <div class="home-post-body${isAnonPost ? ' whisper-reveal' : ''}">
           ${post.caption ? `<div class="home-post-text">${escapeHtml(post.caption)}</div>` : ''}
@@ -1452,27 +1448,31 @@
   function renderCommentItem(c){
     const name = c.profile?.username || 'someone';
     const avatarHtml = c.profile?.avatar_url ? `<img src="${escapeHtml(c.profile.avatar_url)}" alt="">` : initials(name);
+    const isOwnComment = currentUser && c.user_id === currentUser.id;
+    const deleteBtn = isOwnComment
+      ? `<button class="home-comment-delete" data-comment-id="${c.id}" data-comment-kind="${c.kind}">Delete</button>`
+      : '';
     if (c.kind === 'voice') {
       const dur = c.duration_seconds ? `${Math.round(c.duration_seconds)}s` : '';
       return `
-        <div class="home-comment-item">
+        <div class="home-comment-item" data-comment-id="${c.id}">
           <div class="avatar">${avatarHtml}</div>
           <div style="flex:1;min-width:0;">
             <div class="home-voice-bubble">
               <b>${escapeHtml(name)}</b> ${dur ? `<span style="font-family:var(--font-mono);font-size:10px;color:var(--grey);">· ${dur}</span>` : ''}
               <audio controls src="${escapeHtml(c.audio_url)}"></audio>
             </div>
-            <div class="home-comment-time">${timeAgo(c.created_at)}</div>
+            <div class="home-comment-time">${timeAgo(c.created_at)}${deleteBtn}</div>
           </div>
         </div>
       `;
     }
     return `
-      <div class="home-comment-item">
+      <div class="home-comment-item" data-comment-id="${c.id}">
         <div class="avatar">${avatarHtml}</div>
         <div>
           <div class="home-comment-bubble"><b>${escapeHtml(name)}</b><p>${escapeHtml(c.content)}</p></div>
-          <div class="home-comment-time">${timeAgo(c.created_at)}</div>
+          <div class="home-comment-time">${timeAgo(c.created_at)}${deleteBtn}</div>
         </div>
       </div>
     `;
@@ -1493,6 +1493,42 @@
       panel.dataset.loaded = '1';
     }
   }
+
+  document.addEventListener('click', async (e) => {
+    const delBtn = e.target.closest('.home-comment-delete');
+    if (!delBtn) return;
+    e.stopPropagation();
+    if (!currentUser) return;
+    const commentId = delBtn.dataset.commentId;
+    const kind = delBtn.dataset.commentKind;
+    const item = delBtn.closest('.home-comment-item');
+    const postCard = delBtn.closest('.home-post-card');
+    const postId = postCard ? postCard.dataset.postId : null;
+    if (!window.confirm('Delete this comment?')) return;
+    delBtn.disabled = true;
+    try {
+      const table = kind === 'voice' ? 'voice_comments' : 'post_comments';
+      const { error } = await supabaseClient
+        .from(table)
+        .delete()
+        .eq('id', commentId)
+        .eq('user_id', currentUser.id);
+      if (error) throw error;
+      if (item) item.remove();
+      if (postId) {
+        const countEl = document.querySelector(`.home-comment-toggle[data-post-id="${postId}"] .home-comment-count`);
+        if (countEl) countEl.textContent = Math.max(0, Number(countEl.textContent) - 1);
+        const listEl = document.getElementById(`home-comment-list-${postId}`);
+        if (listEl && !listEl.children.length) {
+          listEl.innerHTML = `<div class="home-comment-empty">No comments yet — be the first.</div>`;
+        }
+      }
+      showToast('Comment deleted');
+    } catch (err) {
+      delBtn.disabled = false;
+      showToast(err.message || 'Could not delete comment', 'error');
+    }
+  });
 
   function wireHomeActions(){
     document.querySelectorAll('.whisper-reveal').forEach(el => {
@@ -1534,6 +1570,30 @@
 
     document.querySelectorAll('.home-comment-toggle').forEach(btn => {
       btn.addEventListener('click', () => openComments(btn.dataset.postId));
+    });
+
+    document.querySelectorAll('.home-post-delete').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (!currentUser) return;
+        const postId = btn.dataset.postId;
+        if (!window.confirm('Delete this post? This can\'t be undone.')) return;
+        btn.disabled = true;
+        try {
+          const { error } = await supabaseClient
+            .from('posts')
+            .delete()
+            .eq('id', postId)
+            .eq('user_id', currentUser.id);
+          if (error) throw error;
+          const card = document.querySelector(`.home-post-card[data-post-id="${postId}"]`);
+          if (card) card.remove();
+          showToast('Post deleted');
+        } catch (err) {
+          btn.disabled = false;
+          showToast(err.message || 'Could not delete post', 'error');
+        }
+      });
     });
 
     document.querySelectorAll('.home-comment-input').forEach(input => {
@@ -2075,10 +2135,6 @@
 
       <div class="view-panel active" id="viewFeed">
         <div class="home-composer" id="homeComposer">
-          <div class="whisper-banner">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
-            <span>whisper mode — no name attached, blurred until someone taps it open</span>
-          </div>
           <textarea id="homeComposerText" placeholder="Tell your circle about your day — just between you all..." rows="1"></textarea>
           <div class="home-composer-media" id="homeMediaField" style="display:none;">
             <input type="text" id="homeMediaUrl" placeholder="Paste an image or video URL...">
@@ -2157,7 +2213,6 @@
     const setWhisperMode = (on) => {
       isAnon = on;
       anonToggle.classList.toggle('active', on);
-      homeComposerEl.classList.toggle('whisper-on', on);
       textarea.placeholder = on ? WHISPER_PLACEHOLDER : NORMAL_PLACEHOLDER;
     };
     anonToggle.addEventListener('click', () => {
