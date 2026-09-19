@@ -948,6 +948,16 @@
   .sg-btn:hover{background:#e64a27;}
   .sg-btn:active{transform:scale(.95);}
   .sg-btn:focus-visible{outline:2px solid var(--ink);outline-offset:3px;}
+
+  /* ============================================================
+     ANONYMOUS POST NOTICE — shown once before whisper-mode posting
+  ============================================================ */
+  .anon-notice-icon{width:52px;height:52px;border-radius:50%;background:#14151a;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
+  .anon-notice-icon svg{width:26px;height:26px;}
+  .anon-notice-actions{display:flex;gap:8px;margin-top:18px;}
+  .anon-notice-actions .sg-btn{margin-top:0;flex:1;white-space:nowrap;}
+  .anon-notice-ghost{background:#f1f1ef;color:var(--ink-soft)!important;}
+  .anon-notice-ghost:hover{background:#e6e6e3;}
 </style>
 </head>
 <body>
@@ -1308,6 +1318,10 @@
   // posts table columns: id, user_id, caption, media_url, media_type, created_at,
   // circle_id, score, likes_count, comment_count, is_anonymous
   async function loadPosts(sort){
+    // Best-effort: sweep any anonymous posts whose 24-hour window (since
+    // everyone saw them) has already passed, before we fetch the feed.
+    await cleanupExpiredAnonPosts();
+
     let query = supabaseClient
       .from('posts')
       .select('id, user_id, caption, media_url, media_type, duration_seconds, created_at, score, likes_count, comment_count, is_anonymous')
@@ -2216,8 +2230,15 @@
       textarea.placeholder = on ? WHISPER_PLACEHOLDER : NORMAL_PLACEHOLDER;
     };
     anonToggle.addEventListener('click', () => {
-      setWhisperMode(!isAnon);
-      showToast(isAnon ? 'Whisper mode — this one stays unsigned' : 'Posting as yourself');
+      if (isAnon){
+        setWhisperMode(false);
+        showToast('Posting as yourself');
+        return;
+      }
+      requestWhisperMode(() => {
+        setWhisperMode(true);
+        showToast('Whisper mode — this one stays unsigned');
+      });
     });
 
     const voiceBtn = document.getElementById('homeVoiceBtn');
@@ -2431,6 +2452,7 @@
     const myLikes = await loadMyLikes(posts.map(p => p.id));
     feed.innerHTML = posts.map(p => renderHomePostCard(p, myLikes.has(p.id))).join('');
     wireHomeActions();
+    recordAnonViews(posts);
   }
 
   // =========================================================
@@ -2862,6 +2884,91 @@
 
     // 4. traceable watermark
     if (SG_WATERMARK) addScreenshotWatermark();
+  }
+
+  // =========================================================
+  // ANONYMOUS POSTS — pre-post notice, view tracking, auto-expiry
+  //
+  // Requires (run once in the Supabase SQL editor):
+  //   - a `post_views` table
+  //   - an `all_seen_at` column on `posts`
+  //   - the `record_post_view` and `cleanup_expired_anon_posts` RPC functions
+  // See the SQL migration provided alongside this file.
+  // =========================================================
+  const ANON_NOTICE_KEY = `anonNoticeSeen_${circleId}`;
+
+  function hasSeenAnonNotice(){
+    try { return localStorage.getItem(ANON_NOTICE_KEY) === '1'; } catch(_) { return false; }
+  }
+  function markAnonNoticeSeen(){
+    try { localStorage.setItem(ANON_NOTICE_KEY, '1'); } catch(_) {}
+  }
+
+  // Shown once, before someone's first anonymous post, so they know the
+  // trade-off up front rather than finding out after the fact.
+  function showAnonNoticeModal(onConfirm){
+    if (document.querySelector('.anon-notice-backdrop')) return;
+    const el = document.createElement('div');
+    el.className = 'sg-backdrop anon-notice-backdrop';
+    el.setAttribute('role', 'alertdialog');
+    el.setAttribute('aria-modal', 'true');
+    // static strings only (no user input), so innerHTML is safe here
+    el.innerHTML = `
+      <div class="sg-card">
+        <div class="anon-notice-icon">
+          <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#fff" d="M16 3C8.8 3 2.9 8.3 1.9 15.2c-.2 1.6 1 3 2.6 3h1.2l-1.5 2.8a1 1 0 001.8.9l1.9-3.7h16.2l1.9 3.7a1 1 0 001.8-.9L26.3 18.2h1.2c1.6 0 2.8-1.4 2.6-3C29.1 8.3 23.2 3 16 3z"/>
+            <circle cx="10.5" cy="15.5" r="2.8" fill="#14151a"/>
+            <circle cx="21.5" cy="15.5" r="2.8" fill="#14151a"/>
+            <rect x="13.5" y="14.5" width="5" height="2" fill="#14151a"/>
+          </svg>
+        </div>
+        <h3>Posting anonymously</h3>
+        <p>Your identity will be hidden — no one in the circle, including admins, can tell it's you. This post automatically disappears 24 hours after everyone here has seen it.</p>
+        <div class="anon-notice-actions">
+          <button class="sg-btn anon-notice-ghost" type="button" data-choice="cancel">Never mind</button>
+          <button class="sg-btn" type="button" data-choice="confirm">Got it, post anonymously</button>
+        </div>
+      </div>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('show'));
+
+    const close = (confirmed) => {
+      el.classList.remove('show');
+      setTimeout(() => el.remove(), 200);
+      if (confirmed){
+        markAnonNoticeSeen();
+        onConfirm();
+      }
+    };
+    el.querySelector('[data-choice="confirm"]').addEventListener('click', () => close(true));
+    el.querySelector('[data-choice="cancel"]').addEventListener('click', () => close(false));
+  }
+
+  // Gate for turning whisper mode on: shows the one-time notice first,
+  // then runs `onEnabled` once the person has acknowledged it.
+  function requestWhisperMode(onEnabled){
+    if (hasSeenAnonNotice()){ onEnabled(); return; }
+    showAnonNoticeModal(onEnabled);
+  }
+
+  // Fire-and-forget: tell the backend "I've seen this anonymous post" for
+  // every anonymous post currently in the feed. Once every circle member
+  // has done this for a post, the backend stamps `all_seen_at`, and the
+  // post is deleted 24 hours after that.
+  function recordAnonViews(posts){
+    if (!currentUser) return;
+    (posts || []).filter(p => p.is_anonymous).forEach(p => {
+      supabaseClient.rpc('record_post_view', { p_post_id: p.id })
+        .then(({ error }) => { if (error) console.error('record_post_view failed', error); });
+    });
+  }
+
+  // Best-effort cleanup, called opportunistically whenever the feed loads.
+  // Safe to call often — it's a no-op when nothing has expired yet.
+  async function cleanupExpiredAnonPosts(){
+    try { await supabaseClient.rpc('cleanup_expired_anon_posts'); }
+    catch (err) { console.error('cleanup_expired_anon_posts failed', err); }
   }
 
   // =========================================================
