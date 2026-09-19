@@ -1718,6 +1718,130 @@
     return count ?? 0;
   }
 
+  // =========================================================
+  // PRIVATE MEDIA — every file lives in a private bucket and is only
+  // ever shown through a short-lived signed link. Storage policies
+  // (circle membership) decide who is allowed to get a link at all.
+  // =========================================================
+  const SIGNED_TTL = 1800;                          // links live 30 minutes
+  const SIGNED_CACHE_MS = (SIGNED_TTL - 300) * 1000; // re-sign 5 min before expiry
+  const signedCache = new Map();                    // "bucket/path" -> { url, exp }
+  const MEDIA_BUCKETS = ['voice-posts', 'voice-comments', 'album-photos'];
+  const PUBLIC_MARK = '/storage/v1/object/public/';
+  const SIGN_MARK = '/storage/v1/object/sign/';
+
+  // What we store in the DB is the object PATH. Rows created before the
+  // switch hold a full public URL — we read the path back out of it.
+  // Returns null for anything that isn't one of our files (external links).
+  function mediaPathFrom(bucket, value){
+    if (!value) return null;
+    const v = String(value).trim();
+    if (!/^https?:\/\//i.test(v)) return v.replace(/^\/+/, '');
+    for (const mark of [PUBLIC_MARK, SIGN_MARK]) {
+      const i = v.indexOf(mark + bucket + '/');
+      if (i !== -1) {
+        let p = v.slice(i + mark.length + bucket.length + 1).split('?')[0];
+        try { p = decodeURIComponent(p); } catch (_) {}
+        return p;
+      }
+    }
+    return null;
+  }
+
+  // Turn stored refs into signed URLs (batched + cached). A file that can't
+  // be signed (not a member, deleted) comes back as '' — never a fallback URL.
+  async function signMedia(bucket, refs){
+    const now = Date.now();
+    const out = new Array(refs.length);
+    const need = new Map();                         // path -> [indexes]
+    refs.forEach((ref, i) => {
+      const path = mediaPathFrom(bucket, ref);
+      if (path === null) { out[i] = ref; return; }  // external link, leave alone
+      const hit = signedCache.get(bucket + '/' + path);
+      if (hit && hit.exp > now) { out[i] = hit.url; return; }
+      if (!need.has(path)) need.set(path, []);
+      need.get(path).push(i);
+    });
+    if (need.size) {
+      const { data, error } = await supabaseClient.storage.from(bucket).createSignedUrls([...need.keys()], SIGNED_TTL);
+      if (error) console.error('signMedia failed', error);
+      (data || []).forEach(row => {
+        if (row && row.signedUrl && !row.error) {
+          signedCache.set(bucket + '/' + row.path, { url: row.signedUrl, exp: now + SIGNED_CACHE_MS });
+          (need.get(row.path) || []).forEach(i => { out[i] = row.signedUrl; });
+        }
+      });
+      need.forEach(idxs => idxs.forEach(i => { if (out[i] === undefined) out[i] = ''; }));
+    }
+    return out;
+  }
+
+  async function hydratePostMedia(list){
+    const at = [];
+    list.forEach((p, i) => { if (p.media_url && p.media_type === 'voice') at.push(i); });
+    if (!at.length) return list;
+    const urls = await signMedia('voice-posts', at.map(i => list[i].media_url));
+    at.forEach((li, k) => { list[li] = { ...list[li], media_url: urls[k] }; });
+    return list;
+  }
+
+  async function hydrateCommentMedia(list){
+    const at = [];
+    list.forEach((c, i) => { if (c.kind === 'voice' && c.audio_url) at.push(i); });
+    if (!at.length) return list;
+    const urls = await signMedia('voice-comments', at.map(i => list[i].audio_url));
+    at.forEach((li, k) => { list[li] = { ...list[li], audio_url: urls[k] }; });
+    return list;
+  }
+
+  async function hydrateAlbumMedia(list){
+    if (!list.length) return list;
+    const urls = await signMedia('album-photos', list.map(p => p.photo_url));
+    return list.map((p, i) => ({ ...p, photo_url: urls[i] }));
+  }
+
+  // "Delete" has to mean delete: remember where the file is, drop the row,
+  // then erase the file itself from storage.
+  async function mediaRefBeforeDelete(table, id){
+    try {
+      if (table === 'posts') {
+        const { data } = await supabaseClient.from('posts').select('media_url, media_type').eq('id', id).maybeSingle();
+        if (!data || data.media_type !== 'voice') return null;
+        return { bucket: 'voice-posts', path: mediaPathFrom('voice-posts', data.media_url) };
+      }
+      const { data } = await supabaseClient.from('voice_comments').select('audio_url').eq('id', id).maybeSingle();
+      return data ? { bucket: 'voice-comments', path: mediaPathFrom('voice-comments', data.audio_url) } : null;
+    } catch (_) { return null; }
+  }
+  async function eraseMedia(ref){
+    if (!ref || !ref.path) return;
+    signedCache.delete(ref.bucket + '/' + ref.path);
+    const { error } = await supabaseClient.storage.from(ref.bucket).remove([ref.path]);
+    if (error) console.warn('could not erase file from storage', error);
+  }
+
+  // A link that expired while the page stayed open: quietly get a fresh one, once.
+  document.addEventListener('error', async (e) => {
+    const el = e.target;
+    if (!el || !['IMG', 'AUDIO', 'VIDEO'].includes(el.tagName) || el.dataset.resigned) return;
+    const src = el.currentSrc || el.src || '';
+    const i = src.indexOf(SIGN_MARK);
+    if (i === -1) return;
+    const rest = src.slice(i + SIGN_MARK.length).split('?')[0];
+    const slash = rest.indexOf('/');
+    const bucket = rest.slice(0, slash);
+    if (!MEDIA_BUCKETS.includes(bucket)) return;
+    el.dataset.resigned = '1';
+    let path = rest.slice(slash + 1);
+    try { path = decodeURIComponent(path); } catch (_) {}
+    signedCache.delete(bucket + '/' + path);
+    const [fresh] = await signMedia(bucket, [path]);
+    if (fresh) el.src = fresh;
+  }, true);
+
+  // Never keep links around after sign-out.
+  supabaseClient.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') signedCache.clear(); });
+
   // ---- posts ----
   // posts table columns: id, user_id, caption, media_url, media_type, created_at,
   // circle_id, score, likes_count, comment_count, is_anonymous
@@ -1751,6 +1875,8 @@
       (profs || []).forEach(p => { profileById[p.id] = p; });
       list = list.map(p => ({ ...p, profiles: profileById[p.user_id] || null }));
     }
+
+    list = await hydratePostMedia(list);
 
     if (sort === 'hot') {
       list = list.map(p => ({ ...p, _hot: ((p.score||0) + 0.6*(p.comment_count||0) + 1) / Math.pow((Date.now()-new Date(p.created_at))/3600000 + 2, 1.3) }))
@@ -1866,7 +1992,8 @@
     const { data: profs } = await supabaseClient.from('profiles').select('id, username, avatar_url').in('id', userIds);
     const profileById = {};
     (profs || []).forEach(p => { profileById[p.id] = p; });
-    return combined.map(c => ({ ...c, profile: profileById[c.user_id] || null }));
+    const withProfiles = combined.map(c => ({ ...c, profile: profileById[c.user_id] || null }));
+    return await hydrateCommentMedia(withProfiles);
   }
 
   function renderCommentItem(c){
@@ -1932,12 +2059,14 @@
     delBtn.disabled = true;
     try {
       const table = kind === 'voice' ? 'voice_comments' : 'post_comments';
+      const fileRef = kind === 'voice' ? await mediaRefBeforeDelete('voice_comments', commentId) : null;
       const { error } = await supabaseClient
         .from(table)
         .delete()
         .eq('id', commentId)
         .eq('user_id', currentUser.id);
       if (error) throw error;
+      eraseMedia(fileRef);
       if (item) item.remove();
       if (postId) {
         const countEl = document.querySelector(`.home-comment-toggle[data-post-id="${postId}"] .home-comment-count`);
@@ -2004,12 +2133,14 @@
         if (!window.confirm('Delete this post? This can\'t be undone.')) return;
         btn.disabled = true;
         try {
+          const fileRef = await mediaRefBeforeDelete('posts', postId);
           const { error } = await supabaseClient
             .from('posts')
             .delete()
             .eq('id', postId)
             .eq('user_id', currentUser.id);
           if (error) throw error;
+          eraseMedia(fileRef);
           const card = document.querySelector(`.home-post-card[data-post-id="${postId}"]`);
           if (card) card.remove();
           showToast('Post deleted');
@@ -2092,12 +2223,10 @@
                 .upload(path, blob, { contentType: 'audio/webm' });
               if (uploadError) throw uploadError;
 
-              const { data: { publicUrl } } = supabaseClient.storage.from('voice-comments').getPublicUrl(path);
-
               const { error: insertError } = await supabaseClient.from('voice_comments').insert({
                 post_id: postId,
                 user_id: currentUser.id,
-                audio_url: publicUrl,
+                audio_url: path,
                 duration_seconds: durationSeconds
               });
               if (insertError) throw insertError;
@@ -2183,7 +2312,7 @@
       .order('created_at', { ascending: false })
       .limit(30);
     if (error){ console.error('loadAlbumPhotos failed', error); return []; }
-    return data || [];
+    return await hydrateAlbumMedia(data || []);
   }
 
   function groupPhotosByMonth(photos){
@@ -2462,12 +2591,10 @@
           .upload(path, blob, { contentType: 'image/jpeg' });
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabaseClient.storage.from('album-photos').getPublicUrl(path);
-
         const { error: insertError } = await supabaseClient.from('album_photos').insert({
           album_id: albumId,
           user_id: currentUser.id,
-          photo_url: publicUrl,
+          photo_url: path,
           filter_applied: activeFilterId,
           caption: captionInput.value.trim() || null,
         });
@@ -2740,13 +2867,11 @@
               .upload(path, blob, { contentType: 'audio/webm' });
             if (uploadError) throw uploadError;
 
-            const { data: { publicUrl } } = supabaseClient.storage.from('voice-posts').getPublicUrl(path);
-
             const { error: insertError } = await supabaseClient.from('posts').insert({
               circle_id: circleId,
               user_id: currentUser.id,
               caption: textarea.value.trim() || null,
-              media_url: publicUrl,
+              media_url: path,
               media_type: 'voice',
               duration_seconds: durationSeconds,
               is_anonymous: isAnon,
@@ -3249,8 +3374,10 @@
     pcArm(btn, 'Delete?', async () => {
       btn.disabled = true;
       try {
+        const fileRef = await mediaRefBeforeDelete('posts', article.dataset.postId);
         const { error } = await supabaseClient.from('posts').delete().eq('id', article.dataset.postId).eq('user_id', currentUser.id);
         if (error) throw error;
+        eraseMedia(fileRef);
         article.remove();
         showToast('Post deleted');
         if (!document.querySelector('#pcFeed .pc-post')) refreshPubFeed();
@@ -3268,8 +3395,10 @@
       btn.disabled = true;
       try {
         const table = row.dataset.kind === 'voice' ? 'voice_comments' : 'post_comments';
+        const fileRef = row.dataset.kind === 'voice' ? await mediaRefBeforeDelete('voice_comments', row.dataset.cid) : null;
         const { error } = await supabaseClient.from(table).delete().eq('id', row.dataset.cid).eq('user_id', currentUser.id);
         if (error) throw error;
+        eraseMedia(fileRef);
         row.remove();
         const list = article.querySelector('.pc-clist');
         const n = list.querySelectorAll('.pc-c').length;
