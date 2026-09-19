@@ -497,114 +497,357 @@
   .home-voice-bubble b{font-family:var(--font-display);font-size:12.5px;font-weight:600;}
   .home-voice-bubble audio{width:100%;margin-top:6px;height:32px;}
 
-  .pub-wrap{background:var(--pub-bg);}
-  .pub-banner{
-    background:linear-gradient(120deg, var(--ink) 0%, #2a2c35 100%);
-    padding:26px 22px 18px;color:#fff;position:relative;overflow:hidden;
+  /* ============================================================
+     PUBLIC CIRCLE
+     Every public circle gets its own colour, derived from its id.
+     --h (hue) and --l (lightness of the on-white colour) are set
+     inline on .pc by renderPublicMode().
+  ============================================================ */
+  .pc{
+    --c:hsl(var(--h) 85% 64%);
+    --cs:hsl(var(--h) 72% var(--l));
+    --cs-soft:hsl(var(--h) 90% 96%);
+    --cs-mid:hsl(var(--h) 65% 86%);
+    --topbar-h:0px;
+    background:#fff;
   }
-  .pub-banner::after{
-    content:'';position:absolute;inset:0;
-    background:radial-gradient(circle at 85% 0%, rgba(255,90,54,.35), transparent 55%);
-    pointer-events:none;
+  @media (max-width:899.98px){ .pc{ --topbar-h:58px; } }
+  .pc :focus-visible{outline:2px solid var(--cs);outline-offset:2px;border-radius:8px;}
+  .pc button:disabled{cursor:default;}
+
+  .pc-av{
+    display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+    width:var(--s,40px);height:var(--s,40px);border-radius:50%;overflow:hidden;
+    color:#fff;font-family:var(--font-display);font-weight:700;font-size:calc(var(--s,40px) * .4);
   }
-  .pub-banner-inner{position:relative;display:flex;align-items:center;gap:14px;}
-  .pub-icon{
-    width:56px;height:56px;border-radius:16px;flex-shrink:0;
-    background:linear-gradient(135deg,var(--accent),#ff8a5c);
+  .pc-av img{width:100%;height:100%;object-fit:cover;}
+  .pc-av svg{width:58%;height:58%;}
+  .pc-av.anon{background:var(--ink);}
+
+  /* ---------- cover ---------- */
+  .pc-cover{
+    container-type:inline-size;
+    position:relative;overflow:hidden;color:#fff;min-height:300px;
+    padding:20px 22px 26px;
+    display:flex;flex-direction:column;justify-content:space-between;
+    background:
+      radial-gradient(80% 120% at 80% 35%, hsl(var(--h) 60% 26%) 0%, transparent 65%),
+      hsl(var(--h) 48% 12%);
+  }
+  .pc-tag{
+    position:relative;z-index:2;display:inline-flex;align-items:center;gap:6px;align-self:flex-start;
+    font-family:var(--font-display);font-weight:500;font-size:13px;color:rgba(255,255,255,.7);
+  }
+  .pc-tag svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;}
+  .pc-cover-main{position:relative;z-index:2;max-width:min(56%,460px);margin-top:28px;}
+  .pc-name{
+    font-family:var(--font-display);font-weight:700;font-size:clamp(30px,5vw,46px);
+    line-height:1.02;letter-spacing:-.035em;overflow-wrap:anywhere;
+  }
+  .pc-desc{
+    font-family:var(--font-serif);font-size:16px;line-height:1.5;color:rgba(255,255,255,.78);
+    margin-top:10px;max-width:38ch;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .pc-cover-row{display:flex;align-items:center;flex-wrap:wrap;gap:12px 14px;margin-top:20px;}
+  .pc-join{
+    display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:0 24px;border-radius:99px;
+    background:#fff;color:var(--ink);font-family:var(--font-display);font-weight:700;font-size:14px;
+    transition:transform .12s var(--ease), background .15s ease;
+  }
+  .pc-join:hover{background:hsl(var(--h) 100% 96%);}
+  .pc-join:active{transform:scale(.96);}
+  .pc-join svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;}
+  .pc-join.joined{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4);cursor:default;}
+  .pc-join.joined:hover{background:transparent;}
+  .pc-icon-btn{
+    width:42px;height:42px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+    border:1px solid rgba(255,255,255,.3);color:#fff;transition:background .15s ease, transform .12s var(--ease);
+  }
+  .pc-icon-btn:hover{background:rgba(255,255,255,.1);}
+  .pc-icon-btn:active{transform:scale(.94);}
+  .pc-icon-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .pc-cover :focus-visible{outline-color:#fff;}
+  .pc-stats{display:flex;align-items:center;flex-wrap:wrap;gap:4px 16px;font-family:var(--font-display);font-size:13.5px;color:rgba(255,255,255,.72);}
+  .pc-stats b{color:#fff;font-weight:700;}
+  .pc-pulse{display:inline-flex;align-items:center;gap:7px;}
+  .pc-pulse i{width:7px;height:7px;border-radius:50%;background:var(--c);box-shadow:0 0 0 3px hsla(var(--h),90%,64%,.25);}
+  .pc-pulse:empty{display:none;}
+
+  .pc-spin{
+    width:14px;height:14px;border-radius:50%;border:2px solid rgba(20,21,26,.2);border-top-color:var(--ink);
+    animation:spin .7s linear infinite;flex-shrink:0;
+  }
+
+  /* orbit: members sit on rings around the circle's core, founders on the inside */
+  .pc-orbit{
+    --u:1;
+    --D:calc(300px * var(--u));
+    position:absolute;z-index:1;top:50%;right:28px;width:var(--D);height:var(--D);
+    transform:translateY(-50%);pointer-events:none;
+  }
+  .pc-ring{position:absolute;left:50%;top:50%;border-radius:50%;transform:translate(-50%,-50%);border:1px solid hsla(var(--h),90%,78%,.24);}
+  .pc-ring.r1{width:34%;height:34%;}
+  .pc-ring.r2{width:62%;height:62%;border-color:hsla(var(--h),90%,78%,.18);}
+  .pc-ring.r3{width:88%;height:88%;border-color:hsla(var(--h),90%,78%,.13);}
+  .pc-ring.r4{width:124%;height:124%;border-color:hsla(var(--h),90%,78%,.08);}
+  .pc-core{
+    position:absolute;left:50%;top:50%;width:calc(34px * var(--u));height:calc(34px * var(--u));
+    transform:translate(-50%,-50%);border-radius:50%;
     display:flex;align-items:center;justify-content:center;
-    box-shadow:0 10px 24px rgba(255,90,54,.35);
+    background:hsla(var(--h),90%,64%,.16);box-shadow:0 0 70px 26px hsla(var(--h),90%,60%,.28);
   }
-  .pub-icon svg{width:26px;height:26px;stroke:#fff;}
-  .pub-banner h1{font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:-.01em;}
-  .pub-banner .pub-tag{font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.65);margin-top:4px;}
-  .pub-banner-actions{position:relative;margin-top:16px;display:flex;gap:10px;align-items:center;}
-  .pub-join-btn{
-    background:var(--accent);color:#fff;font-family:var(--font-display);font-weight:600;font-size:13px;
-    padding:10px 20px;border-radius:99px;transition:background .15s ease, transform .1s ease;
-    display:flex;align-items:center;gap:7px;
+  .pc-core svg{width:60%;height:60%;stroke:var(--c);fill:none;stroke-width:2;}
+  .pc-orb{
+    position:absolute;width:calc(var(--s) * var(--u) * 1px);height:calc(var(--s) * var(--u) * 1px);
+    margin:calc(var(--s) * var(--u) * -.5px) 0 0 calc(var(--s) * var(--u) * -.5px);
+    font-size:calc(var(--s) * var(--u) * .4px);
+    box-shadow:0 0 0 2px hsl(var(--h) 48% 12%), 0 8px 18px rgba(0,0,0,.35);
+    pointer-events:auto;animation:pcPop .5s var(--ease-spring) both;animation-delay:var(--d);
   }
-  .pub-join-btn:hover{background:#e64a27;}
-  .pub-join-btn:active{transform:scale(.96);}
-  .pub-join-btn.joined{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);}
-  .pub-stat{font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.7);}
-  .pub-stat b{color:#fff;font-family:var(--font-display);}
+  .pc-orb.me{box-shadow:0 0 0 2px #fff, 0 8px 18px rgba(0,0,0,.35);}
+  .pc-orb.slot{
+    background:transparent;border:1.5px dashed rgba(255,255,255,.55);color:#fff;box-shadow:none;cursor:pointer;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .pc-orb.slot:hover{background:rgba(255,255,255,.14);border-color:#fff;}
+  .pc-orb.slot svg{width:46%;height:46%;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;}
+  .pc-orb.more{background:rgba(255,255,255,.14);font-family:var(--font-display);font-weight:600;}
+  @keyframes pcPop{ from{transform:scale(.3);opacity:0;} to{transform:scale(1);opacity:1;} }
 
-  .pub-body{display:flex;gap:20px;align-items:flex-start;padding:20px 22px 40px;}
-  .pub-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px;}
+  @container (max-width:759px){
+    .pc-orbit{--u:.82;right:calc(var(--D) * -.16);}
+    .pc-cover-main{max-width:52%;}
+  }
+  @container (max-width:519px){
+    .pc-orbit{--u:.78;right:calc(var(--D) * -.5);}
+    .pc-cover-main{max-width:calc(100% - 120px);}
+    .pc-desc{-webkit-line-clamp:2;font-size:15px;}
+  }
 
-  .pub-sort-row{
-    background:#fff;border:1px solid var(--line);border-radius:14px;
-    display:flex;gap:4px;padding:5px;margin-bottom:2px;
+  /* ---------- body ---------- */
+  .pc-body{container:pcb / inline-size;display:flex;gap:40px;align-items:flex-start;padding:0 22px 64px;}
+  .pc-col{flex:1;min-width:0;max-width:640px;}
+  .pc-rail{
+    width:250px;flex-shrink:0;position:sticky;top:20px;padding-top:24px;
+    display:flex;flex-direction:column;gap:30px;
   }
-  .pub-sort-btn{
-    font-family:var(--font-display);font-weight:600;font-size:12.5px;color:var(--ink-soft);
-    padding:8px 14px;border-radius:10px;transition:background .15s ease, color .15s ease;
-    display:flex;align-items:center;gap:5px;
-  }
-  .pub-sort-btn svg{width:13px;height:13px;}
-  .pub-sort-btn.active{background:var(--accent-soft);color:#c24020;}
+  @container pcb (max-width:800px){ .pc-rail{display:none;} }
 
-  .pub-composer{
-    background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;
-  }
-  .pub-composer textarea{
-    width:100%;border:none;resize:none;outline:none;font-family:var(--font-serif);font-size:14.5px;
-    min-height:38px;max-height:160px;line-height:1.5;
-  }
-  .pub-composer input{
-    width:100%;margin-top:8px;border:1px dashed var(--line-strong);border-radius:10px;
-    padding:8px 10px;font-family:var(--font-mono);font-size:11px;outline:none;
-  }
-  .pub-composer-row{display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
-  .pub-post-btn{
-    background:var(--ink);color:#fff;font-family:var(--font-display);font-weight:600;font-size:12.5px;
-    padding:8px 16px;border-radius:99px;transition:background .15s ease;
-  }
-  .pub-post-btn:hover:not(:disabled){background:#000;}
-  .pub-post-btn:disabled{opacity:.5;}
+  .pc-rail h2{font-family:var(--font-display);font-weight:600;font-size:13.5px;color:var(--ink);margin-bottom:10px;}
+  .pc-rail p{font-family:var(--font-serif);font-size:15px;line-height:1.55;color:var(--ink-soft);}
+  .pc-rail .since{font-family:var(--font-display);font-size:12.5px;color:var(--grey);margin-top:8px;}
+  .pc-rail h2 .cnt{font-weight:500;color:var(--grey);margin-left:4px;}
+  .pc-person{display:flex;align-items:center;gap:10px;padding:5px 0;font-family:var(--font-display);font-size:14px;font-weight:500;}
+  .pc-person span.n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+  .pc-person em{font-style:normal;font-size:11.5px;font-weight:600;color:var(--cs);background:var(--cs-soft);padding:2px 8px;border-radius:99px;flex-shrink:0;}
+  .pc-people-more{margin-top:6px;font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--cs);padding:4px 0;}
+  .pc-people-more:hover{text-decoration:underline;}
 
-  .pub-post-card{
-    background:#fff;border:1px solid var(--line);border-radius:12px;
-    display:flex;overflow:hidden;
-    opacity:0;animation:riseIn .35s var(--ease) forwards;
-    transition:border-color .15s ease;
+  /* ---------- composer ---------- */
+  .pc-compose{display:flex;gap:12px;padding:20px 0 18px;border-bottom:1px solid var(--line);}
+  .pc-compose-main{flex:1;min-width:0;}
+  .pc-compose-ph{
+    display:block;width:100%;text-align:left;min-height:40px;
+    font-family:var(--font-serif);font-size:18px;color:var(--grey);
   }
-  .pub-post-card:hover{border-color:var(--line-strong);}
-  .pub-vote-col{
-    display:flex;flex-direction:column;align-items:center;gap:2px;
-    padding:12px 8px;background:#fafafa;border-right:1px solid var(--line);flex-shrink:0;width:44px;
+  .pc-compose-ph:hover{color:var(--ink-soft);}
+  .pc-compose-panel{display:none;}
+  .pc-compose.open .pc-compose-ph{display:none;}
+  .pc-compose.open .pc-compose-panel{display:block;}
+  .pc-compose textarea{
+    display:block;width:100%;border:none;outline:none;resize:none;background:transparent;
+    font-family:var(--font-serif);font-size:18px;line-height:1.55;color:var(--ink);
+    min-height:84px;max-height:280px;padding:8px 0 4px;
   }
-  .pub-vote-btn{width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:6px;transition:background .12s ease, transform .1s ease;}
-  .pub-vote-btn:hover{background:var(--line);}
-  .pub-vote-btn:active{transform:scale(.9);}
-  .pub-vote-btn svg{width:15px;height:15px;stroke:var(--grey);}
-  .pub-vote-btn.up.active svg{stroke:var(--pub-up);fill:var(--pub-up);}
-  .pub-vote-btn.down.active svg{stroke:var(--pub-down);fill:var(--pub-down);}
-  .pub-vote-score{font-family:var(--font-display);font-weight:700;font-size:13px;color:var(--ink);}
+  .pc-compose textarea::placeholder{color:var(--grey);}
+  .pc-media-field[hidden]{display:none;}
+  .pc-media-field{margin-top:6px;}
+  .pc-media-field input{
+    width:100%;border:1px solid var(--line-strong);border-radius:12px;padding:10px 12px;outline:none;
+    font-family:var(--font-display);font-size:13.5px;color:var(--ink);background:#fff;
+  }
+  .pc-media-field input:focus{border-color:var(--cs);}
+  .pc-media-preview{margin-top:10px;border-radius:14px;overflow:hidden;background:#f2f2f0;}
+  .pc-media-preview:empty{display:none;}
+  .pc-media-preview img,.pc-media-preview video{width:100%;max-height:300px;object-fit:cover;}
+  .pc-hint{font-family:var(--font-display);font-size:13px;color:var(--grey);padding:12px 14px;}
+  .pc-compose-row{display:flex;align-items:center;gap:8px;margin-top:12px;}
+  .pc-spacer{flex:1;}
+  .pc-tool,.pc-anon{
+    display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 12px;border-radius:99px;
+    font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--ink-soft);
+    background:#f5f5f3;transition:background .15s ease, color .15s ease;
+  }
+  .pc-tool{width:36px;padding:0;justify-content:center;}
+  .pc-tool:hover,.pc-anon:hover{background:#ececea;color:var(--ink);}
+  .pc-tool.on{background:var(--cs-soft);color:var(--cs);}
+  .pc-anon[aria-pressed="true"]{background:var(--ink);color:#fff;}
+  .pc-tool svg,.pc-anon svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .pc-post-go{
+    height:36px;padding:0 22px;border-radius:99px;background:var(--cs);color:#fff;
+    font-family:var(--font-display);font-weight:700;font-size:13.5px;display:inline-flex;align-items:center;justify-content:center;min-width:76px;
+    transition:opacity .15s ease, transform .12s var(--ease);
+  }
+  .pc-post-go:disabled{opacity:.35;}
+  .pc-post-go:active:not(:disabled){transform:scale(.96);}
+  .pc-post-go .mini-spinner{width:14px;height:14px;}
 
-  .pub-post-main{flex:1;min-width:0;padding:12px 14px;}
-  .pub-post-meta{font-family:var(--font-mono);font-size:10.5px;color:var(--grey);margin-bottom:5px;}
-  .pub-post-meta b{color:var(--ink-soft);}
-  .pub-post-meta b.anon-tag{color:var(--grey);font-style:italic;}
-  .pub-post-text{font-family:var(--font-serif);font-size:14.5px;line-height:1.55;color:var(--ink);white-space:pre-wrap;}
-  .pub-post-media{margin-top:9px;border-radius:10px;overflow:hidden;border:1px solid var(--line);max-height:420px;}
-  .pub-post-media img, .pub-post-media video{width:100%;max-height:420px;object-fit:cover;}
+  .pc-join-prompt{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+    padding:18px 0;border-bottom:1px solid var(--line);
+    font-family:var(--font-serif);font-size:15.5px;color:var(--ink-soft);line-height:1.45;
+  }
+  .pc-join-prompt button{
+    height:36px;padding:0 18px;border-radius:99px;background:var(--cs);color:#fff;flex-shrink:0;
+    font-family:var(--font-display);font-weight:700;font-size:13.5px;
+  }
 
-  .pub-sidebar{
-    width:280px;flex-shrink:0;display:flex;flex-direction:column;gap:14px;
+  /* ---------- sort bar ---------- */
+  .pc-bar{
+    position:sticky;top:var(--topbar-h);z-index:15;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    margin:0 -16px;padding:12px 16px;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
   }
-  @media (max-width:820px){ .pub-sidebar{display:none;} }
-  .pub-about-card{
-    background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;
+  .pc-seg{position:relative;display:inline-flex;padding:3px;background:#f2f2f0;border-radius:99px;}
+  .pc-seg button{
+    position:relative;z-index:1;height:32px;padding:0 16px;border-radius:99px;
+    font-family:var(--font-display);font-weight:600;font-size:13.5px;color:var(--ink-soft);
+    transition:color .2s ease;
   }
-  .pub-about-card h3{font-family:var(--font-display);font-weight:600;font-size:13px;margin-bottom:8px;}
-  .pub-about-card p{font-family:var(--font-serif);font-size:13.5px;color:var(--ink-soft);line-height:1.5;}
-  .pub-about-stats{display:flex;gap:16px;margin-top:14px;}
-  .pub-about-stats div{display:flex;flex-direction:column;}
-  .pub-about-stats b{font-family:var(--font-display);font-weight:700;font-size:16px;}
-  .pub-about-stats span{font-family:var(--font-mono);font-size:9.5px;color:var(--grey);}
-  .pub-about-created{font-family:var(--font-mono);font-size:10px;color:var(--grey);margin-top:12px;padding-top:12px;border-top:1px solid var(--line);}
-  .pub-members-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .pc-seg button[aria-selected="true"]{color:var(--ink);}
+  .pc-seg-thumb{
+    position:absolute;top:3px;bottom:3px;left:0;width:0;border-radius:99px;background:#fff;
+    box-shadow:0 1px 3px rgba(20,21,26,.14);
+  }
+  .pc-seg.ready .pc-seg-thumb{transition:transform .3s var(--ease), width .3s var(--ease);}
+  .pc-new{
+    height:32px;padding:0 14px;border-radius:99px;background:var(--cs);color:#fff;
+    font-family:var(--font-display);font-weight:700;font-size:13px;
+    display:none;align-items:center;gap:6px;
+  }
+  .pc-new.show{display:inline-flex;animation:pcDrop .3s var(--ease-spring);}
+  .pc-new svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round;}
+  @keyframes pcDrop{ from{transform:translateY(-8px);opacity:0;} to{transform:none;opacity:1;} }
+  @media (max-width:899.98px){ .pc-bar{margin:0 -22px;padding:12px 22px;} }
+
+  /* ---------- feed ---------- */
+  .pc-feed{transition:opacity .2s ease;}
+  .pc-feed.is-loading{opacity:.4;pointer-events:none;}
+  .pc-post{display:flex;gap:12px;padding:20px 0 16px;border-bottom:1px solid var(--line);}
+  .pc-post-main{flex:1;min-width:0;}
+  .pc-head{display:flex;align-items:baseline;gap:8px;font-family:var(--font-display);min-height:20px;}
+  .pc-head b{font-weight:600;font-size:15px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+  .pc-head b.anon{color:var(--ink-soft);font-weight:500;}
+  .pc-head time{font-size:13px;color:var(--grey);flex-shrink:0;}
+  .pc-you{font-size:11.5px;font-weight:600;color:var(--grey);border:1px solid var(--line-strong);border-radius:99px;padding:0 7px;flex-shrink:0;}
+  .pc-text{
+    font-family:var(--font-serif);font-size:17.5px;line-height:1.6;color:var(--ink);margin-top:4px;
+    white-space:pre-wrap;overflow-wrap:anywhere;
+  }
+  .pc-text.clamp{display:-webkit-box;-webkit-line-clamp:8;-webkit-box-orient:vertical;overflow:hidden;}
+  .pc-more{margin-top:4px;font-family:var(--font-display);font-weight:600;font-size:13.5px;color:var(--cs);}
+  .pc-more:hover{text-decoration:underline;}
+  .pc-media{margin-top:12px;border-radius:16px;overflow:hidden;background:#f2f2f0;}
+  .pc-media img,.pc-media video{width:100%;max-height:480px;object-fit:cover;}
+  .pc-media audio{width:100%;}
+  .pc-media.broken{display:none;}
+
+  .pc-foot{display:flex;align-items:center;gap:8px;margin-top:12px;}
+  .pc-vote{display:inline-flex;align-items:center;border-radius:99px;background:#f5f5f3;}
+  .pc-v{
+    position:relative;width:36px;height:34px;display:flex;align-items:center;justify-content:center;
+    border-radius:99px;color:var(--grey);transition:color .15s ease, background .15s ease, transform .1s ease;
+  }
+  .pc-v:hover{color:var(--ink);background:#ececea;}
+  .pc-v:active{transform:scale(.88);}
+  .pc-v svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
+  .pc-v.up.on{color:var(--cs);}
+  .pc-v.down.on{color:#6470f0;}
+  .pc-v.on svg{stroke-width:3.2;}
+  .pc-v.up.burst::after{
+    content:'';position:absolute;inset:3px;border-radius:50%;border:2px solid var(--cs);
+    animation:pcBurst .5s var(--ease) forwards;pointer-events:none;
+  }
+  @keyframes pcBurst{ from{opacity:.9;transform:scale(.5);} to{opacity:0;transform:scale(1.8);} }
+  .pc-score{
+    min-width:24px;text-align:center;font-family:var(--font-display);font-weight:700;font-size:14px;
+    color:var(--ink);font-variant-numeric:tabular-nums;
+  }
+  .pc-score.pos{color:var(--cs);}
+  .pc-score.neg{color:#6470f0;}
+  .pc-score.bump{animation:pcBump .32s var(--ease-spring);}
+  @keyframes pcBump{ 40%{transform:scale(1.35);} }
+  .pc-cbtn{
+    display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px 0 12px;border-radius:99px;
+    background:#f5f5f3;color:var(--ink-soft);font-family:var(--font-display);font-weight:600;font-size:13.5px;
+    transition:background .15s ease, color .15s ease;
+  }
+  .pc-cbtn:hover{background:#ececea;color:var(--ink);}
+  .pc-post.open .pc-cbtn{background:var(--cs-soft);color:var(--cs);}
+  .pc-cbtn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+  .pc-del{
+    margin-left:auto;display:inline-flex;align-items:center;height:34px;padding:0 10px;border-radius:99px;
+    color:var(--grey);font-family:var(--font-display);font-weight:600;font-size:13px;transition:color .15s ease, background .15s ease;
+  }
+  .pc-del:hover{color:var(--danger);}
+  .pc-del.armed{color:#fff;background:var(--danger);}
+  .pc-del svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+
+  .pc-post.spot{
+    background:var(--cs-soft);margin:16px -16px 0;padding:20px 16px 16px;border-radius:20px;border-bottom:none;
+  }
+  .pc-post.spot .pc-text{font-size:21px;line-height:1.5;}
+  @media (max-width:520px){ .pc-post.spot .pc-text{font-size:19px;} }
+  .pc-post.spot .pc-vote,.pc-post.spot .pc-cbtn{background:#fff;}
+  .pc-spot-label{
+    display:flex;align-items:center;gap:6px;margin-bottom:8px;
+    font-family:var(--font-display);font-weight:600;font-size:12.5px;color:var(--cs);
+  }
+  .pc-spot-label svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
+  .pc-post.spot + .pc-post{border-top:none;}
+
+  /* replies open inline, under the post they belong to */
+  .pc-thread{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s var(--ease);}
+  .pc-post.open .pc-thread{grid-template-rows:1fr;}
+  .pc-thread-clip{overflow:hidden;min-height:0;}
+  .pc-thread-in{margin-top:14px;padding-left:14px;border-left:2px solid var(--cs-mid);}
+  .pc-c{display:flex;gap:10px;padding:8px 0;}
+  .pc-c-main{flex:1;min-width:0;}
+  .pc-c-head{display:flex;align-items:baseline;gap:8px;font-family:var(--font-display);}
+  .pc-c-head b{font-weight:600;font-size:14px;}
+  .pc-c-head time{font-size:12.5px;color:var(--grey);}
+  .pc-c-del{font-family:var(--font-display);font-weight:600;font-size:12.5px;color:var(--grey);margin-left:auto;}
+  .pc-c-del:hover{color:var(--danger);}
+  .pc-c-del.armed{color:var(--danger);}
+  .pc-c p{font-family:var(--font-serif);font-size:16px;line-height:1.5;color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere;margin-top:1px;}
+  .pc-c audio{width:100%;height:34px;margin-top:6px;}
+  .pc-c-empty,.pc-c-loading{font-family:var(--font-serif);font-size:15px;color:var(--grey);padding:6px 0;}
+  .pc-cform{display:flex;align-items:center;gap:8px;margin:8px 0 4px;}
+  .pc-cinput{
+    flex:1;min-width:0;height:40px;border-radius:99px;border:1px solid transparent;background:#f5f5f3;padding:0 16px;outline:none;
+    font-family:var(--font-serif);font-size:16px;color:var(--ink);
+  }
+  .pc-cinput:focus{background:#fff;border-color:var(--cs);}
+  .pc-csend{
+    height:40px;padding:0 18px;border-radius:99px;background:var(--cs);color:#fff;
+    font-family:var(--font-display);font-weight:700;font-size:13.5px;transition:opacity .15s ease;
+  }
+  .pc-csend:disabled{opacity:.35;}
+  .pc-cjoin{font-family:var(--font-display);font-weight:600;font-size:13.5px;color:var(--cs);padding:8px 0;}
+  .pc-cjoin:hover{text-decoration:underline;}
+
+  .pc-empty{padding:64px 12px;text-align:center;}
+  .pc-empty h3{font-family:var(--font-display);font-weight:700;font-size:20px;letter-spacing:-.02em;}
+  .pc-empty p{font-family:var(--font-serif);font-size:16px;line-height:1.5;color:var(--ink-soft);max-width:34ch;margin:8px auto 18px;}
+  .pc-empty button{height:40px;padding:0 22px;border-radius:99px;background:var(--cs);color:#fff;font-family:var(--font-display);font-weight:700;font-size:14px;}
+
+  .pc-sk{display:flex;gap:12px;padding:20px 0;border-bottom:1px solid var(--line);}
+  .pc-sk .a,.pc-sk .l{background:linear-gradient(90deg,#f1f1ef 0%,#f8f8f6 50%,#f1f1ef 100%);background-size:200% 100%;animation:pcShimmer 1.3s linear infinite;}
+  .pc-sk .a{width:40px;height:40px;border-radius:50%;flex-shrink:0;}
+  .pc-sk .l{height:13px;border-radius:7px;margin-top:8px;}
+  @keyframes pcShimmer{ to{background-position:-200% 0;} }
 
   .locked-notice{
     display:flex;align-items:center;gap:10px;background:var(--accent-soft);color:#c24020;
@@ -1252,7 +1495,7 @@
   let circle = null;
   let myRole = null;
   let members = [];
-  let currentSort = 'new';
+  let currentSort = 'hot';
 
   async function loadCircle(){
     const { data: c, error } = await supabaseClient
@@ -1341,7 +1584,7 @@
     }
 
     if (sort === 'hot') {
-      list = list.map(p => ({ ...p, _hot: (p.score||0) / Math.pow((Date.now()-new Date(p.created_at))/3600000 + 2, 1.3) }))
+      list = list.map(p => ({ ...p, _hot: ((p.score||0) + 0.6*(p.comment_count||0) + 1) / Math.pow((Date.now()-new Date(p.created_at))/3600000 + 2, 1.3) }))
                  .sort((a,b) => b._hot - a._hot);
     }
     return list;
@@ -2454,254 +2697,745 @@
   }
 
   // =========================================================
-  // PUBLIC MODE — subreddit style
+  // PUBLIC MODE
+  //
+  // Cover: members orbit the circle (founders on the inside rings).
+  // Feed: a continuous thread list with inline replies, not boxed cards.
+  // Colour: every circle gets its own hue from its id.
+  //
+  // Uses only existing tables/RPCs: circles, circle_members, profiles,
+  // posts, post_votes (vote_post), post_comments, voice_comments.
   // =========================================================
-  function renderPubPostCard(post, myVote){
-    const isAnonPost = post.is_anonymous;
-    const name = isAnonPost ? 'Anonymous' : (post.profiles?.username || 'someone');
-    const mediaHtml = post.media_url
-      ? `<div class="pub-post-media">${post.media_type === 'video'
-          ? `<video src="${escapeHtml(post.media_url)}" controls></video>`
-          : `<img src="${escapeHtml(post.media_url)}" alt="">`}</div>`
-      : '';
-    return `
-      <div class="pub-post-card">
-        <div class="pub-vote-col">
-          <button class="pub-vote-btn up ${myVote === 1 ? 'active' : ''}" data-post-id="${post.id}" data-value="1">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 4l8 9h-5v7H9v-7H4z"/></svg>
-          </button>
-          <span class="pub-vote-score">${post.score || 0}</span>
-          <button class="pub-vote-btn down ${myVote === -1 ? 'active' : ''}" data-post-id="${post.id}" data-value="-1">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20l-8-9h5V4h6v7h5z"/></svg>
-          </button>
-        </div>
-        <div class="pub-post-main">
-          <div class="pub-post-meta"><b class="${isAnonPost ? 'anon-tag' : ''}">${escapeHtml(name)}</b> · ${timeAgo(post.created_at)}</div>
-          ${post.caption ? `<div class="pub-post-text">${escapeHtml(post.caption)}</div>` : ''}
-          ${mediaHtml}
-        </div>
-      </div>
-    `;
-  }
+  const PC = { posts: [], channel: null, pending: 0, wired: false };
 
-  function wirePubVotes(){
-    document.querySelectorAll('.pub-vote-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (!requireAuth()) return;
-        const postId = btn.dataset.postId;
-        const value = Number(btn.dataset.value);
-        const card = btn.closest('.pub-post-card');
-        const wasActive = btn.classList.contains('active');
-        const newValue = wasActive ? 0 : value;
-        try {
-          const { error } = await supabaseClient.rpc('vote_post', { p_post_id: postId, p_value: newValue });
-          if (error) throw error;
-          card.querySelectorAll('.pub-vote-btn').forEach(b => b.classList.remove('active'));
-          if (newValue !== 0) btn.classList.add('active');
-          const { data } = await supabaseClient.from('posts').select('score').eq('id', postId).maybeSingle();
-          card.querySelector('.pub-vote-score').textContent = data?.score ?? 0;
-        } catch (err) {
-          showToast(err.message || 'Could not vote', 'error');
+  const PC_ICON = {
+    up:      '<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>',
+    down:    '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
+    comment: '<svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.6 7.1L3 21l1.9-5.4A8 8 0 1121 12z"/></svg>',
+    trash:   '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3"/></svg>',
+    mask:    '<svg viewBox="0 0 32 32"><path fill="currentColor" stroke="none" d="M16 3C8.8 3 2.9 8.3 1.9 15.2c-.2 1.6 1 3 2.6 3h1.2l-1.5 2.8a1 1 0 001.8.9l1.9-3.7h16.2l1.9 3.7a1 1 0 001.8-.9L26.3 18.2h1.2c1.6 0 2.8-1.4 2.6-3C29.1 8.3 23.2 3 16 3z"/><circle cx="10.5" cy="15.5" r="2.8" fill="#14151a" stroke="none"/><circle cx="21.5" cy="15.5" r="2.8" fill="#14151a" stroke="none"/></svg>',
+    globe:   '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.7 3.9 5.7 3.9 9s-1.3 6.3-3.9 9c-2.6-2.7-3.9-5.7-3.9-9S9.4 5.7 12 3z"/></svg>',
+    share:   '<svg viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg>',
+    check:   '<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>',
+    plus:    '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+    image:   '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-9 9"/></svg>',
+    flame:   '<svg viewBox="0 0 24 24"><path d="M12 3c1 4 5 5.5 5 10a5 5 0 01-10 0c0-2 1-3 2-4 .2 1.5 1 2 1.5 2C10 8 11 5.5 12 3z"/></svg>',
+    orbit:   '<svg viewBox="0 0 24 24"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>',
+    arrowUp: '<svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>'
+  };
+
+  // ---- small utilities --------------------------------------------------
+  // escapeHtml() above doesn't escape quotes, so it isn't safe inside an
+  // attribute like src="..." — these are.
+  function pcEsc(s){
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  // http(s) only. Anything else (javascript:, data:, garbage) returns ''.
+  function pcSafeUrl(u){
+    try {
+      const x = new URL(String(u || '').trim(), window.location.href);
+      return (x.protocol === 'https:' || x.protocol === 'http:') ? x.href : '';
+    } catch(_) { return ''; }
+  }
+  function pcHash(s){
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function pcRand(seed){
+    let a = seed | 0;
+    return function(){
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function pcAgo(iso){
+    const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 60) return 'now';
+    if (s < 3600) return `${Math.floor(s / 60)}m`;
+    if (s < 86400) return `${Math.floor(s / 3600)}h`;
+    if (s < 604800) return `${Math.floor(s / 86400)}d`;
+    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+  function pcAvatar(p, size, cls){
+    const name = p?.username || '?';
+    const style = `--s:${size}px`;
+    const url = p?.avatar_url ? pcSafeUrl(p.avatar_url) : '';
+    if (url) return `<span class="pc-av ${cls || ''}" style="${style}"><img src="${pcEsc(url)}" alt="" loading="lazy"></span>`;
+    const h = pcHash(name) % 360;
+    return `<span class="pc-av ${cls || ''}" style="${style};background:hsl(${h} 52% 46%)">${pcEsc(initials(name))}</span>`;
+  }
+  function pcAnonAvatar(size, cls){
+    return `<span class="pc-av anon ${cls || ''}" style="--s:${size}px">${PC_ICON.mask}</span>`;
+  }
+  function pcMe(){ return currentUser ? members.find(m => m.id === currentUser.id) : null; }
+
+  // ---- cover: the orbit ---------------------------------------------------
+  function pcOrbitHtml(isMember){
+    const rand = pcRand(pcHash(String(circle.id)));
+    // [radius as fraction of the orbit box, avatar size, capacity]
+    const rings = [ { r: .17, s: 42, cap: 3 }, { r: .31, s: 36, cap: 5 }, { r: .44, s: 30, cap: 7 } ];
+    const total = rings.reduce((n, r) => n + r.cap, 0);
+    const wantsSlot = !isMember;
+    const overflow = members.length > total;
+    const visible = members.slice(0, wantsSlot || overflow ? total - 1 : total);
+    const specials = wantsSlot ? 'slot' : (overflow ? 'more' : null);
+    const items = visible.map(m => ({ m }));
+    if (specials) items.push({ special: specials });
+
+    let html = `
+      <div class="pc-ring r1"></div><div class="pc-ring r2"></div><div class="pc-ring r3"></div><div class="pc-ring r4"></div>
+      <div class="pc-core">${PC_ICON.orbit}</div>`;
+    let idx = 0;
+    rings.forEach(ring => {
+      const chunk = items.slice(idx, idx + ring.cap);
+      if (!chunk.length) return;
+      const base = rand() * Math.PI * 2;
+      chunk.forEach((it, i) => {
+        const ang = base + (i * Math.PI * 2 / chunk.length) + (rand() - .5) * .3;
+        const left = 50 + ring.r * 100 * Math.cos(ang);
+        const top  = 50 + ring.r * 100 * Math.sin(ang);
+        const pos = `left:${left.toFixed(2)}%;top:${top.toFixed(2)}%;--s:${ring.s};--d:${(.15 + (idx + i) * .07).toFixed(2)}s`;
+        if (it.special === 'slot'){
+          html += `<button type="button" class="pc-av pc-orb slot" style="${pos}" data-act="join" aria-label="Join this circle">${PC_ICON.plus}</button>`;
+        } else if (it.special === 'more'){
+          html += `<span class="pc-av pc-orb more" style="${pos}">+${members.length - visible.length}</span>`;
+        } else {
+          const isMe = currentUser && it.m.id === currentUser.id;
+          const p = it.m;
+          const h = pcHash(p.username || '?') % 360;
+          const url = p.avatar_url ? pcSafeUrl(p.avatar_url) : '';
+          html += `<span class="pc-av pc-orb ${isMe ? 'me' : ''}" style="${pos};${url ? '' : `background:hsl(${h} 52% 46%)`}" title="${pcEsc(p.username || '')}">${url ? `<img src="${pcEsc(url)}" alt="">` : pcEsc(initials(p.username))}</span>`;
         }
       });
+      idx += chunk.length;
+    });
+    return html;
+  }
+
+  // ---- feed rows ----------------------------------------------------------
+  function pcPostHtml(post, myVote, opts){
+    opts = opts || {};
+    const anon = !!post.is_anonymous;
+    const name = anon ? 'Anonymous' : (post.profiles?.username || 'someone');
+    const mine = !!(currentUser && post.user_id === currentUser.id);
+    const caption = post.caption || '';
+    const long = caption.length > 420 || caption.split('\n').length > 7;
+    const score = post.score || 0;
+    const commentCount = post.comment_count || 0;
+    const mediaUrl = post.media_url ? pcSafeUrl(post.media_url) : '';
+
+    let media = '';
+    if (mediaUrl){
+      const inner = post.media_type === 'video'
+        ? `<video src="${pcEsc(mediaUrl)}" controls preload="metadata" playsinline></video>`
+        : post.media_type === 'audio'
+          ? `<audio src="${pcEsc(mediaUrl)}" controls preload="none"></audio>`
+          : `<img src="${pcEsc(mediaUrl)}" alt="" loading="lazy" onerror="this.closest('.pc-media').classList.add('broken')">`;
+      media = `<div class="pc-media">${inner}</div>`;
+    }
+
+    return `
+      <article class="pc-post ${opts.spot ? 'spot' : ''}" data-post-id="${pcEsc(post.id)}" data-my="${myVote || 0}">
+        ${anon ? pcAnonAvatar(40) : pcAvatar(post.profiles, 40)}
+        <div class="pc-post-main">
+          ${opts.spot ? `<div class="pc-spot-label">${PC_ICON.flame}Leading right now</div>` : ''}
+          <div class="pc-head">
+            <b class="${anon ? 'anon' : ''}">${pcEsc(name)}</b>
+            ${anon && mine ? '<span class="pc-you">you</span>' : ''}
+            <time datetime="${pcEsc(post.created_at)}" title="${pcEsc(new Date(post.created_at).toLocaleString())}">${pcAgo(post.created_at)}</time>
+          </div>
+          ${caption ? `<div class="pc-text ${long ? 'clamp' : ''}">${pcEsc(caption)}</div>` : ''}
+          ${long ? `<button type="button" class="pc-more" data-act="more">Show more</button>` : ''}
+          ${media}
+          <div class="pc-foot">
+            <div class="pc-vote" role="group" aria-label="Vote">
+              <button type="button" class="pc-v up ${myVote === 1 ? 'on' : ''}" data-act="vote" data-value="1" aria-pressed="${myVote === 1}" aria-label="Upvote">${PC_ICON.up}</button>
+              <span class="pc-score ${score > 0 ? 'pos' : score < 0 ? 'neg' : ''}" data-score="${score}" aria-live="polite">${score}</span>
+              <button type="button" class="pc-v down ${myVote === -1 ? 'on' : ''}" data-act="vote" data-value="-1" aria-pressed="${myVote === -1}" aria-label="Downvote">${PC_ICON.down}</button>
+            </div>
+            <button type="button" class="pc-cbtn" data-act="thread" aria-expanded="false" aria-label="Replies">
+              ${PC_ICON.comment}<span class="pc-ccount">${commentCount > 0 ? commentCount : 'Reply'}</span>
+            </button>
+            ${mine ? `<button type="button" class="pc-del" data-act="del-post" aria-label="Delete post">${PC_ICON.trash}</button>` : ''}
+          </div>
+          <div class="pc-thread"><div class="pc-thread-clip"><div class="pc-thread-in">
+            <div class="pc-clist"></div>
+            ${myRole !== null ? `
+              <div class="pc-cform">
+                <input class="pc-cinput" type="text" maxlength="500" placeholder="Write a reply" aria-label="Write a reply">
+                <button type="button" class="pc-csend" data-act="send" disabled>Reply</button>
+              </div>` : `<button type="button" class="pc-cjoin" data-act="join">Join the circle to reply</button>`}
+          </div></div></div>
+        </div>
+      </article>`;
+  }
+
+  function pcSkeleton(){
+    const row = `<div class="pc-sk"><div class="a"></div><div style="flex:1"><div class="l" style="width:30%"></div><div class="l" style="width:92%"></div><div class="l" style="width:64%"></div></div></div>`;
+    return row + row + row;
+  }
+
+  function pcSetCount(article, n){
+    const el = article.querySelector('.pc-ccount');
+    if (el) el.textContent = n > 0 ? n : 'Reply';
+  }
+
+  // ---- voting (optimistic, reverts on failure) --------------------------
+  function pcApplyVote(article, myVote, score, burst){
+    article.dataset.my = myVote;
+    const up = article.querySelector('.pc-v.up'), down = article.querySelector('.pc-v.down');
+    up.classList.toggle('on', myVote === 1);   up.setAttribute('aria-pressed', myVote === 1);
+    down.classList.toggle('on', myVote === -1); down.setAttribute('aria-pressed', myVote === -1);
+    const el = article.querySelector('.pc-score');
+    const changed = Number(el.dataset.score) !== score;
+    el.dataset.score = score;
+    el.textContent = score;
+    el.classList.toggle('pos', score > 0);
+    el.classList.toggle('neg', score < 0);
+    if (changed){
+      el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+    }
+    if (burst){
+      up.classList.remove('burst'); void up.offsetWidth; up.classList.add('burst');
+      setTimeout(() => up.classList.remove('burst'), 520);
+    }
+  }
+
+  async function pcVote(article, value){
+    if (!requireAuth()) return;
+    if (article.dataset.busy === '1') return;
+    const id = article.dataset.postId;
+    const prev = Number(article.dataset.my || 0);
+    const next = prev === value ? 0 : value;
+    const prevScore = Number(article.querySelector('.pc-score').dataset.score);
+    pcApplyVote(article, next, prevScore + (next - prev), next === 1);
+    article.dataset.busy = '1';
+    try {
+      const { error } = await supabaseClient.rpc('vote_post', { p_post_id: id, p_value: next });
+      if (error) throw error;
+      const { data } = await supabaseClient.from('posts').select('score').eq('id', id).maybeSingle();
+      if (data && typeof data.score === 'number') pcApplyVote(article, next, data.score, false);
+    } catch (err) {
+      pcApplyVote(article, prev, prevScore, false);
+      showToast(err.message || 'Could not vote', 'error');
+    } finally {
+      delete article.dataset.busy;
+    }
+  }
+
+  // ---- replies ------------------------------------------------------------
+  function pcCommentHtml(c){
+    const p = c.profile;
+    const name = p?.username || 'someone';
+    const mine = !!(currentUser && c.user_id === currentUser.id);
+    const body = c.kind === 'voice'
+      ? `<audio controls preload="none" src="${pcEsc(pcSafeUrl(c.audio_url))}"></audio>`
+      : `<p>${pcEsc(c.content)}</p>`;
+    return `
+      <div class="pc-c" data-cid="${pcEsc(c.id)}" data-kind="${c.kind}">
+        ${pcAvatar(p, 28)}
+        <div class="pc-c-main">
+          <div class="pc-c-head">
+            <b>${pcEsc(name)}</b><time>${pcAgo(c.created_at)}</time>
+            ${mine ? `<button type="button" class="pc-c-del" data-act="del-comment">Delete</button>` : ''}
+          </div>
+          ${body}
+        </div>
+      </div>`;
+  }
+
+  async function pcLoadThread(article){
+    const id = article.dataset.postId;
+    const list = article.querySelector('.pc-clist');
+    const comments = await loadComments(id);
+    list.innerHTML = comments.length
+      ? comments.map(pcCommentHtml).join('')
+      : `<div class="pc-c-empty">No replies yet.</div>`;
+    article.querySelector('.pc-thread').dataset.loaded = '1';
+    pcSetCount(article, comments.length);
+  }
+
+  async function pcToggleThread(article){
+    const open = article.classList.toggle('open');
+    article.querySelector('.pc-cbtn').setAttribute('aria-expanded', open);
+    const thread = article.querySelector('.pc-thread');
+    if (open && !thread.dataset.loaded){
+      article.querySelector('.pc-clist').innerHTML = `<div class="pc-c-loading">Loading replies…</div>`;
+      try { await pcLoadThread(article); }
+      catch (err) {
+        article.querySelector('.pc-clist').innerHTML = `<div class="pc-c-empty">Couldn't load replies. Close and try again.</div>`;
+      }
+    }
+    if (open && window.matchMedia('(min-width:900px)').matches){
+      const input = article.querySelector('.pc-cinput');
+      if (input) setTimeout(() => input.focus({ preventScroll: true }), 320);
+    }
+  }
+
+  async function pcSendComment(article){
+    if (!requireAuth()) return;
+    const input = article.querySelector('.pc-cinput');
+    const btn = article.querySelector('.pc-csend');
+    if (!input || !btn || btn.disabled) return;
+    const text = input.value.trim();
+    if (!text) return;
+    btn.disabled = true;
+    try {
+      const { error } = await supabaseClient.from('post_comments').insert({ post_id: article.dataset.postId, user_id: currentUser.id, content: text });
+      if (error) throw error;
+      input.value = '';
+      await pcLoadThread(article);
+    } catch (err) {
+      showToast(err.message || 'Could not post reply', 'error');
+    } finally {
+      btn.disabled = !input.value.trim();
+    }
+  }
+
+  // First click arms the button ("Delete?"), second click within 3s confirms.
+  function pcArm(btn, armedLabel, onConfirm){
+    if (btn.dataset.armed === '1'){
+      clearTimeout(btn._t);
+      btn.dataset.armed = '';
+      return onConfirm();
+    }
+    const original = btn.innerHTML;
+    btn.dataset.armed = '1';
+    btn.classList.add('armed');
+    btn.textContent = armedLabel;
+    btn._t = setTimeout(() => {
+      btn.dataset.armed = '';
+      btn.classList.remove('armed');
+      btn.innerHTML = original;
+    }, 3000);
+  }
+
+  function pcDeletePost(article, btn){
+    if (!currentUser) return;
+    pcArm(btn, 'Delete?', async () => {
+      btn.disabled = true;
+      try {
+        const { error } = await supabaseClient.from('posts').delete().eq('id', article.dataset.postId).eq('user_id', currentUser.id);
+        if (error) throw error;
+        article.remove();
+        showToast('Post deleted');
+        if (!document.querySelector('#pcFeed .pc-post')) refreshPubFeed();
+      } catch (err) {
+        btn.disabled = false;
+        showToast(err.message || 'Could not delete post', 'error');
+      }
     });
   }
 
+  function pcDeleteComment(article, btn){
+    if (!currentUser) return;
+    const row = btn.closest('.pc-c');
+    pcArm(btn, 'Delete?', async () => {
+      btn.disabled = true;
+      try {
+        const table = row.dataset.kind === 'voice' ? 'voice_comments' : 'post_comments';
+        const { error } = await supabaseClient.from(table).delete().eq('id', row.dataset.cid).eq('user_id', currentUser.id);
+        if (error) throw error;
+        row.remove();
+        const list = article.querySelector('.pc-clist');
+        const n = list.querySelectorAll('.pc-c').length;
+        if (!n) list.innerHTML = `<div class="pc-c-empty">No replies yet.</div>`;
+        pcSetCount(article, n);
+      } catch (err) {
+        btn.disabled = false;
+        showToast(err.message || 'Could not delete reply', 'error');
+      }
+    });
+  }
+
+  // ---- joining / sharing ----------------------------------------------------
+  async function pcJoin(){
+    if (!requireAuth()) return;
+    if (myRole !== null) return;
+    const btn = document.getElementById('pcJoinBtn');
+    if (btn){ btn.disabled = true; btn.innerHTML = `<span class="pc-spin"></span>`; }
+    try {
+      const { error } = await supabaseClient.from('circle_members').insert({ circle_id: circleId, user_id: currentUser.id, role: 'member' });
+      if (error) throw error;
+      showToast('Joined the circle');
+      myRole = 'member';
+      members = await loadMembers();
+      await renderPublicMode();
+    } catch (err) {
+      showToast(err.message || 'Could not join', 'error');
+      if (btn){ btn.disabled = false; btn.textContent = 'Join circle'; }
+    }
+  }
+
+  async function pcShare(){
+    const url = `${window.location.origin}/circle?public&ID=${encodeURIComponent(circleId)}`;
+    try {
+      if (navigator.share){
+        await navigator.share({ title: circle.name, text: `Join ${circle.name} on Waater`, url });
+        return;
+      }
+    } catch (e) { if (e && e.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(url); showToast('Circle link copied'); }
+    catch (_) { showToast(url); }
+  }
+
+  // ---- sort bar ---------------------------------------------------------------
+  function pcPositionThumb(){
+    const seg = document.getElementById('pcSeg');
+    if (!seg) return;
+    const active = seg.querySelector('[aria-selected="true"]');
+    const thumb = seg.querySelector('.pc-seg-thumb');
+    if (!active || !thumb) return;
+    thumb.style.width = active.offsetWidth + 'px';
+    thumb.style.transform = `translateX(${active.offsetLeft}px)`;
+  }
+
+  function pcSetSort(sort){
+    currentSort = sort;
+    document.querySelectorAll('#pcSeg button').forEach(b => b.setAttribute('aria-selected', b.dataset.sort === sort));
+    pcPositionThumb();
+    refreshPubFeed();
+  }
+
+  function pcShowNewPill(){
+    const pill = document.getElementById('pcNew');
+    if (!pill) return;
+    pill.querySelector('span').textContent = PC.pending === 1 ? '1 new post' : `${PC.pending} new posts`;
+    pill.classList.add('show');
+  }
+
+  function pcSubscribe(){
+    if (PC.channel) return;
+    PC.channel = supabaseClient
+      .channel(`pub-posts-${circleId}`)
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'posts', filter: `circle_id=eq.${circleId}` },
+        (payload) => {
+          if (!payload.new || payload.new.user_id === currentUser?.id) return;
+          PC.pending += 1;
+          pcShowNewPill();
+        })
+      .subscribe();
+  }
+  window.addEventListener('beforeunload', () => { if (PC.channel) supabaseClient.removeChannel(PC.channel); });
+
+  // ---- composer -------------------------------------------------------------------
+  function pcRenderPreview(raw){
+    const box = document.getElementById('pcMediaPreview');
+    if (!box) return;
+    box.innerHTML = '';
+    const safe = pcSafeUrl(raw);
+    if (!raw.trim() || !safe) return;
+    const isVideo = /\.(mp4|mov|webm)(\?|$)/i.test(safe);
+    const el = document.createElement(isVideo ? 'video' : 'img');
+    el.src = safe;
+    if (isVideo){ el.controls = true; el.muted = true; el.preload = 'metadata'; el.playsInline = true; }
+    else { el.alt = ''; }
+    el.addEventListener('error', () => {
+      box.innerHTML = `<p class="pc-hint">Can't preview this link. Use a direct link to an image or video.</p>`;
+    });
+    box.appendChild(el);
+  }
+
+  function pcWireComposer(){
+    const wrap = document.getElementById('pcCompose');
+    if (!wrap) return;
+    const ph = document.getElementById('pcComposePh');
+    const text = document.getElementById('pcText');
+    const mediaBtn = document.getElementById('pcMediaBtn');
+    const mediaField = document.getElementById('pcMediaField');
+    const mediaUrl = document.getElementById('pcMediaUrl');
+    const anonBtn = document.getElementById('pcAnon');
+    const postBtn = document.getElementById('pcPost');
+    const avSlot = document.getElementById('pcComposeAv');
+    const me = pcMe();
+    let isAnon = false;
+
+    const open = () => { wrap.classList.add('open'); text.focus(); };
+    ph.addEventListener('click', open);
+    window.pcOpenComposer = open;
+
+    const refresh = () => {
+      const hasUrl = !!mediaUrl.value.trim();
+      postBtn.disabled = !text.value.trim() && !hasUrl;
+    };
+    text.addEventListener('input', () => {
+      text.style.height = 'auto';
+      text.style.height = Math.min(text.scrollHeight, 280) + 'px';
+      refresh();
+    });
+
+    mediaBtn.addEventListener('click', () => {
+      const showing = mediaField.hidden;
+      mediaField.hidden = !showing;
+      mediaBtn.classList.toggle('on', showing);
+      mediaBtn.setAttribute('aria-pressed', showing);
+      if (showing) mediaUrl.focus();
+    });
+    mediaUrl.addEventListener('input', () => { pcRenderPreview(mediaUrl.value); refresh(); });
+
+    anonBtn.addEventListener('click', () => {
+      isAnon = !isAnon;
+      anonBtn.setAttribute('aria-pressed', isAnon);
+      anonBtn.querySelector('span').textContent = isAnon ? 'Posting anonymously' : 'Anonymous';
+      avSlot.innerHTML = isAnon ? pcAnonAvatar(40) : pcAvatar(me, 40);
+    });
+
+    let posting = false;
+    postBtn.addEventListener('click', async () => {
+      if (posting) return;
+      const content = text.value.trim();
+      const rawUrl = mediaUrl.value.trim();
+      const url = rawUrl ? pcSafeUrl(rawUrl) : '';
+      if (rawUrl && !url){ showToast('Media link must start with http:// or https://', 'error'); return; }
+      if (!content && !url) return;
+      posting = true;
+      postBtn.disabled = true;
+      postBtn.innerHTML = `<span class="mini-spinner"></span>`;
+      try {
+        const { error } = await supabaseClient.from('posts').insert({
+          circle_id: circleId,
+          user_id: currentUser.id,
+          caption: content || null,
+          media_url: url || null,
+          media_type: url ? (/\.(mp4|mov|webm)(\?|$)/i.test(url) ? 'video' : 'image') : null,
+          is_anonymous: isAnon
+        });
+        if (error) throw error;
+        text.value = ''; mediaUrl.value = '';
+        text.style.height = 'auto';
+        pcRenderPreview('');
+        mediaField.hidden = true; mediaBtn.classList.remove('on');
+        if (isAnon){ anonBtn.click(); }
+        wrap.classList.remove('open');
+        showToast('Posted');
+        pcSetSort('new');
+      } catch (err) {
+        showToast(err.message || 'Could not post', 'error');
+      } finally {
+        posting = false;
+        postBtn.textContent = 'Post';
+        refresh();
+      }
+    });
+  }
+
+  // ---- shell ------------------------------------------------------------------------
   async function renderPublicMode(){
     const body = document.getElementById('pageBody');
     const isMember = myRole !== null;
+    const H = pcHash(String(circle.id)) % 360;
+    const L = (H >= 40 && H <= 190) ? 31 : 46;   // keeps on-white text readable across hues
+    const me = pcMe();
+
+    const desc = circle.description
+      ? escapeHtml(circle.description)
+      : 'Anyone can read and vote. Join to post and reply.';
+    const since = new Date(circle.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+    const rail = members.slice(0, 8);
+    const railRest = members.slice(8);
+    const personRow = m => `
+      <div class="pc-person">${pcAvatar(m, 30)}<span class="n">${pcEsc(m.username || 'someone')}</span>${
+        m.role && m.role !== 'member' ? `<em>${pcEsc(m.role.charAt(0).toUpperCase() + m.role.slice(1))}</em>` : ''}</div>`;
 
     body.innerHTML = `
-      <div class="pub-wrap">
-        <div class="pub-banner">
-          <div class="pub-banner-inner">
-            <div class="pub-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>
-            </div>
-            <div>
-              <h1>${escapeHtml(circle.name)}</h1>
-              <div class="pub-tag">public circle · anyone can see and join</div>
+      <div class="pc" style="--h:${H};--l:${L}%">
+        <section class="pc-cover" aria-label="About this circle">
+          <div class="pc-orbit">${pcOrbitHtml(isMember)}</div>
+          <div class="pc-tag">${PC_ICON.globe}Public circle</div>
+          <div class="pc-cover-main">
+            <h1 class="pc-name">${escapeHtml(circle.name)}</h1>
+            <p class="pc-desc">${desc}</p>
+            <div class="pc-cover-row">
+              <button type="button" class="pc-join ${isMember ? 'joined' : ''}" id="pcJoinBtn" ${isMember ? 'disabled' : ''}>
+                ${isMember ? `${PC_ICON.check}Joined` : 'Join circle'}
+              </button>
+              <button type="button" class="pc-icon-btn" id="pcShare" aria-label="Share this circle">${PC_ICON.share}</button>
+              <div class="pc-stats">
+                <span><b>${members.length}</b> ${members.length === 1 ? 'member' : 'members'}</span>
+                <span class="pc-pulse" id="pcPulse"></span>
+              </div>
             </div>
           </div>
-          <div class="pub-banner-actions">
-            <button class="pub-join-btn ${isMember ? 'joined' : ''}" id="pubJoinBtn">
-              ${isMember ? 'Joined ✓' : 'Join circle'}
-            </button>
-            <span class="pub-stat"><b>${members.length}</b> ${members.length === 1 ? 'member' : 'members'}</span>
-          </div>
-        </div>
+        </section>
 
-        <div class="pub-body">
-          <div class="pub-main">
-            ${!isMember ? `
-              <div class="locked-notice">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
-                Join to post here — you can still browse and vote.
+        <div class="pc-body" id="pcBody">
+          <div class="pc-col">
+            ${isMember ? `
+              <div class="pc-compose" id="pcCompose">
+                <span id="pcComposeAv">${pcAvatar(me, 40)}</span>
+                <div class="pc-compose-main">
+                  <button type="button" class="pc-compose-ph" id="pcComposePh">Start a thread</button>
+                  <div class="pc-compose-panel">
+                    <textarea id="pcText" rows="3" maxlength="1500" placeholder="What's on your mind?" aria-label="New thread"></textarea>
+                    <div class="pc-media-field" id="pcMediaField" hidden>
+                      <input type="url" id="pcMediaUrl" placeholder="Paste a link to an image or video" aria-label="Media link">
+                      <div class="pc-media-preview" id="pcMediaPreview"></div>
+                    </div>
+                    <div class="pc-compose-row">
+                      <button type="button" class="pc-tool" id="pcMediaBtn" aria-label="Add image or video" aria-pressed="false">${PC_ICON.image}</button>
+                      <button type="button" class="pc-anon" id="pcAnon" aria-pressed="false">${PC_ICON.mask}<span>Anonymous</span></button>
+                      <span class="pc-spacer"></span>
+                      <button type="button" class="pc-post-go" id="pcPost" disabled>Post</button>
+                    </div>
+                  </div>
+                </div>
               </div>
             ` : `
-              <div class="pub-composer">
-                <textarea id="pubComposerText" placeholder="Share something with this circle..." rows="1"></textarea>
-                <input type="text" id="pubMediaUrl" placeholder="Optional image/video URL">
-                <div class="pub-composer-row">
-
-                  <button class="pub-post-btn" id="pubAnonToggle" style="background:#1a1b1f;color:#fff;">Anon</button>
-
-                <button class="pub-post-btn" id="pubPostBtn" disabled>Post</button>
-
-
-                </div>
+              <div class="pc-join-prompt">
+                <span>Join to start threads and reply. Anyone can vote.</span>
+                <button type="button" data-act="join">Join circle</button>
               </div>
             `}
 
-            <div class="pub-sort-row">
-              <button class="pub-sort-btn ${currentSort==='hot'?'active':''}" data-sort="hot">🔥 Hot</button>
-              <button class="pub-sort-btn ${currentSort==='new'?'active':''}" data-sort="new">✨ New</button>
-              <button class="pub-sort-btn ${currentSort==='top'?'active':''}" data-sort="top">🏆 Top</button>
+            <div class="pc-bar" id="pcBar">
+              <div class="pc-seg" id="pcSeg" role="tablist" aria-label="Sort posts">
+                <span class="pc-seg-thumb"></span>
+                <button type="button" role="tab" data-sort="hot" aria-selected="${currentSort === 'hot'}">Trending</button>
+                <button type="button" role="tab" data-sort="new" aria-selected="${currentSort === 'new'}">Latest</button>
+                <button type="button" role="tab" data-sort="top" aria-selected="${currentSort === 'top'}">Top</button>
+              </div>
+              <button type="button" class="pc-new" id="pcNew">${PC_ICON.arrowUp}<span></span></button>
             </div>
 
-            <div id="pubFeed"><div class="page-loading">Loading posts…</div></div>
+            <div class="pc-feed" id="pcFeed" aria-live="polite">${pcSkeleton()}</div>
           </div>
 
-          <div class="pub-sidebar">
-            <div class="pub-about-card">
-              <h3>About this circle</h3>
-              <p>${circle.description ? escapeHtml(circle.description) : 'A public space anyone can browse, vote in, and join.'}</p>
-              <div class="pub-about-stats">
-                <div><b>${members.length}</b><span>MEMBERS</span></div>
-              </div>
-              <div class="pub-about-created">Created ${new Date(circle.created_at).toLocaleDateString()}</div>
-            </div>
-            <div class="pub-about-card">
-              <h3>Members</h3>
-              <div class="pub-members-list">
-                ${members.slice(0,12).map(m => `
-                  <div class="mini-avatar" style="width:28px;height:28px;font-size:10px;" title="${escapeHtml(m.username||'')}">
-                    ${m.avatar_url ? `<img src="${escapeHtml(m.avatar_url)}" alt="">` : initials(m.username||'?')}
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          </div>
+          <aside class="pc-rail">
+            <section>
+              <h2>About</h2>
+              <p>${desc}</p>
+              <div class="since">Started ${since}</div>
+            </section>
+            <section>
+              <h2>People<span class="cnt">${members.length}</span></h2>
+              <div id="pcPeople">${rail.map(personRow).join('')}</div>
+              ${railRest.length ? `<button type="button" class="pc-people-more" id="pcPeopleMore">Show all</button>` : ''}
+            </section>
+          </aside>
         </div>
       </div>
     `;
 
-    document.querySelectorAll('.pub-sort-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        currentSort = btn.dataset.sort;
-        document.querySelectorAll('.pub-sort-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        await refreshPubFeed();
-      });
+    // ---- wiring (elements are fresh each render) ----
+    document.getElementById('pcShare').addEventListener('click', pcShare);
+    document.getElementById('pcJoinBtn').addEventListener('click', pcJoin);
+
+    const seg = document.getElementById('pcSeg');
+    seg.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-sort]');
+      if (!b || b.dataset.sort === currentSort) return;
+      pcSetSort(b.dataset.sort);
     });
+    requestAnimationFrame(() => { pcPositionThumb(); requestAnimationFrame(() => seg.classList.add('ready')); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(pcPositionThumb);
+    if (!PC.wired){
+      window.addEventListener('resize', pcPositionThumb, { passive: true });
+      PC.wired = true;
+    }
 
-    const joinBtn = document.getElementById('pubJoinBtn');
-    joinBtn.addEventListener('click', async () => {
-      if (!requireAuth()) return;
-      if (isMember) return;
-      joinBtn.disabled = true;
-      joinBtn.innerHTML = `<span class="mini-spinner"></span>`;
-      try {
-        const { error } = await supabaseClient.from('circle_members').insert({ circle_id: circleId, user_id: currentUser.id, role: 'member' });
-        if (error) throw error;
-        showToast('Joined the circle');
-        myRole = 'member';
-        members = await loadMembers();
-        await renderPublicMode();
-      } catch (err) {
-        showToast(err.message || 'Could not join', 'error');
-        joinBtn.disabled = false;
-        joinBtn.textContent = 'Join circle';
-      }
-    });
-
-    const pubTextarea = document.getElementById('pubComposerText');
-
-    if (pubTextarea){
-      const pubPostBtn = document.getElementById('pubPostBtn');
-      const pubMediaUrl = document.getElementById('pubMediaUrl');
-      const refresh = () => { pubPostBtn.disabled = !pubTextarea.value.trim() && !pubMediaUrl.value.trim(); };
-
-      pubTextarea.addEventListener('input', () => {
-        pubTextarea.style.height = 'auto';
-        pubTextarea.style.height = Math.min(pubTextarea.scrollHeight, 160) + 'px';
-        refresh();
-      });
-
-      const pubAnonToggle = document.getElementById('pubAnonToggle');
-      let pubIsAnon = false;
-      pubAnonToggle.addEventListener('click', () => {
-        pubIsAnon = !pubIsAnon;
-
-        pubAnonToggle.style.background = pubIsAnon ? '#000' : '#1a1b1f';
-        pubAnonToggle.style.color = '#fff';
-
-        pubAnonToggle.textContent = pubIsAnon ? 'Anon ✓' : 'Anon';
-      });
-
-      pubMediaUrl.addEventListener('input', refresh);
-
-      let isPosting = false;
-      pubPostBtn.addEventListener('click', async () => {
-        if (isPosting) return;
-        const content = pubTextarea.value.trim();
-        const url = pubMediaUrl.value.trim();
-        if (!content && !url) return;
-        isPosting = true;
-        pubPostBtn.disabled = true;
-        pubPostBtn.innerHTML = `<span class="mini-spinner"></span>`;
-
-        try {
-          const { error } = await supabaseClient.from('posts').insert({
-            circle_id: circleId,
-            user_id: currentUser.id,
-            caption: content || null,
-            media_url: url || null,
-            media_type: url ? (url.match(/\.(mp4|mov|webm)(\?|$)/i) ? 'video' : 'image') : null,
-            is_anonymous: pubIsAnon,
-          });
-
-          if (error) throw error;
-          pubTextarea.value = ''; pubMediaUrl.value = '';
-          pubIsAnon = false;
-
-          pubAnonToggle.style.background = '#1a1b1f';
-
-          pubAnonToggle.style.color = '#fff';
-
-
-          pubAnonToggle.textContent = 'Anon';
-          pubTextarea.style.height = 'auto';
-          showToast('Posted');
-          await refreshPubFeed();
-        } catch (err) {
-          showToast(err.message || 'Could not post', 'error');
-        } finally {
-          isPosting = false;
-          pubPostBtn.textContent = 'Post';
-          refresh();
-        }
+    const moreBtn = document.getElementById('pcPeopleMore');
+    if (moreBtn){
+      moreBtn.addEventListener('click', () => {
+        document.getElementById('pcPeople').insertAdjacentHTML('beforeend', railRest.map(personRow).join(''));
+        moreBtn.remove();
       });
     }
 
+    document.getElementById('pcNew').addEventListener('click', async () => {
+      const top = document.getElementById('pcBody').getBoundingClientRect().top + window.scrollY -
+        (window.matchMedia('(max-width:899.98px)').matches ? 58 : 0);
+      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+      await refreshPubFeed();
+    });
+
+    // one delegated handler for everything inside the feed
+    const feed = document.getElementById('pcFeed');
+    feed.addEventListener('click', (e) => {
+      const t = e.target.closest('[data-act]');
+      if (!t) return;
+      const article = t.closest('.pc-post');
+      switch (t.dataset.act){
+        case 'vote':        return pcVote(article, Number(t.dataset.value));
+        case 'thread':      return pcToggleThread(article);
+        case 'send':        return pcSendComment(article);
+        case 'del-post':    return pcDeletePost(article, t);
+        case 'del-comment': return pcDeleteComment(article, t);
+        case 'join':        return pcJoin();
+        case 'compose':     window.scrollTo({ top: 0, behavior: 'smooth' }); return window.pcOpenComposer && window.pcOpenComposer();
+        case 'more': {
+          const txt = article.querySelector('.pc-text');
+          const nowClamped = txt.classList.toggle('clamp');
+          t.textContent = nowClamped ? 'Show more' : 'Show less';
+          return;
+        }
+      }
+    });
+    feed.addEventListener('input', (e) => {
+      if (!e.target.classList.contains('pc-cinput')) return;
+      const btn = e.target.closest('.pc-post').querySelector('.pc-csend');
+      if (btn) btn.disabled = !e.target.value.trim();
+    });
+    feed.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.isComposing && e.target.classList.contains('pc-cinput')){
+        e.preventDefault();
+        pcSendComment(e.target.closest('.pc-post'));
+      }
+    });
+    body.querySelectorAll('.pc-orb.slot').forEach(b => b.addEventListener('click', pcJoin));
+
+    pcWireComposer();
+    pcSubscribe();
     await refreshPubFeed();
   }
 
+  function pcUpdatePulse(posts){
+    const el = document.getElementById('pcPulse');
+    if (!el || currentSort === 'top') return;      // "top" isn't ordered by recency
+    const dayAgo = Date.now() - 86400000;
+    const n = posts.filter(p => new Date(p.created_at).getTime() > dayAgo).length;
+    el.innerHTML = n === 0
+      ? ''
+      : `<i></i>${n}${posts.length >= 50 ? '+' : ''} ${n === 1 ? 'post' : 'posts'} today`;
+  }
+
   async function refreshPubFeed(){
-    const feed = document.getElementById('pubFeed');
-    const posts = await loadPosts(currentSort);
-    if (posts.length === 0){
+    const feed = document.getElementById('pcFeed');
+    if (!feed) return;
+    PC.pending = 0;
+    const pill = document.getElementById('pcNew');
+    if (pill) pill.classList.remove('show');
+
+    const sortAtStart = currentSort;
+    if (feed.querySelector('.pc-post')) feed.classList.add('is-loading');
+    const posts = await loadPosts(sortAtStart);
+    if (sortAtStart !== currentSort) return;         // a newer sort click won the race
+    PC.posts = posts;
+    pcUpdatePulse(posts);
+
+    if (!posts.length){
+      feed.classList.remove('is-loading');
       feed.innerHTML = `
-        <div class="home-empty">
-          <h3>No posts yet</h3>
-          <p>Nothing has been shared here — check back soon, or be first.</p>
-        </div>
-      `;
+        <div class="pc-empty">
+          <h3>Nothing here yet</h3>
+          <p>${myRole !== null ? 'Start the first thread and set the tone for this circle.' : 'Join the circle to start the first thread.'}</p>
+          <button type="button" data-act="${myRole !== null ? 'compose' : 'join'}">${myRole !== null ? 'Start a thread' : 'Join circle'}</button>
+        </div>`;
       return;
     }
-    const myVotes = await loadMyVotes(posts.map(p => p.id));
-    feed.innerHTML = posts.map(p => renderPubPostCard(p, myVotes[p.id])).join('');
-    wirePubVotes();
+
+    const votes = await loadMyVotes(posts.map(p => p.id));
+    if (sortAtStart !== currentSort) return;
+
+    const first = posts[0];
+    const spotId = (sortAtStart === 'hot' && (first.score || 0) >= 3 &&
+      Date.now() - new Date(first.created_at).getTime() < 172800000) ? first.id : null;
+
+    feed.innerHTML = posts.map(p => pcPostHtml(p, votes[p.id] || 0, { spot: p.id === spotId })).join('');
+    feed.classList.remove('is-loading');
   }
 
   let composerTimer = null;
