@@ -1059,12 +1059,12 @@
           `).join('')}
         </div>
         <div class="welcome-text">
-          <div class="welcome-eyebrow">${inviterName ? 'you were chosen' : 'you belong here'}</div>
-          <h1 class="welcome-title">${inviterName ? `${escapeHtml(inviterName)} wanted you here` : `Welcome to ${escapeHtml(circle.name)}`}</h1>
-          <p class="welcome-sub">${inviterName ? `Out of everyone they know, ${escapeHtml(inviterName)} thought of you. You're now one of only ${members.length} people who get to be part of ${escapeHtml(circle.name)}.` : `You're now one of only ${members.length} people who get to be part of ${escapeHtml(circle.name)}.`}</p>
+          <div class="welcome-eyebrow">you're special</div>
+          <h1 class="welcome-title">${inviterName ? `That's why @${escapeHtml(inviterName)} invited you` : `Welcome to ${escapeHtml(circle.name)}`}</h1>
+          <p class="welcome-sub">${inviterName ? `Out of everyone @${escapeHtml(inviterName)} knows, they chose you. You're now one of only ${members.length} people in ${escapeHtml(circle.name)}.` : `You're now one of only ${members.length} people who get to be part of ${escapeHtml(circle.name)}.`}</p>
           ${note ? `
             <div class="welcome-note">
-              <b>${inviterName ? `a note from ${escapeHtml(inviterName)}` : 'a note for you'}</b>
+              <b>${inviterName ? `a note from @${escapeHtml(inviterName)}` : 'a note for you'}</b>
               <p>${escapeHtml(note)}</p>
             </div>
           ` : ''}
