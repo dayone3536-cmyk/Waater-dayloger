@@ -1199,6 +1199,20 @@
   .anon-notice-actions .sg-btn{margin-top:0;flex:1;white-space:nowrap;}
   .anon-notice-ghost{background:#f1f1ef;color:var(--ink-soft)!important;}
   .anon-notice-ghost:hover{background:#e6e6e3;}
+
+  /* ANON-ACTIVE BANNER — shown inline in the composer while whisper
+     mode is on, every time, so it's always clear a post is anonymous
+     and will self-delete. */
+  .composer-anon-banner{
+    display:none;align-items:center;gap:9px;
+    padding:9px 12px;margin:10px 0 2px;border-radius:11px;
+    background:#14151a;color:#f1f1ef;
+    font-family:var(--font-mono);font-size:11.5px;letter-spacing:.01em;line-height:1.4;
+    animation:riseIn .18s var(--ease);
+  }
+  .composer-anon-banner.show{display:flex;}
+  .composer-anon-banner svg{width:15px;height:15px;flex-shrink:0;}
+  .composer-anon-banner b{color:#fff;font-family:var(--font-display);font-weight:600;font-style:normal;}
 </style>
 </head>
 <body>
@@ -1558,9 +1572,11 @@
   // ---- posts ----
   // posts table columns: id, user_id, caption, media_url, media_type, created_at,
   // circle_id, score, likes_count, comment_count, is_anonymous
+  const ANON_POST_TTL_MS = 24 * 60 * 60 * 1000; // anonymous posts live for exactly 24 hours
+
   async function loadPosts(sort){
-    // Best-effort: sweep any anonymous posts whose 24-hour window (since
-    // everyone saw them) has already passed, before we fetch the feed.
+    // Best-effort: sweep any anonymous posts older than 24 hours before
+    // we fetch the feed (see cleanup_expired_anon_posts on the backend).
     await cleanupExpiredAnonPosts();
 
     let query = supabaseClient
@@ -1574,6 +1590,10 @@
     const { data, error } = await query.limit(50);
     if (error) { console.error('loadPosts failed', error); return []; }
     let list = data || [];
+
+    // Safety net: hide any anonymous post past its 24-hour window on the
+    // client too, in case the backend sweep hasn't run yet.
+    list = list.filter(p => !p.is_anonymous || (Date.now() - new Date(p.created_at).getTime()) < ANON_POST_TTL_MS);
 
     if (list.length > 0) {
       const userIds = [...new Set(list.map(p => p.user_id))];
@@ -2394,6 +2414,15 @@
           <div class="home-composer-media" id="homeMediaField" style="display:none;">
             <input type="text" id="homeMediaUrl" placeholder="Paste an image or video URL...">
           </div>
+          <div class="composer-anon-banner" id="homeAnonBanner">
+            <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+              <path fill="#fff" d="M16 3C8.8 3 2.9 8.3 1.9 15.2c-.2 1.6 1 3 2.6 3h1.2l-1.5 2.8a1 1 0 001.8.9l1.9-3.7h16.2l1.9 3.7a1 1 0 001.8-.9L26.3 18.2h1.2c1.6 0 2.8-1.4 2.6-3C29.1 8.3 23.2 3 16 3z"/>
+              <circle cx="10.5" cy="15.5" r="2.2" fill="#14151a"/>
+              <circle cx="21.5" cy="15.5" r="2.2" fill="#14151a"/>
+              <rect x="13.5" y="14.5" width="5" height="1.6" fill="#14151a"/>
+            </svg>
+            <span>You're posting as <b>Anonymous</b> — this post is automatically deleted after 24 hours.</span>
+          </div>
           <div class="home-composer-row">
             <div class="home-composer-tools">
               <button class="home-composer-tool" id="homeMediaToggle" title="Add photo/video">
@@ -2462,6 +2491,7 @@
 
     const anonToggle = document.getElementById('homeAnonToggle');
     const homeComposerEl = document.getElementById('homeComposer');
+    const homeAnonBanner = document.getElementById('homeAnonBanner');
     const WHISPER_PLACEHOLDER = "Say the thing you don't tell anyone else...";
     const NORMAL_PLACEHOLDER = "Tell your circle about your day — just between you all...";
     let isAnon = false;
@@ -2469,6 +2499,7 @@
       isAnon = on;
       anonToggle.classList.toggle('active', on);
       textarea.placeholder = on ? WHISPER_PLACEHOLDER : NORMAL_PLACEHOLDER;
+      homeAnonBanner.classList.toggle('show', on);
     };
     anonToggle.addEventListener('click', () => {
       if (isAnon){
@@ -2693,7 +2724,6 @@
     const myLikes = await loadMyLikes(posts.map(p => p.id));
     feed.innerHTML = posts.map(p => renderHomePostCard(p, myLikes.has(p.id))).join('');
     wireHomeActions();
-    recordAnonViews(posts);
   }
 
   // =========================================================
@@ -3149,6 +3179,7 @@
     const mediaField = document.getElementById('pcMediaField');
     const mediaUrl = document.getElementById('pcMediaUrl');
     const anonBtn = document.getElementById('pcAnon');
+    const anonBanner = document.getElementById('pcAnonBanner');
     const postBtn = document.getElementById('pcPost');
     const avSlot = document.getElementById('pcComposeAv');
     const me = pcMe();
@@ -3182,6 +3213,7 @@
       anonBtn.setAttribute('aria-pressed', isAnon);
       anonBtn.querySelector('span').textContent = isAnon ? 'Posting anonymously' : 'Anonymous';
       avSlot.innerHTML = isAnon ? pcAnonAvatar(40) : pcAvatar(me, 40);
+      anonBanner.classList.toggle('show', isAnon);
     });
 
     let posting = false;
@@ -3274,6 +3306,15 @@
                     <div class="pc-media-field" id="pcMediaField" hidden>
                       <input type="url" id="pcMediaUrl" placeholder="Paste a link to an image or video" aria-label="Media link">
                       <div class="pc-media-preview" id="pcMediaPreview"></div>
+                    </div>
+                    <div class="composer-anon-banner" id="pcAnonBanner">
+                      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                        <path fill="#fff" d="M16 3C8.8 3 2.9 8.3 1.9 15.2c-.2 1.6 1 3 2.6 3h1.2l-1.5 2.8a1 1 0 001.8.9l1.9-3.7h16.2l1.9 3.7a1 1 0 001.8-.9L26.3 18.2h1.2c1.6 0 2.8-1.4 2.6-3C29.1 8.3 23.2 3 16 3z"/>
+                        <circle cx="10.5" cy="15.5" r="2.2" fill="#14151a"/>
+                        <circle cx="21.5" cy="15.5" r="2.2" fill="#14151a"/>
+                        <rect x="13.5" y="14.5" width="5" height="1.6" fill="#14151a"/>
+                      </svg>
+                      <span>You're posting as <b>Anonymous</b> — this post is automatically deleted after 24 hours.</span>
                     </div>
                     <div class="pc-compose-row">
                       <button type="button" class="pc-tool" id="pcMediaBtn" aria-label="Add image or video" aria-pressed="false">${PC_ICON.image}</button>
@@ -3599,13 +3640,15 @@
   }
 
   // =========================================================
-  // ANONYMOUS POSTS — pre-post notice, view tracking, auto-expiry
+  // ANONYMOUS POSTS — pre-post notice, auto-expiry
+  //
+  // Anonymous ("whisper mode") posts always self-delete exactly 24 hours
+  // after they're created — not dependent on who has viewed them.
   //
   // Requires (run once in the Supabase SQL editor):
-  //   - a `post_views` table
-  //   - an `all_seen_at` column on `posts`
-  //   - the `record_post_view` and `cleanup_expired_anon_posts` RPC functions
-  // See the SQL migration provided alongside this file.
+  //   - the `cleanup_expired_anon_posts` RPC function, which deletes any
+  //     row where is_anonymous = true and created_at < now() - 24h.
+  // See circle-anon-expiry.sql for the migration.
   // =========================================================
   const ANON_NOTICE_KEY = `anonNoticeSeen_${circleId}`;
 
@@ -3636,7 +3679,7 @@
           </svg>
         </div>
         <h3>Posting anonymously</h3>
-        <p>Your identity will be hidden — no one in the circle, including admins, can tell it's you. This post automatically disappears 24 hours after everyone here has seen it.</p>
+        <p>Your identity will be hidden — no one in the circle, including admins, can tell it's you. This post automatically disappears 24 hours after you post it.</p>
         <div class="anon-notice-actions">
           <button class="sg-btn anon-notice-ghost" type="button" data-choice="cancel">Never mind</button>
           <button class="sg-btn" type="button" data-choice="confirm">Got it, post anonymously</button>
@@ -3664,20 +3707,9 @@
     showAnonNoticeModal(onEnabled);
   }
 
-  // Fire-and-forget: tell the backend "I've seen this anonymous post" for
-  // every anonymous post currently in the feed. Once every circle member
-  // has done this for a post, the backend stamps `all_seen_at`, and the
-  // post is deleted 24 hours after that.
-  function recordAnonViews(posts){
-    if (!currentUser) return;
-    (posts || []).filter(p => p.is_anonymous).forEach(p => {
-      supabaseClient.rpc('record_post_view', { p_post_id: p.id })
-        .then(({ error }) => { if (error) console.error('record_post_view failed', error); });
-    });
-  }
-
   // Best-effort cleanup, called opportunistically whenever the feed loads.
-  // Safe to call often — it's a no-op when nothing has expired yet.
+  // Deletes anonymous posts whose 24-hour window has passed. Safe to call
+  // often — it's a no-op when nothing has expired yet.
   async function cleanupExpiredAnonPosts(){
     try { await supabaseClient.rpc('cleanup_expired_anon_posts'); }
     catch (err) { console.error('cleanup_expired_anon_posts failed', err); }
