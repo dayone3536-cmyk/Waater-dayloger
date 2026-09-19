@@ -164,6 +164,8 @@
   }
   .home-settings-btn:hover{border-color:var(--accent);}
   .home-settings-btn:active{transform:scale(.94);}
+  .home-settings-btn:disabled{opacity:.35;cursor:default;}
+  .home-settings-btn:disabled:hover{border-color:var(--line-strong);}
   .home-settings-btn svg{width:16px;height:16px;stroke:var(--ink-soft);}
 
   .home-people-row{
@@ -1210,6 +1212,26 @@
       .filter(Boolean);
   }
 
+  // How many invites this owner has already created for this circle since
+  // midnight (local time). Backs the "N/2 today" badge and the client-side
+  // disable — the real enforcement lives in the DB trigger on circle_invites,
+  // this is just so the button reflects it without a failed request first.
+  // Assumes a `circle_invites` table with circle_id, created_by, created_at —
+  // rename these to match your actual invites table if it differs.
+  async function loadInvitesToday(){
+    if (!currentUser) return 0;
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const { count, error } = await supabaseClient
+      .from('circle_invites')
+      .select('id', { count: 'exact', head: true })
+      .eq('circle_id', circleId)
+      .eq('created_by', currentUser.id)
+      .gte('created_at', startOfDay.toISOString());
+    if (error) { console.error('loadInvitesToday failed', error); return 0; }
+    return count ?? 0;
+  }
+
   // ---- posts ----
   // posts table columns: id, user_id, caption, media_url, media_type, created_at,
   // circle_id, score, likes_count, comment_count, is_anonymous
@@ -1896,6 +1918,7 @@
   async function renderHomeMode(){
     const body = document.getElementById('pageBody');
     const meRow = members.find(m => m.id === currentUser.id);
+    const invitesToday = myRole === 'owner' ? await loadInvitesToday() : 0;
 
     // Decide once per circle-session whether this visit deserves the ceremony.
     const shouldWelcome = justJoined(meRow) && !sessionStorage.getItem(`welcomed_${circleId}`);
@@ -1916,15 +1939,27 @@
             <div class="home-eyebrow">${getGreeting()}</div>
             <h1>${escapeHtml(circle.name)}</h1>
             <div class="home-sub">${circle.description ? escapeHtml(circle.description) : `Just the ${members.length} of you — nothing here leaves this room.`}</div>
-            <div class="privacy-badge">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
-              <span><b>Private</b> · visible only to ${members.length} member${members.length===1?'':'s'}</span>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:11px;">
+              <div class="privacy-badge" style="margin-top:0;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+                <span><b>Private</b> · visible only to ${members.length} member${members.length===1?'':'s'}</span>
+              </div>
+              ${members.length < 10 ? `
+              <div class="privacy-badge" style="margin-top:0;background:var(--accent-soft);border-color:transparent;">
+                <span>🔥 <b>${10 - members.length}</b> spot${10 - members.length === 1 ? '' : 's'} left</span>
+              </div>` : `
+              <div class="privacy-badge" style="margin-top:0;background:#f3f3f1;border-color:transparent;">
+                <span style="color:var(--ink-soft);"><b>Circle full</b> · 10/10</span>
+              </div>`}
             </div>
           </div>
           ${myRole === 'owner' ? `
-          <button class="home-settings-btn" id="homeInviteBtn" title="Invite">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
-          </button>` : ''}
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;">
+            <button class="home-settings-btn" id="homeInviteBtn" title="Invite" ${invitesToday >= 2 ? 'disabled' : ''}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+            </button>
+            <span id="inviteCountBadge" style="font-family:var(--font-mono);font-size:9px;color:${invitesToday >= 2 ? 'var(--danger)' : 'var(--grey)'};white-space:nowrap;">${invitesToday}/2 today</span>
+          </div>` : ''}
         </div>
         ${renderPeopleRow()}
       </div>
@@ -2148,7 +2183,15 @@
     });
 
     const inviteBtn = document.getElementById('homeInviteBtn');
+    let invitesUsedToday = invitesToday;
     if (inviteBtn) inviteBtn.addEventListener('click', async () => {
+      // Client-side check just for instant feedback — the DB trigger on
+      // circle_invites is the real enforcement, this only avoids a round
+      // trip when we already know today's quota is spent.
+      if (invitesUsedToday >= 2) {
+        showToast("You've used both invites for today — try again tomorrow", 'error');
+        return;
+      }
       const note = await openInviteModal();
       try {
         // Try passing the note through to the RPC. If the backend hasn't
@@ -2165,6 +2208,15 @@
         }
         const { data, error } = rpcResult;
         if (error) throw error;
+
+        invitesUsedToday += 1;
+        const badge = document.getElementById('inviteCountBadge');
+        if (badge) {
+          badge.textContent = `${invitesUsedToday}/2 today`;
+          badge.style.color = invitesUsedToday >= 2 ? 'var(--danger)' : 'var(--grey)';
+        }
+        if (invitesUsedToday >= 2) inviteBtn.disabled = true;
+
         try {
 
           await navigator.clipboard.writeText(`${window.location.origin}/circle?code=${encodeURIComponent(data.code)}`);
@@ -2174,7 +2226,15 @@
           showToast(`Invite code: ${data.code}`);
         }
       } catch (err) {
-        showToast(err.message || 'Could not create invite', 'error');
+        if (err.message?.includes('invite_limit_reached')) {
+          showToast("You've used both invites for today — try again tomorrow", 'error');
+          invitesUsedToday = 2;
+          inviteBtn.disabled = true;
+        } else if (err.message?.includes('circle_full')) {
+          showToast('This circle is full (max 10 members)', 'error');
+        } else {
+          showToast(err.message || 'Could not create invite', 'error');
+        }
       }
     });
 
