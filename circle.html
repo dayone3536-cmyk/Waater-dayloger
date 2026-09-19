@@ -1059,9 +1059,9 @@
           `).join('')}
         </div>
         <div class="welcome-text">
-          <div class="welcome-eyebrow">you're special</div>
-          <h1 class="welcome-title">${inviterName ? `That's why ${escapeHtml(inviterName)} invited you` : `You're in ${escapeHtml(circle.name)}`}</h1>
-          <p class="welcome-sub">${members.length} of you now. What gets shared here stays inside this circle — always.</p>
+          <div class="welcome-eyebrow">${inviterName ? 'you were chosen' : 'you belong here'}</div>
+          <h1 class="welcome-title">${inviterName ? `${escapeHtml(inviterName)} wanted you here` : `Welcome to ${escapeHtml(circle.name)}`}</h1>
+          <p class="welcome-sub">${inviterName ? `Out of everyone they know, ${escapeHtml(inviterName)} thought of you. You're now one of only ${members.length} people who get to be part of ${escapeHtml(circle.name)}.` : `You're now one of only ${members.length} people who get to be part of ${escapeHtml(circle.name)}.`}</p>
           ${note ? `
             <div class="welcome-note">
               <b>${inviterName ? `a note from ${escapeHtml(inviterName)}` : 'a note for you'}</b>
@@ -1070,10 +1070,10 @@
           ` : ''}
           <div class="welcome-privacy-line">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
-            Private circle — only these ${members.length} people can ever see what's posted here
+            A space just for the ${members.length} of you — nothing shared here ever leaves this circle
           </div>
         </div>
-        <button class="welcome-enter">Enter circle</button>
+        <button class="welcome-enter">I'm in</button>
       `;
       document.body.appendChild(overlay);
       requestAnimationFrame(() => overlay.classList.add('show'));
