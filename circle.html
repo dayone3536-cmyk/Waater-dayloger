@@ -920,10 +920,8 @@
   body.sg-active input, body.sg-active textarea{-webkit-user-select:text;user-select:text;}
   body.sg-active img, body.sg-active video{-webkit-user-drag:none;}
   body > *{transition:filter .12s ease;}
-  body.sg-hidden > *:not(.sg-backdrop):not(.sg-watermark):not(script){filter:blur(22px) saturate(.6);}
+  body.sg-hidden > *:not(.sg-backdrop):not(script){filter:blur(22px) saturate(.6);}
   @media print{ body.sg-active{display:none!important;} }
-
-  .sg-watermark{position:fixed;inset:0;z-index:590;pointer-events:none;background-repeat:repeat;}
 
   .sg-backdrop{
     position:fixed;inset:0;z-index:600;background:rgba(20,21,26,.62);
@@ -2781,12 +2779,8 @@
   //      (snipping tools, app switcher previews, screen-share pickers)
   //   2. catches desktop screenshot shortcuts and shows the popup
   //   3. blocks print / save-page / right-click + drag on media
-  //   4. stamps each viewer's username as a faint watermark, so a
-  //      leaked screenshot can be traced back to who took it
   // For real blocking you'd need a native app (Android FLAG_SECURE).
   // =========================================================
-  const SG_WATERMARK = true;   // set false to remove the faint username watermark
-
   const SG_CAUGHT_LINES = [
     { emoji:'📸', title:'You got caught!',            body:'You can\u2019t screenshot here. Everything stays inside the circle.',            button:'ok, I\u2019m sorry' },
     { emoji:'🚨', title:'The circle police are here.', body:'Whatever you just tried to take out of here \u2014 put it back. This place is for us only.', button:'fine, I\u2019ll behave' },
@@ -2823,20 +2817,6 @@
     };
     btn.addEventListener('click', close);
     btn.focus();
-  }
-
-  function addScreenshotWatermark(){
-    const me = members.find(m => m.id === currentUser.id);
-    const name = (me && me.username) ? me.username : 'member';
-    const safe = name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="150">`
-      + `<text x="20" y="90" transform="rotate(-22 120 75)" font-family="Arial, sans-serif" `
-      + `font-size="14" font-weight="600" fill="#14151a" fill-opacity="0.07">${safe}</text></svg>`;
-    const mark = document.createElement('div');
-    mark.className = 'sg-watermark';
-    mark.setAttribute('aria-hidden', 'true');
-    mark.style.backgroundImage = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
-    document.body.appendChild(mark);
   }
 
   function enableScreenshotGuard(){
@@ -2882,8 +2862,6 @@
       if (e.target.tagName === 'IMG') e.preventDefault();
     });
 
-    // 4. traceable watermark
-    if (SG_WATERMARK) addScreenshotWatermark();
   }
 
   // =========================================================
