@@ -1528,8 +1528,13 @@
       feedEl.innerHTML = posts.map((post, i) => renderPost(post, i)).join('');
       attachPostHandlers();
     } catch (err) {
-      console.error('Failed to load feed:', err);
+      console.error('Failed to load feed:', err, { code: err && err.code, details: err && err.details, hint: err && err.hint });
       statusEl.textContent = 'Could not load posts. Try refreshing.';
+      // Add ?debug=1 to the page URL to see the real reason on screen.
+      if (new URLSearchParams(window.location.search).has('debug')) {
+        const reason = [err && err.code, err && err.message, err && err.details, err && err.hint].filter(Boolean).join(' | ');
+        statusEl.textContent += ' [' + (reason || String(err)) + ']';
+      }
     }
   }
 
@@ -1941,4 +1946,3 @@
 
 </body>
 </html>
-
