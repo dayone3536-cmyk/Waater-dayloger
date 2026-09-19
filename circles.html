@@ -5,7 +5,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Circles — Waater</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -36,7 +36,7 @@
     color:var(--ink);
     font-family:var(--font-serif);
     -webkit-font-smoothing:antialiased;
-    padding-bottom:78px;
+    padding-bottom:calc(98px + env(safe-area-inset-bottom));
   }
   a{color:inherit;text-decoration:none;}
   button{font-family:inherit;border:none;background:none;cursor:pointer;}
@@ -50,64 +50,127 @@
   .app{display:flex;max-width:1180px;margin:0 auto;}
   .main{flex:1;min-width:0;border-left:1px solid var(--line);border-right:1px solid var(--line);}
 
+  /* =========================================================
+     NAVIGATION — sidebar (desktop) / topbar + dock (mobile)
+     ========================================================= */
+  .wordmark{
+    font-family:var(--font-display);font-weight:700;font-size:21px;letter-spacing:-0.03em;
+    display:inline-flex;align-items:baseline;line-height:1;
+  }
+  .wordmark .dot{color:var(--accent);display:inline-block;transition:transform .45s var(--ease-spring);}
+  a.wordmark:hover .dot{transform:translateY(-3px) scale(1.3);}
+
+  /* ---------- Mobile top bar ---------- */
   .topbar{
     display:flex;align-items:center;justify-content:space-between;
-    padding:18px 20px 14px;border-bottom:1px solid var(--line);
-    position:sticky;top:0;background:rgba(255,255,255,.92);
-    backdrop-filter:blur(8px);z-index:20;
+    height:58px;padding:0 18px;
+    position:sticky;top:0;z-index:20;
+    background:rgba(255,255,255,.82);
+    -webkit-backdrop-filter:saturate(180%) blur(16px);backdrop-filter:saturate(180%) blur(16px);
+    border-bottom:1px solid var(--line);
+    transition:box-shadow .25s ease;
   }
-  .wordmark{font-family:var(--font-display);font-weight:700;font-size:20px;letter-spacing:-0.02em;display:flex;align-items:baseline;gap:2px;}
-  .wordmark .dot{color:var(--accent);}
+  .topbar.scrolled{box-shadow:0 8px 22px -14px rgba(20,21,26,.28);}
 
+  /* ---------- Desktop sidebar ---------- */
   .sidebar{
-    display:none;width:var(--nav-w);flex-shrink:0;padding:28px 18px;
-    flex-direction:column;height:100vh;position:sticky;top:0;
+    display:none;width:var(--nav-w);flex-shrink:0;padding:26px 16px 20px;
+    flex-direction:column;height:100vh;height:100dvh;position:sticky;top:0;
+  }
+  .sidebar .brand{align-self:flex-start;font-size:26px;padding:6px 14px;margin-bottom:26px;border-radius:12px;}
+
+  .nav-wrap{position:relative;}
+  .nav-list{list-style:none;display:flex;flex-direction:column;gap:2px;position:relative;z-index:1;}
+  .nav-pill{
+    position:absolute;left:0;right:0;top:0;height:46px;border-radius:14px;background:#f3f3f4;
+    opacity:0;pointer-events:none;z-index:0;
+    transition:transform .38s var(--ease-spring), height .2s var(--ease), opacity .2s ease;
+  }
+  .nav-pill.on{opacity:1;}
+  .nav-pill.snap{transition:opacity .2s ease;}
+
+  .nav-item{
+    position:relative;display:flex;align-items:center;gap:14px;height:46px;padding:0 14px;
+    border-radius:14px;font-family:var(--font-display);font-size:15.5px;font-weight:500;letter-spacing:-.005em;
+    color:var(--ink-soft);
+    transition:color .18s ease, background .18s ease, transform .15s var(--ease-spring);
+  }
+  .nav-item svg{
+    width:22px;height:22px;flex-shrink:0;stroke:currentColor;
+    transition:transform .35s var(--ease-spring), stroke .18s ease, fill .18s ease;
+  }
+  .nav-item:hover{color:var(--ink);}
+  .nav-item:hover svg{transform:scale(1.12) rotate(-5deg);}
+  .nav-item:active{transform:scale(.97);}
+  .nav-item.active{color:var(--ink);font-weight:600;background:var(--accent-soft);}
+  .nav-item.active svg{stroke:var(--accent);fill:rgba(255,90,54,.16);}
+  .nav-item.active::before{
+    content:'';position:absolute;left:-6px;top:50%;width:4px;height:20px;border-radius:0 4px 4px 0;
+    background:var(--accent);transform:translateY(-50%);
+    animation:navBar .45s var(--ease-spring) both;
+  }
+  @keyframes navBar{ from{transform:translateY(-50%) scaleY(.2);opacity:0;} to{transform:translateY(-50%) scaleY(1);opacity:1;} }
+  .nav-item:focus-visible,.sidebar .brand:focus-visible,.nav-create:focus-visible,
+  .sidebar-profile:focus-visible,.sidebar-signout:focus-visible,.sidebar-signin:focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px;
   }
 
-  .sidebar .wordmark{font-size:24px;padding:0 10px;margin-bottom:28px;}
-.nav-list{list-style:none;display:flex;flex-direction:column;gap:6px;background:var(--white);border:1px solid var(--line);border-radius:20px;padding:10px;box-shadow:0 14px 34px -20px rgba(255,90,54,.28),0 2px 10px rgba(20,21,26,.04);}
-.nav-item{
-  display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:999px;
-  font-family:var(--font-display);font-size:15.5px;font-weight:600;
-  color:var(--ink-soft);white-space:nowrap;
-  transition:background .2s var(--ease), color .2s var(--ease), box-shadow .2s var(--ease), transform .15s var(--ease);
-}
-.nav-item svg{width:21px;height:21px;flex-shrink:0;transition:stroke .2s var(--ease);}
-.nav-item:hover{background:var(--accent-soft);color:var(--ink);box-shadow:inset 0 1px 4px rgba(20,21,26,.05);}
-.nav-item:hover svg{stroke:var(--accent);}
-.nav-item:active{transform:scale(.96);}
-.nav-item.active{background:linear-gradient(135deg,#ff8a5c,var(--accent));color:#fff;box-shadow:0 8px 18px -8px rgba(255,90,54,.6);}
-.nav-item.active svg{stroke:#fff;}
-.nav-create{margin-top:4px;background:var(--ink);color:var(--white)!important;justify-content:center;font-weight:700;}
-.nav-create:hover{background:#000;box-shadow:0 8px 18px -8px rgba(0,0,0,.4);}
-.nav-create:active{transform:scale(.96);}
-.nav-create svg{stroke:var(--white);}
-.nav-create.active{background:linear-gradient(135deg,#2b2b30,#000);}
+  .nav-create{
+    position:relative;overflow:hidden;margin-top:18px;display:flex;align-items:center;justify-content:center;gap:9px;
+    height:48px;border-radius:14px;color:#fff;
+    font-family:var(--font-display);font-weight:600;font-size:15px;
+    background:linear-gradient(135deg,#ff7d59 0%,var(--accent) 55%,#f2431c 100%);
+    box-shadow:0 10px 22px -8px rgba(255,90,54,.6), inset 0 1px 0 rgba(255,255,255,.28);
+    transition:transform .25s var(--ease-spring), box-shadow .25s ease;
+  }
+  .nav-create svg{width:19px;height:19px;stroke:#fff;transition:transform .4s var(--ease-spring);}
+  .nav-create::after{
+    content:'';position:absolute;inset:0;transform:translateX(-130%);
+    background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.38) 50%,transparent 70%);
+    transition:transform .7s var(--ease);
+  }
+  .nav-create:hover{transform:translateY(-2px);box-shadow:0 16px 28px -8px rgba(255,90,54,.65), inset 0 1px 0 rgba(255,255,255,.3);}
+  .nav-create:hover svg{transform:rotate(90deg);}
+  .nav-create:hover::after{transform:translateX(130%);}
+  .nav-create:active{transform:scale(.97);}
 
-
+  .sidebar-auth{margin-top:auto;}
+  .sidebar-user{
+    display:flex;align-items:center;gap:4px;padding:8px;border-radius:18px;
+    background:#fff;border:1px solid var(--line);
+    transition:border-color .2s ease, box-shadow .2s ease;
+  }
+  .sidebar-user:hover{border-color:var(--line-strong);box-shadow:0 8px 22px -14px rgba(20,21,26,.25);}
   .sidebar-profile{
-    margin-top:auto;display:flex;align-items:center;gap:10px;
-    padding:10px 12px;border-radius:12px;border:1px solid var(--line);
-    transition:border-color .16s var(--ease);
+    flex:1;min-width:0;display:flex;align-items:center;gap:11px;padding:3px 6px 3px 3px;border-radius:12px;
+    transition:background .15s ease;
   }
-  .sidebar-profile:hover{border-color:var(--line-strong);}
+  .sidebar-profile:hover{background:#f7f7f8;}
   .mini-avatar{
     width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd8c9,var(--accent));
     flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;
     font-family:var(--font-display);font-weight:700;font-size:14px;overflow:hidden;
   }
   .mini-avatar img{width:100%;height:100%;object-fit:cover;}
-  .sidebar-profile .who{display:flex;flex-direction:column;line-height:1.2;flex:1;min-width:0;}
+  .sidebar-user .mini-avatar{width:38px;height:38px;box-shadow:0 0 0 2px #fff, 0 0 0 3.5px var(--accent-soft);}
+  .sidebar-profile .who{display:flex;flex-direction:column;line-height:1.25;flex:1;min-width:0;}
   .sidebar-profile .who span:first-child{font-family:var(--font-display);font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .sidebar-profile .who span:last-child{font-family:var(--font-mono);font-size:11px;color:var(--grey);}
-  .sidebar-signout{font-family:var(--font-mono);font-size:10px;color:var(--grey);padding:4px 6px;border-radius:6px;flex-shrink:0;}
-  .sidebar-signout:hover{color:var(--accent);}
-  .sidebar-signin{
-    margin-top:auto;display:block;text-align:center;background:var(--ink);color:#fff!important;
-    font-family:var(--font-display);font-weight:600;font-size:13.5px;padding:12px;border-radius:12px;
-    transition:background .16s var(--ease);
+  .sidebar-profile .who span:last-child{font-family:var(--font-mono);font-size:10.5px;color:var(--grey);}
+  .sidebar-signout{
+    width:34px;height:34px;flex-shrink:0;border-radius:11px;display:grid;place-items:center;color:var(--grey);
+    transition:background .15s ease, color .15s ease, transform .15s var(--ease-spring);
   }
-  .sidebar-signin:hover{background:#000;}
+  .sidebar-signout svg{width:17px;height:17px;stroke:currentColor;}
+  .sidebar-signout:hover{background:#fdeeed;color:var(--danger);}
+  .sidebar-signout:active{transform:scale(.9);}
+  .sidebar-signin{
+    margin-top:auto;display:flex;align-items:center;justify-content:center;gap:8px;height:48px;
+    background:var(--ink);color:#fff!important;border-radius:14px;
+    font-family:var(--font-display);font-weight:600;font-size:14.5px;
+    transition:background .16s ease, transform .2s var(--ease-spring);
+  }
+  .sidebar-signin:hover{background:#000;transform:translateY(-1px);}
+  .sidebar-signin:active{transform:scale(.97);}
 
   @media (min-width:900px){
     body{padding-bottom:0;}
@@ -115,21 +178,49 @@
     .sidebar{display:flex;}
   }
 
+  /* ---------- Mobile floating dock ---------- */
   .bottom-nav{
-    position:fixed;bottom:0;left:0;right:0;height:64px;
-    background:rgba(255,255,255,.96);backdrop-filter:blur(10px);
-    border-top:1px solid var(--line);display:flex;align-items:center;
-    justify-content:space-around;z-index:30;
+    position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));
+    max-width:440px;margin:0 auto;height:64px;padding:0 6px;
+    display:grid;grid-template-columns:repeat(5,1fr);align-items:center;
+    border-radius:24px;z-index:30;
+    background:rgba(255,255,255,.86);
+    -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
+    border:1px solid rgba(20,21,26,.06);
+    box-shadow:0 14px 34px -10px rgba(20,21,26,.22), 0 2px 8px rgba(20,21,26,.05);
+    transition:transform .4s var(--ease), opacity .25s ease;
   }
-  .tab{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--grey);font-family:var(--font-mono);font-size:9.5px;letter-spacing:.02em;padding:6px 10px;transition:transform .12s var(--ease);}
-  .tab:active{transform:scale(.92);}
-  .tab svg{width:22px;height:22px;stroke:var(--grey);}
+  .bottom-nav.hidden{transform:translateY(calc(100% + 32px));opacity:0;pointer-events:none;}
+  .tab{
+    position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    color:var(--grey);font-family:var(--font-display);font-weight:600;font-size:10.5px;letter-spacing:.005em;
+    -webkit-tap-highlight-color:transparent;
+    transition:color .2s ease, transform .2s var(--ease-spring);
+  }
+  .tab-ico{
+    width:48px;height:30px;border-radius:99px;display:grid;place-items:center;
+    transition:background .25s ease;
+  }
+  .tab svg{width:22px;height:22px;stroke:currentColor;transition:transform .3s var(--ease-spring);}
+  .tab:active svg{transform:scale(.82);}
   .tab.active{color:var(--ink);}
-  .tab.active svg{stroke:var(--ink);}
-  .tab-create{position:relative;top:-20px;}
-  .tab-create .ring{width:52px;height:52px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(255,90,54,.4);}
-  .tab-create svg{width:22px;height:22px;stroke:#fff;stroke-width:2.4;}
-  .tab-create span{display:none;}
+  .tab.active .tab-ico{background:var(--accent-soft);}
+  .tab.active svg{stroke:var(--accent);fill:rgba(255,90,54,.16);animation:tabPop .5s var(--ease-spring);}
+  @keyframes tabPop{ 0%{transform:scale(.7);} 100%{transform:scale(1);} }
+  .tab:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:18px;}
+
+  .tab-create{overflow:visible;}
+  .tab-create .ring{
+    width:54px;height:54px;border-radius:50%;display:grid;place-items:center;
+    background:linear-gradient(135deg,#ff7d59,var(--accent) 55%,#f2431c);
+    transform:translateY(-14px);
+    box-shadow:0 0 0 5px #fff, 0 12px 22px -4px rgba(255,90,54,.55), inset 0 1px 0 rgba(255,255,255,.3);
+    transition:transform .3s var(--ease-spring), box-shadow .3s ease;
+  }
+  .tab-create svg{width:24px;height:24px;stroke:#fff;stroke-width:2.4;fill:none;transition:transform .35s var(--ease-spring);}
+  .tab-create:active .ring{transform:translateY(-12px) scale(.92);}
+  .tab-create:active svg{transform:rotate(90deg);}
+  .tab-create .tab-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
   @media (min-width:900px){ .bottom-nav{display:none;} }
 
   @keyframes riseIn{ from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
@@ -791,34 +882,37 @@
 
 <div class="app">
   <aside class="sidebar">
-    <div class="wordmark">waater<span class="dot">.</span></div>
-    <ul class="nav-list">
-      <li><a href="/" class="nav-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
-        Home</a></li>
+    <a href="/" class="wordmark brand" aria-label="Waater home">waater<span class="dot">.</span></a>
 
-      <li><a href="/create" class="nav-item nav-create">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
-        Create</a></li>
+    <div class="nav-wrap">
+      <span class="nav-pill" aria-hidden="true"></span>
+      <ul class="nav-list">
+        <li><a href="/" class="nav-item" data-nav="home">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+          <span>Home</span></a></li>
+        <li><a href="/circles" class="nav-item active" data-nav="circles" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>
+          <span>Circles</span></a></li>
+        <li><a href="/messages" class="nav-item" data-nav="messages">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <span>Messages</span></a></li>
+        <li><a href="/profile" class="nav-item" data-nav="profile">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+          <span>Profile</span></a></li>
+      </ul>
+    </div>
 
-      <li><a href="/circles" class="nav-item active">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>
-        Circles</a></li>
+    <a href="/create" class="nav-create" data-nav="create">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Create
+    </a>
 
-      <li><a href="/messages" class="nav-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-        messages</a></li>
-
-      <li><a href="/profile" class="nav-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-        Profile</a></li>
-    </ul>
-    <div id="sidebarAuthArea"></div>
+    <div id="sidebarAuthArea" class="sidebar-auth"></div>
   </aside>
 
   <main class="main">
     <div class="topbar">
-      <div class="wordmark">waater<span class="dot">.</span></div>
+      <a href="/" class="wordmark" aria-label="Waater home">waater<span class="dot">.</span></a>
     </div>
 
     <div id="pageBody">
@@ -827,32 +921,26 @@
   </main>
 </div>
 
-<nav class="bottom-nav">
-  <a href="/" class="tab">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
-    home
+<nav class="bottom-nav" aria-label="Primary">
+  <a href="/" class="tab" data-nav="home">
+    <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg></span>
+    <span class="tab-label">Home</span>
   </a>
-
-  <a href="/create" class="tab tab-create">
-    <div class="ring">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>
-    </div>
-    <span>create</span>
+  <a href="/circles" class="tab active" data-nav="circles" aria-current="page">
+    <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg></span>
+    <span class="tab-label">Circles</span>
   </a>
-
-  <a href="/circles" class="tab active">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>
-    circles
+  <a href="/create" class="tab tab-create" data-nav="create" aria-label="Create">
+    <span class="ring"><svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+    <span class="tab-label">Create</span>
   </a>
-
-  <a href="/messages" class="tab">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-    messages
+  <a href="/messages" class="tab" data-nav="messages">
+    <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></span>
+    <span class="tab-label">Messages</span>
   </a>
-
-  <a href="/profile" class="tab">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-    profile
+  <a href="/profile" class="tab" data-nav="profile">
+    <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span>
+    <span class="tab-label">Profile</span>
   </a>
 </nav>
 
@@ -922,14 +1010,15 @@
       : initials(currentUsername);
 
     area.innerHTML = `
-      <a href="/profile" class="sidebar-profile">
-        <div class="mini-avatar">${avatarHtml}</div>
-        <div class="who">
-          <span>${escapeHtml(currentUsername)}</span>
-          <span>view profile</span>
-        </div>
-      </a>
-      <button class="sidebar-signout" id="signOutBtn">Sign out</button>
+      <div class="sidebar-user">
+        <a href="/profile" class="sidebar-profile">
+          <div class="mini-avatar">${avatarHtml}</div>
+          <div class="who"><span>${escapeHtml(currentUsername)}</span><span>view profile</span></div>
+        </a>
+        <button class="sidebar-signout" id="signOutBtn" type="button" aria-label="Sign out" title="Sign out">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        </button>
+      </div>
     `;
     document.getElementById('signOutBtn').addEventListener('click', async () => {
       await supabaseClient.auth.signOut();
@@ -1750,5 +1839,71 @@
   init();
 </script>
 
+<script>
+// Navigation behaviour: active link, sliding hover pill, topbar shadow, dock polish
+(function(){
+  var path = location.pathname.replace(/\.html$/, '').replace(/\/+$/, '') || '/';
+  var first = '/' + (path.split('/')[1] || '');
+  var keyMap = {'/':'home','/home':'home','/index':'home','/create':'create','/circles':'circles','/circle':'circles','/messages':'messages','/profile':'profile'};
+  var key = keyMap[path] || keyMap[first];
+  if (key){
+    document.querySelectorAll('[data-nav]').forEach(function(el){
+      var on = el.getAttribute('data-nav') === key && !el.classList.contains('nav-create') && !el.classList.contains('tab-create');
+      el.classList.toggle('active', on);
+      if (on) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current');
+    });
+  }
+
+  // sliding hover pill (desktop)
+  var list = document.querySelector('.nav-list');
+  var pill = document.querySelector('.nav-pill');
+  if (list && pill){
+    var move = function(el){
+      var y = el.getBoundingClientRect().top - list.getBoundingClientRect().top;
+      pill.style.height = el.offsetHeight + 'px';
+      if (!pill.classList.contains('on')){
+        pill.classList.add('snap');
+        pill.style.transform = 'translateY(' + y + 'px)';
+        void pill.offsetWidth;
+        pill.classList.remove('snap');
+        pill.classList.add('on');
+      } else {
+        pill.style.transform = 'translateY(' + y + 'px)';
+      }
+    };
+    list.querySelectorAll('.nav-item').forEach(function(a){
+      a.addEventListener('mouseenter', function(){ move(a); });
+      a.addEventListener('focus', function(){ if (a.matches(':focus-visible')) move(a); });
+    });
+    list.addEventListener('mouseleave', function(){ pill.classList.remove('on'); });
+    list.addEventListener('focusout', function(){ pill.classList.remove('on'); });
+  }
+
+  // topbar gets a soft shadow once you scroll
+  var tb = document.querySelector('.topbar');
+  if (tb){
+    var f = function(){ tb.classList.toggle('scrolled', window.scrollY > 4); };
+    window.addEventListener('scroll', f, {passive:true}); f();
+  }
+
+  // dock: light haptic tap, and tuck away while typing so the keyboard has room
+  var dock = document.querySelector('.bottom-nav');
+  if (dock){
+    dock.querySelectorAll('.tab').forEach(function(t){
+      t.addEventListener('click', function(){ if (navigator.vibrate) navigator.vibrate(8); });
+    });
+    var FIELD = 'input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=button]):not([type=submit]),textarea,select,[contenteditable="true"]';
+    var isField = function(el){ return el && el.matches && el.matches(FIELD); };
+    document.addEventListener('focusin', function(e){
+      if (isField(e.target) && window.matchMedia('(max-width:899.98px)').matches) dock.classList.add('hidden');
+    });
+    document.addEventListener('focusout', function(){
+      setTimeout(function(){ if (!isField(document.activeElement)) dock.classList.remove('hidden'); }, 60);
+    });
+  }
+})();
+</script>
+
 </body>
 </html>
+
