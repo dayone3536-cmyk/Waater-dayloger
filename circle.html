@@ -2768,14 +2768,13 @@
     const anonToggle = document.getElementById('homeAnonToggle');
     const homeComposerEl = document.getElementById('homeComposer');
     const homeAnonBanner = document.getElementById('homeAnonBanner');
-    const WHISPER_PLACEHOLDER = "Say the thing you don't tell anyone else...";
     const NORMAL_PLACEHOLDER = "Tell your circle about your day — just between you all...";
 
     // Rotating prompts shown (as the placeholder) only while whisper/anon
-    // mode is on — one swaps in every 5s to nudge people who are staring
-    // at a blank box. Purely cosmetic: never written into the post itself.
+    // mode is on — a new one swaps in every 5s. Every entry here is a real
+    // prompt (never the plain "normal mode" filler line), and the order is
+    // reshuffled each time whisper mode turns on so it doesn't feel static.
     const WHISPER_PROMPTS = [
-      WHISPER_PLACEHOLDER,
       "What's the one thing you did but didn't get punished for?",
       "What's a secret you've never told this circle?",
       "What's something you'd only admit anonymously?",
@@ -2787,20 +2786,31 @@
     ];
     let whisperPromptTimer = null;
     let whisperPromptIndex = 0;
+    let whisperPromptOrder = [];
+
+    const shuffledPromptOrder = () => {
+      const order = WHISPER_PROMPTS.map((_, i) => i);
+      for (let i = order.length - 1; i > 0; i--){
+        const j = Math.floor(Math.random() * (i + 1));
+        [order[i], order[j]] = [order[j], order[i]];
+      }
+      return order;
+    };
 
     const stopWhisperPrompts = () => {
       if (whisperPromptTimer){ clearInterval(whisperPromptTimer); whisperPromptTimer = null; }
     };
     const startWhisperPrompts = () => {
       stopWhisperPrompts();
+      whisperPromptOrder = shuffledPromptOrder();
       whisperPromptIndex = 0;
-      textarea.placeholder = WHISPER_PROMPTS[0];
+      textarea.placeholder = WHISPER_PROMPTS[whisperPromptOrder[0]];
       whisperPromptTimer = setInterval(() => {
         // Don't yank the placeholder out from under someone who's typing —
         // it's invisible anyway once there's text, so just keep advancing
         // the index quietly and it'll show the right one if they clear it.
-        whisperPromptIndex = (whisperPromptIndex + 1) % WHISPER_PROMPTS.length;
-        textarea.placeholder = WHISPER_PROMPTS[whisperPromptIndex];
+        whisperPromptIndex = (whisperPromptIndex + 1) % whisperPromptOrder.length;
+        textarea.placeholder = WHISPER_PROMPTS[whisperPromptOrder[whisperPromptIndex]];
       }, 5000);
     };
 
