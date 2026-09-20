@@ -2032,7 +2032,7 @@
     const mediaHtml = post.media_url
       ? `<div class="home-post-media">${
           post.media_type === 'voice'
-            ? `<div class="home-voice-bubble"><b>🎙️ Voice post${post.duration_seconds ? ` · ${Math.round(post.duration_seconds)}s` : ''}</b><audio src="${escapeHtml(post.media_url)}" controls></audio></div>`
+            ? `<div class="home-voice-bubble"><b>🎙️ Voice post${post.duration_seconds ? ` · ${Math.round(post.duration_seconds)}s` : ''}</b><audio src="${escapeHtml(post.media_url)}" controls controlsList="nodownload noremoteplayback" oncontextmenu="return false;"></audio></div>`
           : post.media_type === 'video'
             ? `<video src="${escapeHtml(post.media_url)}" controls></video>`
             : `<img src="${escapeHtml(post.media_url)}" alt="">`
@@ -2125,7 +2125,7 @@
           <div style="flex:1;min-width:0;">
             <div class="home-voice-bubble">
               <b>${escapeHtml(name)}</b> ${dur ? `<span style="font-family:var(--font-mono);font-size:10px;color:var(--grey);">· ${dur}</span>` : ''}
-              <audio controls src="${escapeHtml(c.audio_url)}"></audio>
+              <audio controls controlsList="nodownload noremoteplayback" oncontextmenu="return false;" src="${escapeHtml(c.audio_url)}"></audio>
             </div>
             <div class="home-comment-time">${timeAgo(c.created_at)}${deleteBtn}</div>
           </div>
@@ -3342,7 +3342,7 @@
       const inner = post.media_type === 'video'
         ? `<video src="${pcEsc(mediaUrl)}" controls preload="metadata" playsinline></video>`
         : post.media_type === 'audio'
-          ? `<audio src="${pcEsc(mediaUrl)}" controls preload="none"></audio>`
+          ? `<audio src="${pcEsc(mediaUrl)}" controls controlsList="nodownload noremoteplayback" oncontextmenu="return false;" preload="none"></audio>`
           : `<img src="${pcEsc(mediaUrl)}" alt="" loading="lazy" onerror="this.closest('.pc-media').classList.add('broken')">`;
       media = `<div class="pc-media">${inner}</div>`;
     }
@@ -3442,7 +3442,7 @@
     const name = p?.username || 'someone';
     const mine = !!(currentUser && c.user_id === currentUser.id);
     const body = c.kind === 'voice'
-      ? `<audio controls preload="none" src="${pcEsc(pcSafeUrl(c.audio_url))}"></audio>`
+      ? `<audio controls controlsList="nodownload noremoteplayback" oncontextmenu="return false;" preload="none" src="${pcEsc(pcSafeUrl(c.audio_url))}"></audio>`
       : `<p>${pcEsc(c.content)}</p>`;
     return `
       <div class="pc-c" data-cid="${pcEsc(c.id)}" data-kind="${c.kind}">
