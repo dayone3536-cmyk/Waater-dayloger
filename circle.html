@@ -3983,10 +3983,28 @@
     function onScroll(){
       if (!isMobile()){ resetToVisible(); return; }
       if (composer.classList.contains('overlay-open')) return;
-      const scrolled = window.scrollY > THRESHOLD;
-      composer.classList.toggle('collapsed', scrolled);
-      fab.classList.toggle('show', scrolled);
+
+      const y = window.scrollY;
+      const isCollapsed = composer.classList.contains('collapsed');
+
+      if (!isCollapsed){
+        // how much scroll room would be left once the composer is gone?
+        const composerH = composer.offsetHeight + 18; // +18 for its margin-top
+        const spare = document.documentElement.scrollHeight - window.innerHeight - composerH;
+
+        // only collapse if there's still plenty of page left to scroll
+        if (y > THRESHOLD && spare > THRESHOLD + 60){
+          composer.classList.add('collapsed');
+          fab.classList.add('show');
+        }
+      } else if (y < 4){
+        // only expand when you're basically at the very top
+        composer.classList.remove('collapsed');
+        fab.classList.remove('show');
+      }
     }
+
+
     window.addEventListener('scroll', onScroll, { passive:true });
     window.addEventListener('resize', onScroll, { passive:true });
     onScroll();
@@ -4194,10 +4212,14 @@
   // Best-effort cleanup, called opportunistically whenever the feed loads.
   // Deletes anonymous posts whose 24-hour window has passed. Safe to call
   // often — it's a no-op when nothing has expired yet.
-  async function cleanupExpiredAnonPosts(){
-    try { await supabaseClient.rpc('cleanup_expired_anon_posts'); }
-    catch (err) { console.error('cleanup_expired_anon_posts failed', err); }
-  }
+
+
+     async function cleanupExpiredAnonPosts(){
+      const { error } = await supabaseClient.rpc('cleanup_expired_anon_posts');
+      if (error) console.error('cleanup_expired_anon_posts failed', error);
+    }
+
+
 
   // =========================================================
   // MAIN INIT
