@@ -3006,7 +3006,7 @@
           user_id: currentUser.id,
           caption: content || null,
           media_url: url || null,
-          media_type: url ? (url.match(/\.(mp4|mov|webm)(\?|$)/i) ? 'video' : 'image') : null,
+          media_type: url ? (url.match(/\.(mp4|mov|webm)(\?|$)/i) ? 'video' : 'photo') : null,
           is_anonymous: wasWhisper,
         });
         if (error) throw error;
@@ -3643,7 +3643,7 @@
           user_id: currentUser.id,
           caption: content || null,
           media_url: url || null,
-          media_type: url ? (/\.(mp4|mov|webm)(\?|$)/i.test(url) ? 'video' : 'image') : null,
+          media_type: url ? (/\.(mp4|mov|webm)(\?|$)/i.test(url) ? 'video' : 'photo') : null,
           is_anonymous: isAnon
         });
         if (error) throw error;
