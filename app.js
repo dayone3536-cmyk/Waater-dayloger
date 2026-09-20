@@ -52,6 +52,11 @@ app.get('/circles', (req, res) => res.sendFile(path.join(__dirname, 'circles.htm
 app.get('/auth', (req, res) => res.sendFile(path.join(__dirname, 'auth.html')));
 app.get('/circle', (req, res) => res.sendFile(path.join(__dirname, 'circle.html')));
 
+// notification settings + unsubscribe — same page, its own JS tells them apart
+// by checking window.location.pathname (see notify-settings.html)
+app.get('/notify-settings', (req, res) => res.sendFile(path.join(__dirname, 'notify-settings.html')));
+app.get('/unsubscribe', (req, res) => res.sendFile(path.join(__dirname, 'notify-settings.html')));
+
 // old bookmarks/links to /inbox still work
 app.get('/inbox', (req, res) => res.redirect(301, '/messages'));
 

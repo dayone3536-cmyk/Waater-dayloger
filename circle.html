@@ -1075,6 +1075,15 @@
   .welcome-enter:hover{background:#e64a27;}
   .welcome-enter:active{transform:scale(.95);}
 
+
+  .post-highlight{
+  animation: postHighlightPulse 2.2s ease;
+}
+@keyframes postHighlightPulse{
+  0%{ box-shadow:0 0 0 3px var(--accent); border-radius:16px; }
+  100%{ box-shadow:0 0 0 0px transparent; }
+}
+
   /* ============================================================
      INVITE MODAL — personal note attached to an invite link
   ============================================================ */
@@ -4300,6 +4309,8 @@
         }
         window.location.replace(`/circle?private&ID=${encodeURIComponent(data.circle_id)}`);
         return;
+
+
       }
 
     if (!circleId){
@@ -4347,10 +4358,24 @@
       }
       enableScreenshotGuard();
       await renderHomeMode();
+
+      const targetPostId = params.get('post');
+      if (targetPostId) {
+        setTimeout(() => {
+          const card = document.querySelector(`[data-post-id="${targetPostId}"]`);
+          if (card) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.classList.add('post-highlight');
+            setTimeout(() => card.classList.remove('post-highlight'), 2200);
+          }
+        }, 300);
+      }
     } else {
       await renderPublicMode();
     }
   }
+
+
 
   init();
 </script>
