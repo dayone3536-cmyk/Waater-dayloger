@@ -344,6 +344,23 @@
   .uploader-mute svg{width:15px;height:15px;stroke:#fff;}
 
   /* caption */
+  /* ---------- "Post to" picker (reddit-style community select) ---------- */
+  .audience-field{margin-bottom:14px;position:relative;display:inline-block;max-width:100%;}
+  .audience-dot{
+    position:absolute;left:12px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:50%;
+    display:grid;place-items:center;pointer-events:none;color:#fff;
+    font-family:var(--font-display);font-weight:700;font-size:11px;
+    background:linear-gradient(135deg,#ffd8c9,var(--accent));
+  }
+  .audience-field select{
+    -webkit-appearance:none;appearance:none;max-width:100%;height:40px;padding:0 36px 0 40px;
+    border:1px solid var(--line-strong);border-radius:99px;background:#fff;color:var(--ink);
+    font-family:var(--font-display);font-weight:600;font-size:14px;cursor:pointer;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .audience-field select:hover{border-color:var(--grey);}
+  .audience-field select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft);}
+  .audience-caret{position:absolute;right:14px;top:50%;width:14px;height:14px;transform:translateY(-50%);pointer-events:none;stroke:var(--grey);}
   .caption-field{margin-top:0;margin-bottom:20px;}
   .caption-field label{
     display:block;font-family:var(--font-mono);font-size:11px;
@@ -883,6 +900,13 @@
     const createBody = document.getElementById('createBody');
     createBody.innerHTML = `
       <form id="createForm">
+       <div class="audience-field" id="audienceField">
+        <span class="audience-dot" id="audienceDot">W</span>
+        <select id="audienceSelect" aria-label="Where to post">
+          <option value="">My feed</option>
+        </select>
+        <svg class="audience-caret" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+       </div>
        <div class="caption-field">
         <button type="button" class="prompt-chip" id="promptChip" aria-label="Get a different prompt">
           <svg class="prompt-shuffle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M21 3l-8.5 8.5M4 20L12.5 11.5M21 16v5h-5M4 4l5 5"/></svg>
@@ -920,6 +944,44 @@
         </div>
       </form>
     `;
+
+    // ---- "Post to": my feed, or any PUBLIC circle I've joined ----
+    // Deep link: /create?circle=<id> preselects a circle (use it from circle.html).
+    const audienceSelect = document.getElementById('audienceSelect');
+    const audienceDot = document.getElementById('audienceDot');
+    const wantedCircle = new URLSearchParams(location.search).get('circle');
+    const circleNames = {};
+
+    function syncAudienceDot(){
+      const id = audienceSelect.value;
+      const name = id ? circleNames[id] : currentUsername;
+      audienceDot.textContent = initials(name);
+      if (id){
+        let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+        audienceDot.style.background = `hsl(${h % 360} 65% 46%)`;
+      } else {
+        audienceDot.style.background = '';
+      }
+    }
+    audienceSelect.addEventListener('change', syncAudienceDot);
+    syncAudienceDot();
+
+    (async () => {
+      try {
+        const { data: mem } = await supabaseClient.from('circle_members').select('circle_id').eq('user_id', currentUser.id);
+        const ids = (mem || []).map(m => m.circle_id);
+        if (!ids.length) return;
+        const { data: circs } = await supabaseClient.from('circles').select('id, name').in('id', ids).eq('is_private', false).order('name');
+        (circs || []).forEach(c => {
+          circleNames[c.id] = c.name;
+          const o = document.createElement('option');
+          o.value = c.id; o.textContent = c.name;
+          audienceSelect.appendChild(o);
+        });
+        if (wantedCircle && circleNames[wantedCircle]) audienceSelect.value = wantedCircle;
+        syncAudienceDot();
+      } catch (err) { console.warn('could not load circles', err); }
+    })();
 
     const uploader = document.getElementById('uploader');
     const fileInput = document.getElementById('fileInput');
@@ -1213,6 +1275,7 @@
           .from('posts')
           .insert({
             user_id: currentUser.id,
+            circle_id: audienceSelect.value || null,
             caption,
             media_url: mediaUrl,
             media_type: mediaType
@@ -1236,6 +1299,7 @@
             ? `I just logged today on Waater — "${caption}". Add yours 👇`
             : `I just logged today on Waater. Add yours 👇`;
 
+          const postedCircleId = audienceSelect.value || null;
           const now = new Date();
           const dateLabel = now.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 
@@ -1254,7 +1318,7 @@
               <div class="stamp">
                 <div class="stamp-meta">
                   <svg class="stamp-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
-                  ${dateLabel} · on your feed
+                  ${dateLabel} · ${postedCircleId ? 'in ' + escapeHtml(circleNames[postedCircleId]) : 'on your feed'}
                 </div>
                 <p class="stamp-headline">That's today, logged.</p>
                 <div class="stamp-post">
@@ -1272,7 +1336,7 @@
                   <span id="copyLinkLabel">Copy link</span>
                 </button>
               </div>
-              <a href="/" class="complete-skip" id="shareSkip">Back to feed</a>
+              <a href="${postedCircleId ? '/circle?public&ID=' + encodeURIComponent(postedCircleId) : '/'}" class="complete-skip" id="shareSkip">${postedCircleId ? 'Back to circle' : 'Back to feed'}</a>
             </div>
           `;
 
