@@ -338,6 +338,8 @@
   #homeAnonToggle{background:#1a1b1f;}
     #homeAnonToggle:hover{background:#000;}
     #homeAnonToggle.active{background:#000;box-shadow:inset 0 0 0 2px #555;}
+  /* voice is dimmed (but still tappable, so it can explain why) while anonymous */
+  #homeVoiceBtn.voice-locked{opacity:.4;}
 
 
   .home-post-btn{
@@ -2965,6 +2967,8 @@
     const setWhisperMode = (on) => {
       isAnon = on;
       anonToggle.classList.toggle('active', on);
+      const vb = document.getElementById('homeVoiceBtn');
+      if (vb) vb.classList.toggle('voice-locked', on);
       homeAnonBanner.classList.toggle('show', on);
       if (on){
         startWhisperPrompts();
@@ -2979,6 +2983,8 @@
         showToast('Posting as yourself');
         return;
       }
+      // can't go anonymous mid-recording: the voice would give them away
+      if (voiceBtn.classList.contains('recording')){ showAnonVoiceNotice(); return; }
       requestWhisperMode(() => {
         setWhisperMode(true);
         showToast('Whisper mode — this one stays unsigned');
@@ -2996,6 +3002,9 @@
     voiceBtn.addEventListener('click', async () => {
       if (!requireAuth()) return;
 
+      // Voice notes can't be anonymous — friends would recognise the voice.
+      if (isAnon && !voiceBtn.classList.contains('recording')){ showAnonVoiceNotice(); return; }
+
       if (voiceBtn.classList.contains('recording')) {
         voiceRecorder.stop();
         return;
@@ -3012,6 +3021,9 @@
           clearInterval(voiceTimerInterval);
           voiceTimer.style.display = 'none';
           voiceBtn.classList.remove('recording');
+
+          // safety net: never upload a voice recording as an anonymous post
+          if (isAnon){ voiceChunks = []; showAnonVoiceNotice(); return; }
 
           const durationSeconds = (Date.now() - voiceStartTime) / 1000;
           const blob = new Blob(voiceChunks, { type: 'audio/webm' });
@@ -4202,6 +4214,49 @@
       }
     };
     el.querySelector('[data-choice="confirm"]').addEventListener('click', () => close(true));
+    el.querySelector('[data-choice="cancel"]').addEventListener('click', () => close(false));
+  }
+
+  // Shown whenever someone tries to post a voice note while anonymous.
+  // Voice can't be anonymous (friends know how each other sound), so we
+  // nudge them to type instead.
+  function showAnonVoiceNotice(){
+    if (document.querySelector('.anon-voice-backdrop')) return;
+    const el = document.createElement('div');
+    el.className = 'sg-backdrop anon-notice-backdrop anon-voice-backdrop';
+    el.setAttribute('role', 'alertdialog');
+    el.setAttribute('aria-modal', 'true');
+    // static strings only (no user input), so innerHTML is safe here
+    el.innerHTML = `
+      <div class="sg-card">
+        <div class="anon-notice-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
+            <path d="M19 10v2a7 7 0 01-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+            <line x1="3" y1="3" x2="21" y2="21"/>
+          </svg>
+        </div>
+        <h3>Voice can give you away</h3>
+        <p>People know how you sound, so a voice note can't stay anonymous — they'd figure out it's you. Write it instead and it stays unsigned.</p>
+        <div class="anon-notice-actions">
+          <button class="sg-btn anon-notice-ghost" type="button" data-choice="cancel">Never mind</button>
+          <button class="sg-btn" type="button" data-choice="text">Write it instead</button>
+        </div>
+      </div>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('show'));
+
+    const close = (goText) => {
+      el.classList.remove('show');
+      setTimeout(() => el.remove(), 200);
+      if (goText){
+        const ta = document.getElementById('homeComposerText') || document.querySelector('#homeComposer textarea');
+        if (ta) ta.focus();
+      }
+    };
+    el.querySelector('[data-choice="text"]').addEventListener('click', () => close(true));
     el.querySelector('[data-choice="cancel"]').addEventListener('click', () => close(false));
   }
 
