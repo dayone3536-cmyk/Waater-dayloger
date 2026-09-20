@@ -542,6 +542,26 @@
 
   }
 
+  .circle-banner{
+    display:inline-flex;align-items:center;gap:8px;max-width:100%;
+    margin-bottom:14px;padding:5px 12px 5px 5px;border-radius:99px;
+    background:color-mix(in srgb, var(--c) 9%, #fff);
+    border:1px solid color-mix(in srgb, var(--c) 22%, #fff);
+    transition:transform .2s var(--ease-spring), background .15s ease, box-shadow .2s ease;
+  }
+  .circle-banner:hover{background:color-mix(in srgb, var(--c) 15%, #fff);box-shadow:0 6px 16px -10px var(--c);}
+  .circle-banner:active{transform:scale(.97);}
+  .circle-banner .cb-dot{
+    width:24px;height:24px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;
+    background:var(--c);color:#fff;font-family:var(--font-display);font-weight:700;font-size:12px;
+  }
+  .circle-banner .cb-label{font-family:var(--font-mono);font-size:11px;color:var(--grey);}
+  .circle-banner .cb-name{
+    font-family:var(--font-display);font-weight:600;font-size:14px;color:var(--c);letter-spacing:-.01em;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .circle-banner svg{width:14px;height:14px;flex-shrink:0;stroke:var(--c);opacity:.7;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+
   .post-meta{
     display:flex;
     align-items:center;
@@ -1331,11 +1351,34 @@
   let postsById = {};
   let likedPostIds = new Set();
 
+  // same hue logic as circle.html, so a circle has the same colour everywhere
+  function circleColor(id) {
+    let h = 2166136261;
+    const str = String(id);
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    const hue = (h >>> 0) % 360;
+    const l = (hue >= 40 && hue <= 190) ? 31 : 46;
+    return `hsl(${hue} 72% ${l}%)`;
+  }
+
+  function circleBannerHtml(circle) {
+    if (!circle) return '';
+    const nm = circle.name || 'Circle';
+    return `
+      <a class="circle-banner" href="/circle?public&ID=${encodeURIComponent(circle.id)}" style="--c:${circleColor(circle.id)}" onclick="event.stopPropagation()">
+        <span class="cb-dot">${escapeHtml(nm.trim().slice(0, 1).toUpperCase())}</span>
+        <span class="cb-label">circle:</span>
+        <span class="cb-name">${escapeHtml(nm)}</span>
+        <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+      </a>`;
+  }
+
   function renderPost(post, index) {
     const [g1, g2] = GRADIENTS[index % GRADIENTS.length];
 
-    const name = escapeHtml(post.profiles?.username || 'Someone');
-    const avatarHtml = avatarHtmlFor(name, post.profiles?.avatar_url);
+    const isAnon = !!post.is_anonymous;
+    const name = isAnon ? 'Anonymous' : escapeHtml(post.profiles?.username || 'Someone');
+    const avatarHtml = isAnon ? '?' : avatarHtmlFor(name, post.profiles?.avatar_url);
 
     const caption = linkifyEscaped(escapeHtml(post.caption || ''));
 
@@ -1353,7 +1396,7 @@
         <video src="${escapeHtml(mediaUrl)}" muted loop playsinline preload="metadata"></video>
         <div class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
       `;
-    } else if (mediaType === 'photo' && mediaUrl) {
+    } else if ((mediaType === 'photo' || mediaType === 'image') && mediaUrl) {
       mediaHtml = `<img src="${escapeHtml(mediaUrl)}" alt="" loading="lazy">`;
     }
 
@@ -1363,11 +1406,18 @@
     
       <article class="post" data-post-id="${post.id}">
 
+        ${circleBannerHtml(post.circle)}
+
         <div class="post-meta">
-          <a href="/profile?u=${encodeURIComponent(post.profiles?.username || '')}" class="avatar-link" onclick="event.stopPropagation()">
+          ${isAnon ? `
             <div class="avatar">${avatarHtml}</div>
-          </a>
-          <a href="/profile?u=${encodeURIComponent(post.profiles?.username || '')}" class="name" onclick="event.stopPropagation()">${name}</a>
+            <span class="name">${name}</span>
+          ` : `
+            <a href="/profile?u=${encodeURIComponent(post.profiles?.username || '')}" class="avatar-link" onclick="event.stopPropagation()">
+              <div class="avatar">${avatarHtml}</div>
+            </a>
+            <a href="/profile?u=${encodeURIComponent(post.profiles?.username || '')}" class="name" onclick="event.stopPropagation()">${name}</a>
+          `}
         </div>
 
         ${caption ? `<div class="caption-top">${caption}</div>` : ''}
@@ -1498,11 +1548,29 @@
 
     try {
 
-        const { data: posts, error } = await supabaseClient
-        .from('posts')
-        .select('*, profiles!posts_user_id_fkey(username, avatar_url), likes(count), comments(count)')
-        .is('circle_id', null)
-        .order('created_at', { ascending: false });
+        // Public circles only. Private circle posts never reach the home feed.
+        const { data: pubCircles } = await supabaseClient
+          .from('circles').select('id, name').eq('is_private', false);
+        const circleById = {};
+        (pubCircles || []).forEach(c => { circleById[c.id] = c; });
+        const pubIds = Object.keys(circleById);
+
+        let feedQuery = supabaseClient
+          .from('posts')
+          .select('*, profiles!posts_user_id_fkey(username, avatar_url), likes(count), comments(count)');
+        feedQuery = pubIds.length
+          ? feedQuery.or(`circle_id.is.null,circle_id.in.(${pubIds.join(',')})`)
+          : feedQuery.is('circle_id', null);
+        const { data: rawPosts, error } = await feedQuery.order('created_at', { ascending: false });
+
+        // attach circle info, hide anon authors, drop anon posts past their 24h life
+        const posts = (rawPosts || [])
+          .filter(p => !p.is_anonymous || Date.now() - new Date(p.created_at).getTime() < 86400000)
+          .map(p => ({
+            ...p,
+            circle: p.circle_id ? (circleById[p.circle_id] || null) : null,
+            profiles: p.is_anonymous ? null : p.profiles
+          }));
 
         
 
@@ -1549,7 +1617,7 @@
     let html = '';
     if (post.media_type === 'video' && post.media_url) {
       html = `<video src="${escapeHtml(post.media_url)}" controls autoplay playsinline></video>`;
-    } else if (post.media_type === 'photo' && post.media_url) {
+    } else if ((post.media_type === 'photo' || post.media_type === 'image') && post.media_url) {
       html = `<img src="${escapeHtml(post.media_url)}" alt="">`;
     }
     mediaWrap.innerHTML = html;
@@ -1659,7 +1727,7 @@
     const avatarHtml = avatarHtmlFor(name, post.profiles?.avatar_url);
     const caption = escapeHtml(post.caption || 'Tap to watch');
     let thumbHtml = avatarHtml;
-    if (post.media_type === 'photo' && post.media_url) {
+    if ((post.media_type === 'photo' || post.media_type === 'image') && post.media_url) {
       thumbHtml = `<img src="${escapeHtml(post.media_url)}" alt="">`;
     } else if (post.media_type === 'video' && post.media_url) {
       thumbHtml = `<video src="${escapeHtml(post.media_url)}" muted playsinline></video>`;
