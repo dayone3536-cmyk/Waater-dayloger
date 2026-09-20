@@ -1238,46 +1238,92 @@
   .gallery-add-btn:active{transform:scale(.96);}
   .gallery-add-btn svg{width:15px;height:15px;stroke:#fff;}
 
-  .gallery-group{position:relative;z-index:1;margin-top:26px;}
+  /* ---- Latest memory — one featured slot, set apart from the grid
+     so the newest addition always gets a moment before the archive starts ---- */
+  .gallery-hero{position:relative;z-index:1;margin-top:18px;}
+  .gallery-hero-label{
+    font-family:var(--font-mono);font-size:10.5px;color:var(--grey);text-transform:uppercase;letter-spacing:.07em;
+    margin-bottom:10px;padding-left:2px;display:flex;align-items:center;gap:6px;
+  }
+  .gallery-hero-label .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:heroPulse 2s ease-in-out infinite;}
+  @keyframes heroPulse{ 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.4;transform:scale(.7);} }
+  .gallery-hero-card{
+    position:relative;border-radius:22px;overflow:hidden;cursor:pointer;display:block;width:100%;
+    aspect-ratio:4/3;background:#f6f6f4;border:1px solid var(--line);
+    box-shadow:0 16px 40px -18px rgba(20,21,26,.28);
+    opacity:0;transform:translateY(14px) scale(.98);animation:galleryTileIn .5s var(--ease-spring) forwards;
+    transition:transform .25s var(--ease);
+  }
+  @media (min-width:640px){ .gallery-hero-card{aspect-ratio:16/8;} }
+  .gallery-hero-card:hover{transform:translateY(-2px);}
+  .gallery-hero-card img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s var(--ease);}
+  .gallery-hero-card:hover img{transform:scale(1.03);}
+  .gallery-hero-card .overlay{
+    position:absolute;inset:0;background:linear-gradient(0deg,rgba(15,12,10,.78) 0%,rgba(15,12,10,.15) 45%,transparent 68%);
+    display:flex;flex-direction:column;justify-content:flex-end;padding:18px;text-align:left;
+  }
+  .gallery-hero-card .overlay .who{display:flex;align-items:center;gap:8px;}
+  .gallery-hero-card .overlay .who .mini{
+    width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#ffd8c9,var(--accent));
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:10.5px;font-family:var(--font-display);font-weight:700;overflow:hidden;flex-shrink:0;
+    box-shadow:0 0 0 2px rgba(255,255,255,.5);
+  }
+  .gallery-hero-card .overlay .who .mini img{width:100%;height:100%;object-fit:cover;}
+  .gallery-hero-card .overlay .who span{font-family:var(--font-display);font-weight:600;font-size:13px;color:#fff;}
+  .gallery-hero-card .overlay .cap{
+    font-family:var(--font-serif);font-size:15px;color:#fff;margin-top:8px;line-height:1.4;max-width:34ch;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+
+  .gallery-group{position:relative;z-index:1;margin-top:28px;}
   .gallery-group-label{
     font-family:var(--font-mono);font-size:10.5px;color:var(--grey);text-transform:uppercase;letter-spacing:.07em;
     margin-bottom:10px;padding-left:2px;
   }
-  .gallery-grid{columns:2 140px;column-gap:10px;}
-  @media (min-width:640px){ .gallery-grid{columns:3 160px;} }
-  @media (min-width:900px){ .gallery-grid{columns:3 180px;} }
+
+  /* True reading-order grid — chronological left-to-right, top-to-bottom.
+     (CSS column masonry looks fuller but reshuffles photos down their
+     column instead of across the row, so "most recent" stops meaning
+     top-left; a fixed-ratio grid keeps the order honest on every screen.) */
+  .gallery-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:3px;border-radius:16px;overflow:hidden;
+  }
+  @media (min-width:640px){ .gallery-grid{grid-template-columns:repeat(4,1fr);gap:4px;border-radius:18px;} }
 
   .gallery-tile{
-    break-inside:avoid;margin-bottom:10px;border-radius:16px;overflow:hidden;position:relative;
-    background:#f6f6f4;border:1px solid var(--line);cursor:pointer;width:100%;display:block;
-    opacity:0;transform:translateY(14px) scale(.97);animation:galleryTileIn .5s var(--ease-spring) forwards;
-    transition:box-shadow .2s ease, transform .2s var(--ease);
+    position:relative;cursor:pointer;display:block;width:100%;aspect-ratio:1;overflow:hidden;
+    background:#f6f6f4;
+    opacity:0;transform:scale(.94);animation:galleryTileIn .45s var(--ease-spring) forwards;
   }
-  .gallery-tile:hover{box-shadow:0 14px 34px rgba(20,21,26,.16);transform:translateY(-3px) scale(1.01);}
-  .gallery-tile img{width:100%;display:block;}
-  @keyframes galleryTileIn{ to{opacity:1;transform:translateY(0) scale(1);} }
+  .gallery-tile img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s var(--ease);}
+  .gallery-tile:hover img{transform:scale(1.06);}
+  @keyframes galleryTileIn{ to{opacity:1;transform:scale(1);} }
 
   .gallery-tile .overlay{
-    position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.6),transparent 55%);
-    opacity:0;transition:opacity .2s ease;display:flex;flex-direction:column;justify-content:flex-end;padding:10px;
-    text-align:left;
+    position:absolute;inset:0;
+    background:linear-gradient(0deg,rgba(0,0,0,.55) 0%,transparent 42%);
+    opacity:0;transition:opacity .18s ease;
   }
-  .gallery-tile:hover .overlay{opacity:1;}
-  .gallery-tile .overlay .who{display:flex;align-items:center;gap:6px;}
-  .gallery-tile .overlay .who .mini{
-    width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#ffd8c9,var(--accent));
-    display:flex;align-items:center;justify-content:center;color:#fff;font-size:8px;font-family:var(--font-display);font-weight:700;overflow:hidden;flex-shrink:0;
+  .gallery-tile:hover .overlay,.gallery-tile:focus-visible .overlay{opacity:1;}
+  /* a slim always-on scrim + tiny avatar bottom-left, so who-posted-this
+     is legible on tap-only devices instead of vanishing without :hover */
+  .gallery-tile .who-chip{
+    position:absolute;left:6px;bottom:6px;width:18px;height:18px;border-radius:50%;
+    background:linear-gradient(135deg,#ffd8c9,var(--accent));display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:8px;font-family:var(--font-display);font-weight:700;overflow:hidden;
+    box-shadow:0 0 0 1.5px rgba(255,255,255,.65);
   }
-  .gallery-tile .overlay .who .mini img{width:100%;height:100%;object-fit:cover;}
-  .gallery-tile .overlay span{font-family:var(--font-mono);font-size:9px;color:#fff;}
-  .gallery-tile .overlay .cap{
-    font-family:var(--font-serif);font-size:11.5px;color:#fff;margin-top:4px;line-height:1.3;
-    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  .gallery-tile .who-chip img{width:100%;height:100%;object-fit:cover;}
+  .gallery-tile .overlay-info{
+    position:absolute;left:0;right:0;bottom:0;padding:16px 8px 7px 28px;color:#fff;
+    opacity:0;transition:opacity .18s ease;
   }
-
-  .gallery-cover{column-span:all;margin-bottom:14px;border-radius:20px;aspect-ratio:16/9;}
-  .gallery-cover .overlay{opacity:1;background:linear-gradient(0deg,rgba(0,0,0,.62),transparent 65%);padding:16px;}
-  .gallery-cover .overlay .cap{font-size:13.5px;-webkit-line-clamp:1;}
+  .gallery-tile:hover .overlay-info,.gallery-tile:focus-visible .overlay-info{opacity:1;}
+  .gallery-tile .overlay-info span{font-family:var(--font-mono);font-size:8.5px;}
+  .gallery-tile .overlay-info .cap{
+    font-family:var(--font-serif);font-size:10.5px;margin-top:2px;line-height:1.25;
+    display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;
+  }
 
   .gallery-empty{
     position:relative;z-index:1;text-align:center;padding:56px 20px;margin-top:20px;
@@ -2351,18 +2397,38 @@
     `;
   }
 
-  function renderGalleryTile(ph, idx, isCover){
+  function renderGalleryTile(ph, idx){
     const m = members.find(x => x.id === ph.user_id);
     const name = m?.username || 'Someone';
     const avatarHtml = m?.avatar_url ? `<img src="${escapeHtml(m.avatar_url)}" alt="">` : initials(name);
     return `
-      <button class="gallery-tile${isCover ? ' gallery-cover' : ''}" data-photo-id="${ph.id}" style="animation-delay:${Math.min(idx * 45, 480)}ms;" type="button">
+      <button class="gallery-tile" data-photo-id="${ph.id}" style="animation-delay:${Math.min(idx * 30, 360)}ms;" type="button">
         <img src="${escapeHtml(ph.photo_url)}" alt="" loading="lazy">
-        <div class="overlay">
-          <div class="who"><span class="mini">${avatarHtml}</span><span>${escapeHtml(name)} · ${timeAgo(ph.created_at)}</span></div>
+        <div class="overlay"></div>
+        <span class="who-chip">${avatarHtml}</span>
+        <div class="overlay-info">
+          <span>${escapeHtml(name)} · ${timeAgo(ph.created_at)}</span>
           ${ph.caption ? `<div class="cap">${escapeHtml(ph.caption)}</div>` : ''}
         </div>
       </button>
+    `;
+  }
+
+  function renderGalleryHero(ph){
+    const m = members.find(x => x.id === ph.user_id);
+    const name = m?.username || 'Someone';
+    const avatarHtml = m?.avatar_url ? `<img src="${escapeHtml(m.avatar_url)}" alt="">` : initials(name);
+    return `
+      <div class="gallery-hero">
+        <div class="gallery-hero-label"><span class="dot"></span>Latest memory</div>
+        <button class="gallery-hero-card" data-photo-id="${ph.id}" type="button">
+          <img src="${escapeHtml(ph.photo_url)}" alt="" loading="lazy">
+          <div class="overlay">
+            <div class="who"><span class="mini">${avatarHtml}</span><span>${escapeHtml(name)} · ${timeAgo(ph.created_at)}</span></div>
+            ${ph.caption ? `<div class="cap">${escapeHtml(ph.caption)}</div>` : ''}
+          </div>
+        </button>
+      </div>
     `;
   }
 
@@ -2378,13 +2444,16 @@
         </div>
       `;
     }
-    const groups = groupPhotosByMonth(photos);
+    // The newest photo gets one featured slot up top; everything else,
+    // including that same photo's neighbours, keeps strict chronological
+    // order in the grid below so scrolling still reads like a timeline.
+    const [heroPhoto, ...rest] = photos;
+    const groups = groupPhotosByMonth(rest);
     let idx = 0;
-    let first = true;
     const groupsHtml = [...groups.entries()].map(([label, groupPhotos]) => {
       const tiles = groupPhotos.map(ph => {
-        const html = renderGalleryTile(ph, idx, first);
-        idx++; first = false;
+        const html = renderGalleryTile(ph, idx);
+        idx++;
         return html;
       }).join('');
       return `
@@ -2397,6 +2466,7 @@
     return `
       <div class="gallery-glow"></div>
       ${renderGalleryHeader(photos)}
+      ${renderGalleryHero(heroPhoto)}
       ${groupsHtml}
     `;
   }
@@ -2407,7 +2477,7 @@
       if (!requireAuth()) return;
       openAlbumCaptureModal();
     });
-    document.querySelectorAll('#galleryWrap .gallery-tile').forEach(tile => {
+    document.querySelectorAll('#galleryWrap .gallery-tile, #galleryWrap .gallery-hero-card').forEach(tile => {
       tile.addEventListener('click', () => {
         const idx = photos.findIndex(p => p.id === tile.dataset.photoId);
         if (idx > -1) openGalleryLightbox(photos, idx);
