@@ -1211,47 +1211,45 @@
     display:inline-flex;align-items:center;gap:6px;
     font-family:var(--font-mono);font-size:10.5px;color:var(--accent);letter-spacing:.06em;text-transform:uppercase;
   }
-  .gallery-eyebrow .live-dot{
-    width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0;
-    box-shadow:0 0 0 0 rgba(255,90,54,.5);
-    animation:eyebrowPulse 2.2s ease-in-out infinite;
-  }
-  @keyframes eyebrowPulse{
-    0%{box-shadow:0 0 0 0 rgba(255,90,54,.45);}
-    70%{box-shadow:0 0 0 6px rgba(255,90,54,0);}
-    100%{box-shadow:0 0 0 0 rgba(255,90,54,0);}
-  }
-  .gallery-title{
-    font-family:var(--font-display);font-weight:700;font-size:26px;letter-spacing:-.015em;margin-top:6px;
-    display:flex;align-items:center;gap:9px;
-    background:linear-gradient(100deg,var(--ink) 45%,var(--ink-soft) 100%);
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-  }
+  
+  .solar-mark{
+  position:relative;display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;flex-shrink:0;
+}
+.solar-sun{
+  position:absolute;width:7px;height:7px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%, #fff, var(--accent) 60%, #c24020 100%);
+  box-shadow:0 0 7px 1.5px rgba(255,90,54,.55);
+  z-index:2;
+}
+.solar-orbit{
+  position:absolute;border-radius:50%;
+  display:flex;align-items:center;justify-content:flex-start;
+}
+.solar-orbit-1{
+  width:16px;height:16px;border:1px solid rgba(255,90,54,.24);
+  animation:solarSpin 3.4s linear infinite;
+}
+.solar-orbit-2{
+  width:26px;height:26px;border:1px solid rgba(124,140,255,.2);
+  animation:solarSpin 6.5s linear infinite reverse;
+}
+.solar-planet{
+  width:4px;height:4px;border-radius:50%;background:var(--accent-2);
+  box-shadow:0 0 4px rgba(255,177,153,.85);
+  transform:translateX(-2px);
+}
+.solar-planet-2{
+  width:3.5px;height:3.5px;border-radius:50%;background:#7c8cff;
+  box-shadow:0 0 4px rgba(124,140,255,.85);
+  transform:translateX(-1.75px);
+}
+@keyframes solarSpin{ to{ transform:rotate(360deg); } }
+@media (prefers-reduced-motion: reduce){
+  .solar-orbit{ animation-duration:0.001ms !important; }
+}
 
-  /* ---- Animated sparkle mark: two hand-drawn four-point stars that
-     twinkle out of phase, replacing the static ✨ glyph with real motion. ---- */
-  .sparkle-mark{
-    position:relative;display:inline-flex;align-items:center;justify-content:center;
-    width:24px;height:24px;flex-shrink:0;
-  }
-  .sparkle-mark svg{position:absolute;transform-origin:center;filter:drop-shadow(0 2px 5px rgba(255,90,54,.35));}
-  .sparkle-mark .spark-big{
-    width:22px;height:22px;top:1px;left:1px;color:var(--accent);
-    animation:sparkleBig 2.8s var(--ease) infinite;
-  }
-  .sparkle-mark .spark-small{
-    width:10px;height:10px;top:-4px;right:-6px;color:var(--accent-2);
-    animation:sparkleSmall 2.8s var(--ease) infinite .7s;
-  }
-  @keyframes sparkleBig{
-    0%,100%{transform:scale(.82) rotate(-6deg);opacity:.7;}
-    45%{transform:scale(1.14) rotate(10deg);opacity:1;}
-    70%{transform:scale(.96) rotate(4deg);opacity:.9;}
-  }
-  @keyframes sparkleSmall{
-    0%,100%{transform:scale(.4) rotate(0deg);opacity:.3;}
-    50%{transform:scale(1.2) rotate(-22deg);opacity:1;}
-  }
+
   .gallery-sub{font-family:var(--font-serif);font-size:14px;color:var(--ink-soft);margin-top:6px;}
   .gallery-meta{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap;}
   .gallery-facepile{display:flex;}
@@ -2449,14 +2447,19 @@
     }).join('');
     return `
       <div class="gallery-head">
-        <div class="gallery-eyebrow"><span class="live-dot"></span>private &amp; permanent</div>
-        <h2 class="gallery-title">
-          <span class="sparkle-mark" aria-hidden="true">
-            <svg class="spark-big" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c.9 4.9 1.1 5.1 6 6-4.9.9-5.1 1.1-6 6-.9-4.9-1.1-5.1-6-6 4.9-.9 5.1-1.1 6-6Z"/></svg>
-            <svg class="spark-small" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c.9 4.9 1.1 5.1 6 6-4.9.9-5.1 1.1-6 6-.9-4.9-1.1-5.1-6-6 4.9-.9 5.1-1.1 6-6Z"/></svg>
-          </span>
-          The Album
-        </h2>
+
+
+        <div class="gallery-eyebrow">private &amp; permanent</div>
+          <h2 class="gallery-title">
+            <span class="solar-mark" aria-hidden="true">
+              <span class="solar-orbit solar-orbit-2"><span class="solar-planet solar-planet-2"></span></span>
+              <span class="solar-orbit solar-orbit-1"><span class="solar-planet"></span></span>
+              <span class="solar-sun"></span>
+            </span>
+            The Album
+          </h2>
+
+
         <div class="gallery-sub">Every little moment this circle wants to keep.</div>
         ${photos.length ? `
         <div class="gallery-meta">
