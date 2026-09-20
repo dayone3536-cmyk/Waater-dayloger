@@ -1066,9 +1066,11 @@
 
     const { data: postData, error } = await supabaseClient
       .from('posts')
-      .select('*, profiles(username, avatar_url), likes(count), comments(count)')
+      .select('*, profiles!posts_user_id_fkey(username, avatar_url), likes(count), comments(count)')
       .eq('id', postId)
       .maybeSingle();
+
+    if (error) console.error('Failed to load post:', error);
 
     if (error || !postData){
       body.innerHTML = `<div class="status-state">Couldn't find that post.</div>`;
