@@ -1196,26 +1196,62 @@
   .gallery-wrap{padding:22px 22px 40px;position:relative;}
 
   .gallery-glow{
-    position:absolute;top:-10px;left:0;right:0;height:220px;pointer-events:none;z-index:0;
+    position:absolute;top:-10px;left:0;right:0;height:260px;pointer-events:none;z-index:0;
     background:
-      radial-gradient(240px 150px at 12% 15%, rgba(255,90,54,.16), transparent 70%),
-      radial-gradient(220px 150px at 88% 5%, rgba(124,140,255,.13), transparent 70%);
+      radial-gradient(260px 170px at 10% 10%, rgba(255,90,54,.19), transparent 70%),
+      radial-gradient(240px 170px at 90% 0%, rgba(124,140,255,.15), transparent 70%),
+      radial-gradient(200px 150px at 55% 30%, rgba(255,177,153,.14), transparent 72%);
     filter:blur(8px);
-    animation:galleryDrift 9s ease-in-out infinite alternate;
+    animation:galleryDrift 10s ease-in-out infinite alternate;
   }
-  @keyframes galleryDrift{ from{transform:translateY(0) scale(1);} to{transform:translateY(12px) scale(1.04);} }
+  @keyframes galleryDrift{ from{transform:translateY(0) scale(1);opacity:.9;} to{transform:translateY(14px) scale(1.06);opacity:1;} }
 
   .gallery-head{position:relative;z-index:1;}
   .gallery-eyebrow{
     display:inline-flex;align-items:center;gap:6px;
     font-family:var(--font-mono);font-size:10.5px;color:var(--accent);letter-spacing:.06em;text-transform:uppercase;
   }
-  .gallery-title{
-    font-family:var(--font-display);font-weight:700;font-size:25px;letter-spacing:-.01em;margin-top:5px;
-    display:flex;align-items:center;gap:8px;
+  .gallery-eyebrow .live-dot{
+    width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0;
+    box-shadow:0 0 0 0 rgba(255,90,54,.5);
+    animation:eyebrowPulse 2.2s ease-in-out infinite;
   }
-  .gallery-title .sparkle{display:inline-block;animation:sparkleSpin 3.4s ease-in-out infinite;}
-  @keyframes sparkleSpin{ 0%,100%{transform:rotate(0) scale(1);} 50%{transform:rotate(16deg) scale(1.15);} }
+  @keyframes eyebrowPulse{
+    0%{box-shadow:0 0 0 0 rgba(255,90,54,.45);}
+    70%{box-shadow:0 0 0 6px rgba(255,90,54,0);}
+    100%{box-shadow:0 0 0 0 rgba(255,90,54,0);}
+  }
+  .gallery-title{
+    font-family:var(--font-display);font-weight:700;font-size:26px;letter-spacing:-.015em;margin-top:6px;
+    display:flex;align-items:center;gap:9px;
+    background:linear-gradient(100deg,var(--ink) 45%,var(--ink-soft) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+
+  /* ---- Animated sparkle mark: two hand-drawn four-point stars that
+     twinkle out of phase, replacing the static ✨ glyph with real motion. ---- */
+  .sparkle-mark{
+    position:relative;display:inline-flex;align-items:center;justify-content:center;
+    width:24px;height:24px;flex-shrink:0;
+  }
+  .sparkle-mark svg{position:absolute;transform-origin:center;filter:drop-shadow(0 2px 5px rgba(255,90,54,.35));}
+  .sparkle-mark .spark-big{
+    width:22px;height:22px;top:1px;left:1px;color:var(--accent);
+    animation:sparkleBig 2.8s var(--ease) infinite;
+  }
+  .sparkle-mark .spark-small{
+    width:10px;height:10px;top:-4px;right:-6px;color:var(--accent-2);
+    animation:sparkleSmall 2.8s var(--ease) infinite .7s;
+  }
+  @keyframes sparkleBig{
+    0%,100%{transform:scale(.82) rotate(-6deg);opacity:.7;}
+    45%{transform:scale(1.14) rotate(10deg);opacity:1;}
+    70%{transform:scale(.96) rotate(4deg);opacity:.9;}
+  }
+  @keyframes sparkleSmall{
+    0%,100%{transform:scale(.4) rotate(0deg);opacity:.3;}
+    50%{transform:scale(1.2) rotate(-22deg);opacity:1;}
+  }
   .gallery-sub{font-family:var(--font-serif);font-size:14px;color:var(--ink-soft);margin-top:6px;}
   .gallery-meta{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap;}
   .gallery-facepile{display:flex;}
@@ -1223,20 +1259,30 @@
     width:26px;height:26px;border-radius:50%;border:2px solid #fff;margin-left:-8px;
     background:linear-gradient(135deg,#ffd8c9,var(--accent));display:flex;align-items:center;justify-content:center;
     color:#fff;font-family:var(--font-display);font-weight:700;font-size:9.5px;overflow:hidden;flex-shrink:0;
+    transition:transform .2s var(--ease-spring);
   }
+  .gallery-facepile:hover .fp{transform:translateX(2px);}
   .gallery-facepile .fp:first-child{margin-left:0;}
   .gallery-facepile .fp img{width:100%;height:100%;object-fit:cover;}
   .gallery-meta-text{font-family:var(--font-mono);font-size:10.5px;color:var(--grey);}
 
   .gallery-add-btn{
-    margin-top:16px;display:inline-flex;align-items:center;gap:8px;
-    background:var(--ink);color:#fff!important;font-family:var(--font-display);font-weight:600;font-size:13px;
-    padding:10px 18px;border-radius:99px;transition:transform .15s var(--ease),background .15s ease,box-shadow .2s ease;
-    box-shadow:0 8px 20px rgba(20,21,26,.16);
+    position:relative;overflow:hidden;margin-top:16px;display:inline-flex;align-items:center;gap:8px;
+    background:linear-gradient(135deg,#2a2b31 0%,var(--ink) 55%,#000 100%);
+    color:#fff!important;font-family:var(--font-display);font-weight:600;font-size:13px;
+    padding:10px 18px;border-radius:99px;transition:transform .2s var(--ease-spring),box-shadow .2s ease;
+    box-shadow:0 10px 22px -6px rgba(20,21,26,.4), inset 0 1px 0 rgba(255,255,255,.12);
   }
-  .gallery-add-btn:hover{background:#000;transform:translateY(-1px);}
+  .gallery-add-btn::after{
+    content:'';position:absolute;inset:0;transform:translateX(-130%);
+    background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.32) 50%,transparent 70%);
+    transition:transform .7s var(--ease);
+  }
+  .gallery-add-btn:hover{transform:translateY(-2px);box-shadow:0 14px 26px -6px rgba(20,21,26,.45), inset 0 1px 0 rgba(255,255,255,.15);}
+  .gallery-add-btn:hover::after{transform:translateX(130%);}
+  .gallery-add-btn:hover svg{transform:rotate(90deg);}
   .gallery-add-btn:active{transform:scale(.96);}
-  .gallery-add-btn svg{width:15px;height:15px;stroke:#fff;}
+  .gallery-add-btn svg{width:15px;height:15px;stroke:#fff;transition:transform .4s var(--ease-spring);}
 
   /* ---- Latest memory — one featured slot, set apart from the grid
      so the newest addition always gets a moment before the archive starts ---- */
@@ -1248,16 +1294,24 @@
   .gallery-hero-label .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:heroPulse 2s ease-in-out infinite;}
   @keyframes heroPulse{ 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.4;transform:scale(.7);} }
   .gallery-hero-card{
-    position:relative;border-radius:22px;overflow:hidden;cursor:pointer;display:block;width:100%;
-    aspect-ratio:4/3;background:#f6f6f4;border:1px solid var(--line);
-    box-shadow:0 16px 40px -18px rgba(20,21,26,.28);
+    position:relative;border-radius:24px;overflow:hidden;cursor:pointer;display:block;width:100%;
+    aspect-ratio:4/3;background:#f6f6f4;
+    box-shadow:0 18px 44px -18px rgba(20,21,26,.32);
     opacity:0;transform:translateY(14px) scale(.98);animation:galleryTileIn .5s var(--ease-spring) forwards;
-    transition:transform .25s var(--ease);
+    transition:transform .3s var(--ease),box-shadow .3s var(--ease);
+  }
+  .gallery-hero-card::before{
+    content:'';position:absolute;inset:0;border-radius:inherit;padding:1.5px;z-index:2;pointer-events:none;
+    background:linear-gradient(135deg,rgba(255,255,255,.55),rgba(255,90,54,.3) 40%,rgba(124,140,255,.28) 100%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    opacity:0;transition:opacity .3s ease;
   }
   @media (min-width:640px){ .gallery-hero-card{aspect-ratio:16/8;} }
-  .gallery-hero-card:hover{transform:translateY(-2px);}
-  .gallery-hero-card img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s var(--ease);}
-  .gallery-hero-card:hover img{transform:scale(1.03);}
+  .gallery-hero-card:hover{transform:translateY(-3px);box-shadow:0 24px 52px -16px rgba(20,21,26,.4);}
+  .gallery-hero-card:hover::before{opacity:1;}
+  .gallery-hero-card img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s var(--ease);}
+  .gallery-hero-card:hover img{transform:scale(1.04);}
   .gallery-hero-card .overlay{
     position:absolute;inset:0;background:linear-gradient(0deg,rgba(15,12,10,.78) 0%,rgba(15,12,10,.15) 45%,transparent 68%);
     display:flex;flex-direction:column;justify-content:flex-end;padding:18px;text-align:left;
@@ -1277,8 +1331,13 @@
 
   .gallery-group{position:relative;z-index:1;margin-top:28px;}
   .gallery-group-label{
+    display:flex;align-items:center;gap:10px;
     font-family:var(--font-mono);font-size:10.5px;color:var(--grey);text-transform:uppercase;letter-spacing:.07em;
     margin-bottom:10px;padding-left:2px;
+  }
+  .gallery-group-label::after{
+    content:'';flex:1;height:1px;
+    background:linear-gradient(90deg,var(--line-strong),transparent);
   }
 
   /* True reading-order grid — chronological left-to-right, top-to-bottom.
@@ -1295,8 +1354,14 @@
     background:#f6f6f4;
     opacity:0;transform:scale(.94);animation:galleryTileIn .45s var(--ease-spring) forwards;
   }
-  .gallery-tile img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s var(--ease);}
-  .gallery-tile:hover img{transform:scale(1.06);}
+  .gallery-tile img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .45s var(--ease);}
+  .gallery-tile:hover img{transform:scale(1.08);}
+  .gallery-tile::after{
+    content:'';position:absolute;inset:0;z-index:1;pointer-events:none;
+    background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.5) 50%,transparent 60%);
+    transform:translateX(-120%);
+  }
+  .gallery-tile:hover::after{transform:translateX(120%);transition:transform .65s var(--ease);}
   @keyframes galleryTileIn{ to{opacity:1;transform:scale(1);} }
 
   .gallery-tile .overlay{
@@ -1326,16 +1391,19 @@
   }
 
   .gallery-empty{
-    position:relative;z-index:1;text-align:center;padding:56px 20px;margin-top:20px;
-    border:1.5px dashed var(--line-strong);border-radius:22px;background:var(--accent-soft);
+    position:relative;z-index:1;text-align:center;padding:56px 20px;margin-top:20px;overflow:hidden;
+    border:1.5px dashed var(--line-strong);border-radius:22px;
+    background:linear-gradient(160deg,var(--accent-soft) 0%,#fff 75%);
   }
   .gallery-empty .ic{
-    width:52px;height:52px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;
-    margin:0 auto 14px;box-shadow:0 6px 18px rgba(20,21,26,.08);
+    position:relative;width:56px;height:56px;border-radius:50%;
+    background:linear-gradient(135deg,#fff,#fff5f1);
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 14px;box-shadow:0 8px 20px rgba(255,90,54,.16),0 0 0 6px rgba(255,90,54,.06);
     animation:galleryFloat 2.6s ease-in-out infinite;
   }
-  @keyframes galleryFloat{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-7px);} }
-  .gallery-empty .ic svg{width:22px;height:22px;stroke:var(--accent);}
+  @keyframes galleryFloat{ 0%,100%{transform:translateY(0) rotate(0deg);} 50%{transform:translateY(-7px) rotate(-4deg);} }
+  .gallery-empty .ic svg{width:23px;height:23px;stroke:var(--accent);}
   .gallery-empty h3{font-family:var(--font-display);font-weight:700;font-size:16px;}
   .gallery-empty p{font-family:var(--font-serif);font-size:13.5px;color:var(--ink-soft);margin-top:6px;max-width:260px;margin-left:auto;margin-right:auto;line-height:1.5;}
   .gallery-empty .gallery-add-btn{margin-top:18px;}
@@ -2381,8 +2449,14 @@
     }).join('');
     return `
       <div class="gallery-head">
-        <div class="gallery-eyebrow">private &amp; permanent</div>
-        <h2 class="gallery-title"><span class="sparkle">✨</span> The Album</h2>
+        <div class="gallery-eyebrow"><span class="live-dot"></span>private &amp; permanent</div>
+        <h2 class="gallery-title">
+          <span class="sparkle-mark" aria-hidden="true">
+            <svg class="spark-big" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c.9 4.9 1.1 5.1 6 6-4.9.9-5.1 1.1-6 6-.9-4.9-1.1-5.1-6-6 4.9-.9 5.1-1.1 6-6Z"/></svg>
+            <svg class="spark-small" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c.9 4.9 1.1 5.1 6 6-4.9.9-5.1 1.1-6 6-.9-4.9-1.1-5.1-6-6 4.9-.9 5.1-1.1 6-6Z"/></svg>
+          </span>
+          The Album
+        </h2>
         <div class="gallery-sub">Every little moment this circle wants to keep.</div>
         ${photos.length ? `
         <div class="gallery-meta">
