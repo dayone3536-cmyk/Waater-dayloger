@@ -6,10 +6,12 @@
     "start": "node app.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.112.4",
+    "@supabase/supabase-js": "^2.116.0",
     "cors": "^2.8.6",
+    "dotenv": "^18.0.1",
     "express": "^5.2.1",
     "firebase": "^12.18.0",
-    "morgan": "^1.12.0"
+    "morgan": "^1.12.0",
+    "node-cron": "^4.6.0"
   }
 }

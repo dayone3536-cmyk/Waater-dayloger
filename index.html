@@ -2054,7 +2054,7 @@
       <div class="dl-sub">${escapeHtml(stats.message)}</div>
       <div class="dl-stats">
         <div class="dl-stat"><b>${formatNum(stats.commentCount)}</b><span>COMMENTS</span></div>
-        <div class="dl-stat"><b>~${formatNum(stats.fileCount)}</b><span>CLIPS</span></div>
+        <div class="dl-stat"><b>~${formatNum(stats.fileCount)}</b><span>PHOTOS</span></div>
         <div class="dl-stat"><b>~${formatBytes(stats.totalEstBytes)}</b><span>EST. SIZE</span></div>
       </div>
       <div class="dl-actions">
@@ -2101,7 +2101,7 @@
       <div class="dl-confetti">${pieces}</div>
       <div class="dl-icon big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg></div>
       <div class="dl-title">Saved, safe and sound</div>
-      <div class="dl-sub">${formatNum(stats.commentCount)} comment${stats.commentCount === 1 ? '' : 's'}${stats.voiceCount ? ` and ${formatNum(stats.voiceCount)} voice note${stats.voiceCount === 1 ? '' : 's'}` : ''} saved in one ${formatBytes(stats.sizeBytes)} file. Tap it anytime to open — works with no internet.</div>
+      <div class="dl-sub">${formatNum(stats.commentCount)} comment${stats.commentCount === 1 ? '' : 's'} saved in one ${formatBytes(stats.sizeBytes)} file. Tap it anytime — it opens like the real thing, no internet needed.</div>
       <div class="dl-actions">
         <button class="dl-btn dl-btn-primary" onclick="closeDownloadSheet()">Nice</button>
       </div>
@@ -2121,9 +2121,10 @@
     `;
   }
 
-  // ---- ONE-FILE OFFLINE PLAYER ----
-  // Everything (photo/video, avatars, every voice note) is embedded inside a
-  // single .html file. Tap it, it opens, voice notes play. No zip, no folders.
+  // ---- ONE-FILE OFFLINE POST PAGE ----
+  // A single .html that looks and behaves like the live Waater post page:
+  // same fonts, same post card, comments that stream in as you scroll.
+  // No voice notes here — public feed is text/photo/video only.
   function blobToDataUrl(blob) {
     return new Promise((res, rej) => {
       const r = new FileReader();
@@ -2133,108 +2134,292 @@
     });
   }
 
+  // shrink photos so the single file stays light (avatars → 96px, post photo → 1600px)
+  async function shrinkImage(blob, maxDim, quality) {
+    try {
+      if (!blob.type.startsWith('image/') || blob.type === 'image/gif' || !window.createImageBitmap) return blob;
+      const bmp = await createImageBitmap(blob);
+      const scale = Math.min(1, maxDim / Math.max(bmp.width, bmp.height));
+      if (scale === 1 && blob.size < 400 * 1024) { bmp.close && bmp.close(); return blob; }
+      const c = document.createElement('canvas');
+      c.width = Math.round(bmp.width * scale);
+      c.height = Math.round(bmp.height * scale);
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(bmp, 0, 0, c.width, c.height);
+      bmp.close && bmp.close();
+      const out = await new Promise(r => c.toBlob(r, 'image/jpeg', quality));
+      return out && out.size < blob.size ? out : blob;
+    } catch (err) {
+      return blob;
+    }
+  }
+
+  // Grab the exact fonts the live app uses and inline them, so the offline
+  // page looks identical. Falls back to system fonts if this fails.
+  let embeddedFontsCache = null;
+  async function getEmbeddedFontsCss() {
+    if (embeddedFontsCache !== null) return embeddedFontsCache;
+    let out = '';
+    try {
+      const link = document.querySelector('link[href*="fonts.googleapis.com/css2"]');
+      if (link) {
+        const css = await (await fetch(link.href)).text();
+        const blocks = [...css.matchAll(/\/\*\s*latin\s*\*\/\s*(@font-face\s*\{[^}]*\})/g)].map(m => m[1]);
+        const cache = new Map();
+        for (const b of blocks) {
+          const m = b.match(/url\(([^)]+)\)/);
+          if (!m) continue;
+          const url = m[1].replace(/["']/g, '');
+          if (!cache.has(url)) cache.set(url, await blobToDataUrl(await (await fetch(url)).blob()));
+          out += b.replace(m[0], 'url(' + cache.get(url) + ')') + '\n';
+        }
+      }
+    } catch (err) { out = ''; }
+    embeddedFontsCache = out;
+    return out;
+  }
+
   function fmtDur(s) {
     if (!s) return '';
     const m = Math.floor(s / 60), sec = Math.round(s % 60);
     return `${m}:${String(sec).padStart(2, '0')}`;
   }
 
-  const PLAYER_CSS = `
-    :root{--bg:#faf9f8;--card:#fff;--ink:#14151a;--soft:#4a4d55;--grey:#8a8d94;--line:#ececec;--accent:#ff5a36;--accent-soft:#fff1ec;}
-    @media(prefers-color-scheme:dark){:root{--bg:#0e0f12;--card:#17181c;--ink:#f2f2f4;--soft:#b4b6bd;--grey:#7c7f88;--line:#26282e;--accent-soft:#2a1a15;}}
+  const OFFLINE_CSS = `
+    :root{--ink:#14151a;--ink-soft:#4a4d55;--grey:#8a8d94;--line:#ececec;--line-strong:#e0e0e0;--accent:#ff5a36;--accent-soft:#fff1ec;
+      --font-display:'Space Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;--font-serif:'Newsreader',Georgia,'Times New Roman',serif;--font-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+      --ease:cubic-bezier(.22,.9,.32,1);--ease-spring:cubic-bezier(.34,1.56,.64,1);}
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:0 0 90px;}
-    .wrap{max-width:600px;margin:0 auto;padding:16px;}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px;}
-    .stamp{font-size:10.5px;color:var(--grey);letter-spacing:.04em;text-transform:uppercase;margin-bottom:14px;}
-    .head{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
-    .av{width:42px;height:42px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;overflow:hidden;flex-shrink:0;}
-    .av img,.cav img{width:100%;height:100%;object-fit:cover;}
-    .name{font-weight:700;font-size:15.5px;}
-    .caption{font-size:17px;line-height:1.55;margin-bottom:14px;white-space:pre-wrap;word-break:break-word;}
-    .media{width:100%;border-radius:16px;display:block;margin-bottom:14px;background:#000;}
-    audio.media{background:none;}
-    .note{font-size:12px;color:#c9720b;background:#fff3e0;padding:9px 12px;border-radius:10px;margin-bottom:14px;}
-    .transcript{font-style:italic;font-size:14px;line-height:1.55;color:var(--soft);background:var(--bg);padding:11px 13px;border-radius:10px;margin-bottom:14px;white-space:pre-wrap;}
-    .bar{position:sticky;top:0;z-index:5;display:flex;gap:8px;align-items:center;padding:10px 16px;background:var(--bg);border-bottom:1px solid var(--line);}
-    .bar .t{font-weight:700;font-size:13px;color:var(--soft);text-transform:uppercase;letter-spacing:.04em;margin-right:auto;}
-    .btn{border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 13px inherit;font-family:inherit;padding:8px 14px;border-radius:999px;cursor:pointer;}
-    .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
-    #list{display:flex;flex-direction:column;margin-top:14px;}
-    #list.rev{flex-direction:column-reverse;}
-    .ci{display:flex;gap:10px;padding:10px;border-radius:14px;margin-bottom:4px;transition:background .2s;}
-    .ci.now{background:var(--accent-soft);}
-    .cav{width:34px;height:34px;border-radius:50%;background:var(--line);color:var(--soft);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;overflow:hidden;flex-shrink:0;}
-    .cb{flex:1;min-width:0;}
-    .ch{display:flex;align-items:baseline;gap:8px;margin-bottom:2px;}
-    .cn{font-weight:600;font-size:14px;}
-    .ct{font-size:10.5px;color:var(--grey);}
-    .cx{font-size:14.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;}
-    .cb audio{width:100%;max-width:320px;height:36px;margin-top:4px;}
-    .foot{text-align:center;font-size:11px;color:var(--grey);margin-top:22px;}
+    html,body{overflow-x:hidden;}
+    body{background:#fff;color:var(--ink);font-family:var(--font-serif);font-size:16px;-webkit-font-smoothing:antialiased;padding-bottom:calc(88px + env(safe-area-inset-bottom));}
+    a{color:inherit;text-decoration:none;} button{font-family:inherit;border:none;background:none;cursor:pointer;}
+    ::selection{background:var(--accent-soft);color:var(--accent);}
+    @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important;}}
+    .shell{max-width:680px;margin:0 auto;border-left:1px solid var(--line);border-right:1px solid var(--line);min-height:100vh;}
+    .top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:calc(13px + env(safe-area-inset-top)) 22px 13px;background:rgba(255,255,255,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);}
+    .logo{font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:-.04em;}
+    .logo i{font-style:normal;color:var(--accent);}
+    .chip-off{font-family:var(--font-mono);font-size:11px;color:var(--grey);background:#f5f5f6;padding:5px 11px;border-radius:99px;display:flex;align-items:center;gap:7px;}
+    .chip-off b{width:6px;height:6px;border-radius:50%;background:#3cc07a;display:block;}
+    .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd8c9,var(--accent));flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-display);font-weight:700;font-size:13px;overflow:hidden;}
+    .avatar img{width:100%;height:100%;object-fit:cover;}
+    .post{padding:20px 22px 22px;border-bottom:1px solid var(--line);animation:rise .55s var(--ease) both;}
+    @keyframes rise{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+    .circle-banner{display:inline-flex;align-items:center;gap:8px;max-width:100%;margin-bottom:14px;padding:5px 12px 5px 5px;border-radius:99px;background:color-mix(in srgb,var(--c) 9%,#fff);border:1px solid color-mix(in srgb,var(--c) 22%,#fff);}
+    .circle-banner .cb-dot{width:24px;height:24px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;background:var(--c);color:#fff;font-family:var(--font-display);font-weight:700;font-size:12px;}
+    .circle-banner .cb-label{font-family:var(--font-mono);font-size:11px;color:var(--grey);}
+    .circle-banner .cb-name{font-family:var(--font-display);font-weight:600;font-size:14px;color:var(--c);letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .post-meta{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+    .post-meta .name{font-family:var(--font-display);font-weight:600;font-size:15px;}
+    .post-meta .when{margin-left:auto;font-family:var(--font-mono);font-size:11.5px;color:var(--grey);}
+    .caption-top{font-size:16.5px;line-height:1.5;color:var(--ink);margin-bottom:12px;overflow-wrap:anywhere;white-space:pre-wrap;}
+    .caption-top.big{font-size:21px;line-height:1.45;margin-bottom:6px;}
+    .caption-top a,.cbody a{color:var(--accent);}
+    .clip{position:relative;width:100%;aspect-ratio:9/13;max-height:560px;border-radius:16px;overflow:hidden;background:linear-gradient(160deg,var(--g1,#ffe3d6),var(--g2,#ffb199));cursor:pointer;user-select:none;-webkit-user-select:none;}
+    .clip img,.clip video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+    .clip .play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(1);width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.88);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(0,0,0,.14);pointer-events:none;transition:transform .25s var(--ease-spring),opacity .2s;}
+    .clip .play svg{width:19px;height:19px;fill:var(--ink);margin-left:2px;}
+    .clip.playing .play{opacity:0;transform:translate(-50%,-50%) scale(.7);}
+    .clip .duration{position:absolute;top:12px;right:12px;font-family:var(--font-mono);font-size:12px;color:#fff;background:rgba(0,0,0,.35);padding:3px 8px;border-radius:6px;}
+    .clip .pbar{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.35);}
+    .clip .pbar i{display:block;height:100%;width:0;background:#fff;}
+    .note{font-family:var(--font-mono);font-size:11.5px;color:#c9720b;background:#fff3e0;padding:10px 12px;border-radius:10px;margin-bottom:12px;}
+    .post-actions{display:flex;align-items:center;gap:22px;margin-top:14px;}
+    .post-actions button{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:13px;color:var(--ink-soft);}
+    .post-actions svg{width:19px;height:19px;stroke:var(--ink-soft);fill:none;stroke-width:1.8;}
+    .post-actions button:hover,.post-actions button:hover svg{color:var(--accent);stroke:var(--accent);}
+    .post-actions button.liked{color:var(--accent);}
+    .post-actions button.liked svg{stroke:var(--accent);fill:var(--accent);}
+    .post-actions button.pop svg{animation:pop .4s var(--ease-spring);}
+    @keyframes pop{0%{transform:scale(1);}40%{transform:scale(1.4);}100%{transform:scale(1);}}
+    .comments{padding:18px 22px 10px;}
+    .chead{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+    .chead h3{font-family:var(--font-display);font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;}
+    .count-chip{font-family:var(--font-mono);font-size:10.5px;font-weight:400;color:var(--grey);background:#f5f5f6;padding:2px 8px;border-radius:99px;}
+    .seg{display:flex;background:#f5f5f6;border-radius:99px;padding:3px;}
+    .seg button{font-family:var(--font-mono);font-size:11px;color:var(--grey);padding:5px 11px;border-radius:99px;transition:all .18s var(--ease);}
+    .seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08);}
+    .comment-item{display:flex;align-items:flex-start;gap:10px;padding:12px 4px;border-bottom:1px solid var(--line);border-radius:10px;opacity:0;animation:commentIn .35s var(--ease) forwards;}
+    @keyframes commentIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+    .comment-item .avatar{width:32px;height:32px;font-size:12px;margin-top:1px;}
+    .cwrap{flex:1;min-width:0;}
+    .chd{display:flex;align-items:baseline;gap:8px;margin-bottom:3px;}
+    .cname{font-family:var(--font-display);font-weight:600;font-size:14px;}
+    .ctime{font-family:var(--font-mono);font-size:10.5px;color:var(--grey);}
+    .cbody{font-size:15px;line-height:1.5;color:var(--ink-soft);overflow-wrap:anywhere;white-space:pre-wrap;}
+    .empty{text-align:center;padding:36px 20px;color:var(--grey);font-style:italic;font-size:13.5px;}
+    .end{text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--grey);padding:26px 0 12px;}
+    .composer{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:12px 20px calc(12px + env(safe-area-inset-bottom));}
+    .composer div{max-width:640px;margin:0 auto;border:1px solid var(--line-strong);border-radius:99px;padding:11px 16px;font-size:15px;color:var(--grey);font-style:italic;background:#fafafa;}
+    .lightbox{position:fixed;inset:0;background:rgba(10,10,12,.92);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;}
+    .lightbox.show{display:flex;animation:fade .2s;}
+    .lightbox img{max-width:100%;max-height:92vh;border-radius:12px;}
+    @keyframes fade{from{opacity:0;}to{opacity:1;}}
+    .toast{position:fixed;left:50%;bottom:96px;transform:translate(-50%,20px);background:var(--ink);color:#fff;font-family:var(--font-mono);font-size:12px;padding:9px 16px;border-radius:99px;opacity:0;pointer-events:none;transition:all .25s var(--ease);z-index:120;}
+    .toast.show{opacity:1;transform:translate(-50%,0);}
+    @media(min-width:900px){.clip{max-width:380px;}}
   `;
 
-  const PLAYER_JS = `
-    (function(){
-      var list=document.getElementById('list');
-      var clips=[].slice.call(document.querySelectorAll('.cb audio'));
-      var speeds=[1,1.25,1.5,2], si=0, playing=false, idx=-1;
-      var playBtn=document.getElementById('playAll'), spdBtn=document.getElementById('speed'), sortBtn=document.getElementById('sort');
-      function clear(){[].forEach.call(document.querySelectorAll('.ci.now'),function(e){e.classList.remove('now');});}
-      function playAt(i){
-        if(i<0||i>=clips.length){playing=false;playBtn.textContent='▶ Play all voice notes';clear();return;}
-        idx=i; var a=clips[i]; clear(); var row=a.closest('.ci'); row.classList.add('now');
-        row.scrollIntoView({behavior:'smooth',block:'center'});
-        a.playbackRate=speeds[si]; var p=a.play(); if(p&&p.catch)p.catch(function(){});
-      }
-      function ordered(){var arr=clips.slice(); return list.classList.contains('rev')?arr.reverse():arr;}
-      clips.forEach(function(a){
-        a.addEventListener('ended',function(){ if(!playing)return; var o=ordered(); var n=o.indexOf(a)+1; clips=o; playAt(n); });
-        a.addEventListener('play',function(){ clips.forEach(function(b){if(b!==a)b.pause();}); });
-      });
-      playBtn.onclick=function(){
-        if(playing){playing=false;playBtn.textContent='▶ Play all voice notes';clips.forEach(function(a){a.pause();});clear();return;}
-        clips=ordered(); if(!clips.length)return; playing=true; playBtn.textContent='⏸ Stop'; playAt(0);
-      };
-      spdBtn.onclick=function(){si=(si+1)%speeds.length;spdBtn.textContent=speeds[si]+'x';clips.forEach(function(a){a.playbackRate=speeds[si];});};
-      sortBtn.onclick=function(){list.classList.toggle('rev');sortBtn.textContent=list.classList.contains('rev')?'Newest first':'Oldest first';};
-    })();
-  `;
-
-  function buildPlayerParts(post, comments, media, avatarData, audioData, mediaNote) {
-    const author = post.is_anonymous ? 'Anonymous' : (post.profiles?.username || 'Someone');
-    const av = (!post.is_anonymous && post.profiles?.avatar_url) ? avatarData.get(post.profiles.avatar_url) : null;
-    const parts = [];
-    let mediaHtml = '';
-    if (media) {
-      if (post.media_type === 'video') mediaHtml = `<video class="media" src="${media}" controls playsinline preload="metadata"></video>`;
-      else if (post.media_type === 'audio') mediaHtml = `<audio class="media" src="${media}" controls preload="metadata"></audio>`;
-      else mediaHtml = `<img class="media" src="${media}" alt="">`;
+  // Runs INSIDE the downloaded file (serialized with toString) — keep it self-contained.
+  function offlineRuntime() {
+    var D = JSON.parse(document.getElementById('wdata').textContent);
+    var saved = new Date(D.saved).getTime();
+    function $(id) { return document.getElementById(id); }
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function linkify(t) { return esc(t).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>'); }
+    function when(iso) {
+      if (!iso) return '';
+      var d = new Date(iso), s = Math.max(1, (saved - d.getTime()) / 1000);
+      if (s < 60) return Math.floor(s) + 's';
+      if (s < 3600) return Math.floor(s / 60) + 'm';
+      if (s < 86400) return Math.floor(s / 3600) + 'h';
+      if (s < 604800) return Math.floor(s / 86400) + 'd';
+      if (s < 3024000) return Math.floor(s / 604800) + 'w';
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
     }
-    const title = escapeHtml((post.caption || 'A moment from Waater').slice(0, 60));
-    parts.push(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>${PLAYER_CSS}</style></head><body>
-<div class="wrap"><div class="card">
-<div class="stamp">Saved from Waater · ${escapeHtml(new Date().toLocaleString())}</div>
-<div class="head"><div class="av">${av ? `<img src="${av}" alt="">` : escapeHtml(author.slice(0, 1).toUpperCase())}</div><div class="name">${escapeHtml(author)}</div></div>
-${post.caption ? `<div class="caption">${escapeHtml(post.caption)}</div>` : ''}
-${mediaHtml}
-${mediaNote ? `<div class="note">${escapeHtml(mediaNote)}</div>` : ''}
-${post.transcript ? `<div class="transcript">${escapeHtml(post.transcript)}</div>` : ''}
-</div></div>
-<div class="bar"><span class="t">${formatNum(comments.length)} comment${comments.length === 1 ? '' : 's'}</span>
-<button class="btn" id="sort">Oldest first</button><button class="btn" id="speed">1x</button><button class="btn primary" id="playAll">▶ Play all voice notes</button></div>
-<div class="wrap"><div id="list">`);
-    comments.forEach(c => {
-      const name = c.profiles?.username || 'Someone';
-      const cav = c.profiles?.avatar_url ? avatarData.get(c.profiles.avatar_url) : null;
-      const when = c.created_at ? new Date(c.created_at).toLocaleString() : '';
-      const aud = c.audio_url ? audioData.get(c.audio_url) : null;
-      const dur = fmtDur(c.duration_seconds);
-      parts.push(`<div class="ci"><div class="cav">${cav ? `<img src="${cav}" alt="">` : escapeHtml(name.trim().slice(0, 1).toUpperCase())}</div><div class="cb"><div class="ch"><span class="cn">${escapeHtml(name)}</span><span class="ct">${escapeHtml(when)}${dur ? ' · ' + dur : ''}</span></div>${c.body ? `<div class="cx">${escapeHtml(c.body)}</div>` : ''}${aud ? `<audio controls preload="none" src="${aud}"></audio>` : (c.audio_url ? '<div class="ct">Voice note couldn\'t be saved</div>' : '')}</div></div>`);
+    var toastT;
+    function toast(m) { var t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove('show'); }, 1600); }
+    function fmt(s) { s = Math.max(0, Math.round(s || 0)); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
+
+    var pw = $('pwhen'); if (pw) pw.textContent = when(D.post.created_at);
+
+    // like (local only — feels alive, remembered on this device)
+    var key = 'waater-like-' + D.post.id, liked = false;
+    try { liked = localStorage.getItem(key) === '1'; } catch (e) {}
+    var likeBtn = $('likeBtn'), likeN = $('likeN');
+    function paintLike() { likeBtn.classList.toggle('liked', liked); likeN.textContent = D.post.likes + (liked ? 1 : 0); }
+    paintLike();
+    likeBtn.onclick = function () {
+      liked = !liked; try { localStorage.setItem(key, liked ? '1' : '0'); } catch (e) {}
+      paintLike(); likeBtn.classList.remove('pop'); void likeBtn.offsetWidth; if (liked) likeBtn.classList.add('pop');
+    };
+    $('commentBtn').onclick = function () { $('comments').scrollIntoView({ behavior: 'smooth' }); };
+    $('shareBtn').onclick = function () {
+      var t = D.post.caption || 'A moment from Waater';
+      if (navigator.share) { navigator.share({ title: 'Waater', text: t }).catch(function () {}); }
+      else if (navigator.clipboard) { navigator.clipboard.writeText(t).then(function () { toast('Copied'); }); }
+    };
+
+    // media
+    var clip = $('clip');
+    if (clip) {
+      var v = clip.querySelector('video'), img = clip.querySelector('img');
+      if (v) {
+        var dur = $('dur'), fill = $('pfill');
+        v.addEventListener('loadedmetadata', function () { if (dur) dur.textContent = fmt(v.duration); try { v.currentTime = 0.1; } catch (e) {} });
+        v.addEventListener('timeupdate', function () { if (v.duration) fill.style.width = (v.currentTime / v.duration * 100) + '%'; if (dur) dur.textContent = fmt(v.duration - v.currentTime); });
+        v.addEventListener('play', function () { clip.classList.add('playing'); });
+        v.addEventListener('pause', function () { clip.classList.remove('playing'); });
+        v.addEventListener('ended', function () { clip.classList.remove('playing'); fill.style.width = '0'; });
+        clip.onclick = function () { if (v.paused) { v.muted = false; var p = v.play(); if (p && p.catch) p.catch(function () {}); } else { v.pause(); } };
+      } else if (img) {
+        clip.onclick = function () { $('lbImg').src = img.src; $('lb').classList.add('show'); };
+      }
+    }
+    $('lb').onclick = function () { this.classList.remove('show'); };
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') $('lb').classList.remove('show'); });
+
+    // comments — stream in as you scroll, like the live app
+    var list = $('clist'), sentinel = $('sentinel');
+    var items = D.comments, view = items, shown = 0, BATCH = 25, order = 'old';
+    function row(c, k) {
+      var src = c.a != null ? D.avatars[c.a] : null;
+      return '<div class="comment-item" style="animation-delay:' + Math.min(k, 10) * 30 + 'ms"><div class="avatar">' +
+        (src ? '<img src="' + src + '" alt="">' : esc((c.n || '?').trim().slice(0, 1).toUpperCase())) +
+        '</div><div class="cwrap"><div class="chd"><span class="cname">' + esc(c.n) + '</span><span class="ctime">' + when(c.t) + '</span></div>' +
+        (c.b ? '<div class="cbody">' + linkify(c.b) + '</div>' : '') + '</div></div>';
+    }
+    function more() {
+      var end = Math.min(shown + BATCH, view.length), html = '', k = 0;
+      for (; shown < end; shown++, k++) html += row(view[shown], k);
+      list.insertAdjacentHTML('beforeend', html);
+      if (shown >= view.length) { sentinel.innerHTML = view.length > 8 ? '<div class="end">you\'re all caught up</div>' : ''; }
+      else if (io) { io.unobserve(sentinel); io.observe(sentinel); }
+      else { more(); }
+    }
+    var io = ('IntersectionObserver' in window) ? new IntersectionObserver(function (en) { if (en[0].isIntersecting && shown < view.length) more(); }, { rootMargin: '700px' }) : null;
+    function reset() {
+      list.innerHTML = ''; sentinel.innerHTML = ''; shown = 0;
+      view = order === 'old' ? items : items.slice().reverse();
+      if (!view.length) { list.innerHTML = '<div class="empty">No comments on this one.</div>'; return; }
+      more();
+    }
+    [].forEach.call(document.querySelectorAll('.seg button'), function (b) {
+      b.onclick = function () {
+        if (order === b.getAttribute('data-o')) return;
+        order = b.getAttribute('data-o');
+        [].forEach.call(document.querySelectorAll('.seg button'), function (x) { x.classList.toggle('on', x === b); });
+        reset();
+      };
     });
-    if (!comments.length) parts.push('<div class="cx" style="color:var(--grey);padding:10px">No comments on this one.</div>');
-    parts.push(`</div><div class="foot">Saved from Waater 💧 · works offline</div></div><script>${PLAYER_JS}<\/script></body></html>`);
-    return parts;
+    reset();
+  }
+
+  function buildOfflinePage(post, comments, mediaData, avatarList, avatarIdx, mediaNote, fontsCss) {
+    const isAnon = !!post.is_anonymous;
+    const author = isAnon ? 'Anonymous' : (post.profiles?.username || 'Someone');
+    const authorAv = (!isAnon && post.profiles?.avatar_url && avatarIdx.has(post.profiles.avatar_url))
+      ? `<img src="${avatarList[avatarIdx.get(post.profiles.avatar_url)]}" alt="">`
+      : (isAnon ? '?' : escapeHtml(author.trim().slice(0, 1).toUpperCase()));
+    const [g1, g2] = GRADIENTS[0];
+    const caption = linkifyEscaped(escapeHtml(post.caption || ''));
+    const isVideo = post.media_type === 'video';
+    const hasClip = !!(mediaData || (post.media_url && (isVideo || post.media_type === 'photo' || post.media_type === 'image')));
+
+    let clipHtml = '';
+    if (hasClip) {
+      const inner = !mediaData ? '' : isVideo
+        ? `<video src="${mediaData}" playsinline preload="metadata"></video><div class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div><div class="duration" id="dur">${fmtDur(post.duration_seconds)}</div><div class="pbar"><i id="pfill"></i></div>`
+        : `<img src="${mediaData}" alt="">`;
+      clipHtml = `<div class="clip" id="clip" style="--g1:${g1};--g2:${g2};">${inner}</div>`;
+    }
+
+    const circleHtml = post.circle ? `<div class="circle-banner" style="--c:${circleColor(post.circle.id)}"><span class="cb-dot">${escapeHtml((post.circle.name || 'C').trim().slice(0, 1).toUpperCase())}</span><span class="cb-label">circle:</span><span class="cb-name">${escapeHtml(post.circle.name || 'Circle')}</span></div>` : '';
+
+    const data = {
+      saved: new Date().toISOString(),
+      post: { id: post.id, created_at: post.created_at || null, caption: post.caption || '', likes: post.likes?.[0]?.count ?? 0 },
+      avatars: avatarList,
+      comments: comments.map(c => ({
+        n: c.profiles?.username || 'Someone',
+        a: (c.profiles?.avatar_url && avatarIdx.has(c.profiles.avatar_url)) ? avatarIdx.get(c.profiles.avatar_url) : null,
+        b: c.body || '',
+        t: c.created_at || null,
+      })),
+    };
+    // keep the JSON safe inside a <script> tag
+    const json = JSON.stringify(data).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+    const title = escapeHtml((post.caption || 'A moment from Waater').slice(0, 60));
+
+    return [
+      `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#ffffff"><title>${title} · Waater</title><style>${fontsCss}${OFFLINE_CSS}</style></head><body>`,
+      `<div class="shell">
+<div class="top"><span class="logo">waater<i>.</i></span><span class="chip-off"><b></b>saved copy · works offline</span></div>
+<article class="post">
+${circleHtml}
+<div class="post-meta"><div class="avatar">${authorAv}</div><span class="name">${escapeHtml(author)}</span><span class="when" id="pwhen"></span></div>
+${caption ? `<div class="caption-top${hasClip ? '' : ' big'}">${caption}</div>` : ''}
+${clipHtml}
+${mediaNote ? `<div class="note">${escapeHtml(mediaNote)}</div>` : ''}
+<div class="post-actions">
+<button id="likeBtn"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 10-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 000-7.8z"/></svg><span id="likeN">0</span></button>
+<button id="commentBtn"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>${formatNum(comments.length)}</span></button>
+<button id="shareBtn"><svg viewBox="0 0 24 24"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7M16 6l-4-4-4 4M12 2v13"/></svg> share</button>
+</div>
+</article>
+<section class="comments" id="comments">
+<div class="chead"><h3>Comments <span class="count-chip">${formatNum(comments.length)}</span></h3><div class="seg"><button class="on" data-o="old">Oldest</button><button data-o="new">Newest</button></div></div>
+<div id="clist"></div><div id="sentinel"></div>
+</section>
+</div>
+<div class="composer"><div>Saved copy — reconnect to Waater to join in</div></div>
+<div class="lightbox" id="lb"><img id="lbImg" alt=""></div><div class="toast" id="toast"></div>`,
+      mediaData ? '' : '',
+      `<script id="wdata" type="application/json">${json}<\/script>`,
+      `<script>(${offlineRuntime.toString()})();<\/script></body></html>`,
+    ];
   }
 
   // Quick, cheap read on how big this download is likely to be — a HEAD
@@ -2257,34 +2442,13 @@ ${post.transcript ? `<div class="transcript">${escapeHtml(post.transcript)}</div
         ?? (post.media_type === 'video' ? 18 * 1024 * 1024 : 2.5 * 1024 * 1024);
     }
 
-    let sample = [];
-    try {
-      const { data } = await supabaseClient
-        .from('comments')
-        .select('audio_url, duration_seconds, profiles(avatar_url)')
-        .eq('post_id', postId)
-        .limit(40);
-      sample = data || [];
-    } catch (err) { /* no sample — fall back to a conservative estimate */ }
-
-    // comments here are voice notes, not photos — estimate audio size from
-    // duration when we have it (~16KB/s, a reasonable compressed-voice rate),
-    // falling back to a flat per-clip average when duration is missing.
-    const voiceSample = sample.filter(c => c.audio_url);
-    const voiceRatio = sample.length ? voiceSample.length / sample.length : 0;
-    const avgVoiceBytes = voiceSample.length
-      ? voiceSample.reduce((sum, c) => sum + (c.duration_seconds ? c.duration_seconds * 16 * 1024 : 500 * 1024), 0) / voiceSample.length
-      : 500 * 1024;
-    const estVoiceClips = Math.round(voiceRatio * commentCount);
     const estUniqueAvatars = Math.min(commentCount, 500);
-
-    const AVG_AVATAR_BYTES = 45 * 1024;
-    const totalEstBytes = (mediaBytes + estUniqueAvatars * AVG_AVATAR_BYTES + estVoiceClips * avgVoiceBytes) * 1.37; // embedded as base64
-    const fileCount = (post.media_url ? 1 : 0) + estVoiceClips;
+    const totalEstBytes = mediaBytes * 1.37 + estUniqueAvatars * 6 * 1024 + commentCount * 400;
+    const fileCount = (post.media_url ? 1 : 0) + estUniqueAvatars;
 
     if (dlCancelled) return; // they closed the sheet while we were sizing it up
 
-    const big = commentCount > 400 || totalEstBytes > 40 * 1024 * 1024 || estVoiceClips > 80;
+    const big = commentCount > 3000 || totalEstBytes > 60 * 1024 * 1024;
 
     if (big) {
       renderDlWarning(postId, {
@@ -2325,8 +2489,8 @@ ${post.transcript ? `<div class="transcript">${escapeHtml(post.transcript)}</div
     if (text) text.textContent = 'Cancelling…';
   }
 
-  // The real thing: fetch every comment, photo and voice note, then embed it
-  // all in ONE self-contained .html file the user can tap to open, offline.
+  // The real thing: fetch every comment + the photo/video + avatars + fonts,
+  // then seal it all into ONE self-contained .html file.
   async function packAndDownload(postId, setProgress) {
     const post = postsById[postId];
     if (!post) throw new Error('Post not found');
@@ -2348,40 +2512,50 @@ ${post.transcript ? `<div class="transcript">${escapeHtml(post.transcript)}</div
       if (error) throw error;
       allComments = allComments.concat(data || []);
       const frac = totalCount ? Math.min(1, allComments.length / Math.max(totalCount, 1)) : ((data || []).length < PAGE ? 1 : 0.5);
-      setProgress(2 + frac * 18, `Gathering comments… ${formatNum(allComments.length)}${totalCount ? ` of ${formatNum(totalCount)}` : ''}`);
+      setProgress(2 + frac * 22, `Gathering comments… ${formatNum(allComments.length)}${totalCount ? ` of ${formatNum(totalCount)}` : ''}`);
       if (!data || data.length < PAGE) break;
       from += PAGE;
     }
 
     if (dlCancelled) throw new DlCancel();
-    setProgress(22, 'Saving the post…');
-    let media = null, mediaNote = null;
-    if (post.media_url) {
-      try { media = await blobToDataUrl(await fetchBlobWithTimeout(post.media_url, 60000)); }
-      catch (err) { mediaNote = "We couldn't save the original photo/video (the link may be private)."; }
+    setProgress(26, 'Saving the post…');
+    let mediaData = null, mediaNote = null;
+    const mt = post.media_type;
+    if (post.media_url && (mt === 'video' || mt === 'photo' || mt === 'image')) {
+      try {
+        let blob = await fetchBlobWithTimeout(post.media_url, 90000);
+        if (mt !== 'video') blob = await shrinkImage(blob, 1600, 0.86);
+        mediaData = await blobToDataUrl(blob);
+      } catch (err) {
+        mediaNote = "We couldn't save the original photo/video (the link may be private).";
+      }
     }
 
-    // avatars + voice notes, deduped, a few at a time
-    const avatarData = new Map(), audioData = new Map();
-    const jobs = [], seen = new Set();
-    const add = (type, url) => { if (url && !seen.has(url)) { seen.add(url); jobs.push({ type, url }); } };
-    if (!post.is_anonymous) add('avatar', post.profiles?.avatar_url);
-    allComments.forEach(c => { add('avatar', c.profiles?.avatar_url); add('audio', c.audio_url); });
+    if (dlCancelled) throw new DlCancel();
+    setProgress(45, 'Packing the look & feel…');
+    const fontsCss = await getEmbeddedFontsCss();
 
+    // avatars, deduped and shrunk to 96px
+    const avatarList = [], avatarIdx = new Map();
+    const urls = new Set();
+    if (!post.is_anonymous && post.profiles?.avatar_url) urls.add(post.profiles.avatar_url);
+    allComments.forEach(c => { if (c.profiles?.avatar_url) urls.add(c.profiles.avatar_url); });
+    const urlList = [...urls];
     let done = 0;
-    await poolMap(jobs, 4, async (job) => {
+    await poolMap(urlList, 6, async (u) => {
       if (dlCancelled) return;
       try {
-        const data = await blobToDataUrl(await fetchBlobWithTimeout(job.url, 30000));
-        (job.type === 'audio' ? audioData : avatarData).set(job.url, data);
-      } catch (err) { /* shown as "couldn't be saved" in the file */ }
+        const small = await shrinkImage(await fetchBlobWithTimeout(u, 15000), 96, 0.8);
+        avatarIdx.set(u, avatarList.length);
+        avatarList.push(await blobToDataUrl(small));
+      } catch (err) { /* falls back to an initial */ }
       done++;
-      setProgress(25 + (jobs.length ? done / jobs.length : 1) * 65, `Saving photos & voice notes… ${formatNum(done)} of ${formatNum(jobs.length)}`);
+      setProgress(48 + (urlList.length ? done / urlList.length : 1) * 42, `Saving photos… ${formatNum(done)} of ${formatNum(urlList.length)}`);
     });
 
     if (dlCancelled) throw new DlCancel();
     setProgress(93, 'Sealing it into one file…');
-    const parts = buildPlayerParts(post, allComments, media, avatarData, audioData, mediaNote);
+    const parts = buildOfflinePage(post, allComments, mediaData, avatarList, avatarIdx, mediaNote, fontsCss);
     const blob = new Blob(parts, { type: 'text/html' });
 
     const who = post.is_anonymous ? 'anonymous' : (post.profiles?.username || 'waater');
@@ -2393,7 +2567,7 @@ ${post.transcript ? `<div class="transcript">${escapeHtml(post.transcript)}</div
     } catch (err) { /* table may not exist yet — safe to ignore */ }
 
     setProgress(100, 'Done!');
-    renderDlSuccess({ commentCount: allComments.length, voiceCount: audioData.size, sizeBytes: blob.size });
+    renderDlSuccess({ commentCount: allComments.length, sizeBytes: blob.size });
   }
 
   // ---- comments (rebuilt: optimistic send + a hard guard against double-posting) ----

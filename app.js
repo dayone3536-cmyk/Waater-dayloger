@@ -5,6 +5,7 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const { startNotificationCron } = require('./notification-cron');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -94,4 +95,5 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`Daylog backend running on http://localhost:${PORT}`);
+  startNotificationCron();
 });
