@@ -1503,8 +1503,9 @@
   }
 
   // ---- "my circles" strip on the home screen — a quick, no-friction glance
-  // at every circle you're in (public or private), with a red dot for
-  // circles that have posts you haven't opened yet. Only membership + post
+  // at your private circles only (public circles already live in the main
+  // feed below), with a red dot for circles that have posts you haven't
+  // opened yet. Only membership + post
   // timestamps are fetched here, never post content, so private posts still
   // never render outside circle.html itself. "Seen" is tracked locally per
   // device since there's no last_seen column on circle_members yet.
@@ -1533,7 +1534,7 @@
         .eq('user_id', currentUser.id);
       if (error) throw error;
 
-      const circles = (memberships || []).map(m => m.circles).filter(Boolean);
+      const circles = (memberships || []).map(m => m.circles).filter(c => c && c.is_private);
       if (!circles.length) { wrap.hidden = true; return; }
 
       const ids = circles.map(c => c.id);
