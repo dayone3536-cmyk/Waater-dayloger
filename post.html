@@ -78,9 +78,12 @@
     background:rgba(255,255,255,.82);
     -webkit-backdrop-filter:saturate(180%) blur(16px);backdrop-filter:saturate(180%) blur(16px);
     border-bottom:1px solid var(--line);
-    transition:box-shadow .25s ease;
+    transition:box-shadow .25s ease, transform .32s var(--ease);
+    will-change:transform;
+    transform:translateY(0);
   }
   .topbar.scrolled{box-shadow:0 8px 22px -14px rgba(20,21,26,.28);}
+  .topbar.nav-hidden{transform:translateY(-100%);}
   .back-btn{
     width:34px;height:34px;border-radius:50%;background:#f2f2f3;
     display:flex;align-items:center;justify-content:center;flex-shrink:0;
@@ -1441,11 +1444,35 @@
     list.addEventListener('focusout', function(){ pill.classList.remove('on'); });
   }
 
-  // topbar gets a soft shadow once you scroll
+  // topbar: soft shadow once you scroll, and hide-on-scroll-down / reveal-on-scroll-up (YouTube-style)
   var tb = document.querySelector('.topbar');
   if (tb){
-    var f = function(){ tb.classList.toggle('scrolled', window.scrollY > 4); };
-    window.addEventListener('scroll', f, {passive:true}); f();
+    var lastY = window.scrollY;
+    var REVEAL_THRESHOLD = 6;   // ignore tiny jitter
+    var HIDE_AFTER = 58;        // don't hide until we've scrolled past the bar itself
+    var ticking = false;
+
+    var f = function(){
+      var y = window.scrollY;
+      tb.classList.toggle('scrolled', y > 4);
+
+      var delta = y - lastY;
+      if (Math.abs(delta) > REVEAL_THRESHOLD) {
+        if (delta > 0 && y > HIDE_AFTER) {
+          tb.classList.add('nav-hidden');      // scrolling down -> hide
+        } else if (delta < 0) {
+          tb.classList.remove('nav-hidden');   // scrolling up -> reveal
+        }
+        lastY = y;
+      }
+      if (y <= 0) tb.classList.remove('nav-hidden');
+      ticking = false;
+    };
+
+    window.addEventListener('scroll', function(){
+      if (!ticking) { window.requestAnimationFrame(f); ticking = true; }
+    }, {passive:true});
+    f();
   }
 
   // dock: light haptic tap, and tuck away while typing so the keyboard has room
