@@ -563,6 +563,29 @@
   }
   .circle-banner svg{width:14px;height:14px;flex-shrink:0;stroke:var(--c);opacity:.7;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
 
+  .my-circles{margin:2px 0 20px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  .my-circles::-webkit-scrollbar{display:none;}
+  .mc-scroll{display:flex;gap:16px;padding:2px 4px 6px;}
+  .mc-item{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;width:60px;text-decoration:none;}
+  .mc-avatar{
+    position:relative;width:52px;height:52px;border-radius:50%;flex-shrink:0;
+    display:grid;place-items:center;
+    background:color-mix(in srgb, var(--c) 14%, #fff);
+    border:1.5px solid color-mix(in srgb, var(--c) 30%, #fff);
+    color:var(--c);font-family:var(--font-display);font-weight:700;font-size:18px;
+    transition:transform .2s var(--ease-spring), box-shadow .2s ease;
+  }
+  .mc-item:active .mc-avatar{transform:scale(.93);}
+  .mc-item:hover .mc-avatar{box-shadow:0 6px 16px -10px var(--c);}
+  .mc-dot{
+    position:absolute;top:-1px;right:-1px;width:13px;height:13px;border-radius:50%;
+    background:#ff4757;border:2.5px solid #fff;
+  }
+  .mc-name{
+    font-family:var(--font-mono);font-size:11px;color:var(--grey);max-width:60px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+
   .post-meta{
     display:flex;
     align-items:center;
@@ -1142,6 +1165,10 @@
 
     </div>
 
+    <div class="my-circles" id="myCircles" hidden>
+      <div class="mc-scroll" id="myCirclesScroll"></div>
+    </div>
+
     <div class="feed" id="feed">
 
   <div class="feed-status" id="feedStatus">
@@ -1473,6 +1500,79 @@
         <span class="cb-name">${escapeHtml(nm)}</span>
         <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
       </a>`;
+  }
+
+  // ---- "my circles" strip on the home screen — a quick, no-friction glance
+  // at every circle you're in (public or private), with a red dot for
+  // circles that have posts you haven't opened yet. Only membership + post
+  // timestamps are fetched here, never post content, so private posts still
+  // never render outside circle.html itself. "Seen" is tracked locally per
+  // device since there's no last_seen column on circle_members yet.
+  const MC_SEEN_KEY = 'waaterCircleSeen';
+
+  function mcGetSeenMap() {
+    try { return JSON.parse(localStorage.getItem(MC_SEEN_KEY) || '{}'); }
+    catch (_) { return {}; }
+  }
+
+  function mcMarkSeen(circleId) {
+    const map = mcGetSeenMap();
+    map[circleId] = new Date().toISOString();
+    try { localStorage.setItem(MC_SEEN_KEY, JSON.stringify(map)); } catch (_) {}
+  }
+
+  async function loadMyCircles() {
+    const wrap = document.getElementById('myCircles');
+    const scroll = document.getElementById('myCirclesScroll');
+    if (!wrap || !scroll || !supabaseConfigured || !currentUser) return;
+
+    try {
+      const { data: memberships, error } = await supabaseClient
+        .from('circle_members')
+        .select('circle_id, circles(id, name, is_private)')
+        .eq('user_id', currentUser.id);
+      if (error) throw error;
+
+      const circles = (memberships || []).map(m => m.circles).filter(Boolean);
+      if (!circles.length) { wrap.hidden = true; return; }
+
+      const ids = circles.map(c => c.id);
+      const { data: recentPosts } = await supabaseClient
+        .from('posts')
+        .select('circle_id, created_at')
+        .in('circle_id', ids)
+        .order('created_at', { ascending: false });
+
+      const latestByCircle = {};
+      (recentPosts || []).forEach(p => {
+        if (!latestByCircle[p.circle_id]) latestByCircle[p.circle_id] = p.created_at;
+      });
+
+      const seen = mcGetSeenMap();
+
+      scroll.innerHTML = circles.map(c => {
+        const color = circleColor(c.id);
+        const initial = escapeHtml((c.name || 'C').trim().slice(0, 1).toUpperCase());
+        const latest = latestByCircle[c.id];
+        const lastSeenAt = seen[c.id] ? new Date(seen[c.id]).getTime() : 0;
+        const hasNew = !!latest && new Date(latest).getTime() > lastSeenAt;
+        const href = `/circle?${c.is_private ? 'private' : 'public'}&ID=${encodeURIComponent(c.id)}`;
+        return `
+          <a class="mc-item" href="${href}" data-circle-id="${escapeHtml(String(c.id))}">
+            <span class="mc-avatar" style="--c:${color}">${initial}${hasNew ? '<span class="mc-dot"></span>' : ''}</span>
+            <span class="mc-name">${escapeHtml(c.name || 'Circle')}</span>
+          </a>`;
+      }).join('');
+
+      scroll.querySelectorAll('.mc-item').forEach(el => {
+        el.addEventListener('click', () => mcMarkSeen(el.dataset.circleId));
+      });
+
+      wrap.hidden = false;
+    } catch (err) {
+      console.error('Failed to load my circles:', err);
+      wrap.hidden = true;
+    }
   }
 
   function renderPost(post, index) {
@@ -2768,6 +2868,7 @@ ${mediaNote ? `<div class="note">${escapeHtml(mediaNote)}</div>` : ''}
   async function init() {
     if (supabaseConfigured) await loadAuthState();
     loadFeed();
+    loadMyCircles();
     loadStreak();
     await ensurePushSubscriptionIfAlreadyGranted();
   }
