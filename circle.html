@@ -1327,6 +1327,26 @@
   .gallery-add-btn:active{transform:scale(.96);}
   .gallery-add-btn svg{width:15px;height:15px;stroke:#fff;transition:transform .4s var(--ease-spring);}
 
+  /* ---- Golden Hour — ask someone a question ---- */
+  .ask-strip{margin-top:18px;}
+  .ask-strip-label{font-family:var(--font-mono);font-size:10.5px;color:var(--grey);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;}
+  .ask-strip-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;}
+  .ask-chip{
+    flex-shrink:0;display:inline-flex;align-items:center;gap:7px;padding:6px 12px 6px 6px;
+    border-radius:99px;background:#f6f6f4;border:1px solid var(--line);
+    font-family:var(--font-display);font-weight:500;font-size:13px;color:var(--ink);
+    transition:background .15s ease, transform .15s var(--ease-spring), border-color .15s ease;
+  }
+  .ask-chip:hover{background:var(--accent-soft);border-color:var(--accent-2);}
+  .ask-chip:active{transform:scale(.96);}
+  .ask-chip-avatar{
+    width:24px;height:24px;border-radius:50%;flex-shrink:0;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#ffd8c9,var(--accent));color:#fff;
+    font-family:var(--font-display);font-weight:700;font-size:10px;
+  }
+  .ask-chip-avatar img{width:100%;height:100%;object-fit:cover;}
+
   /* ---- Latest memory — one featured slot, set apart from the grid
      so the newest addition always gets a moment before the archive starts ---- */
   .gallery-hero{position:relative;z-index:1;margin-top:18px;}
@@ -2614,6 +2634,62 @@
     return groups;
   }
 
+  // =========================================================
+  // GOLDEN HOUR — send a prompt to another member
+  // =========================================================
+  function openSendPromptModal(toUserId, toUsername){
+    const modal = document.createElement('div');
+    modal.className = 'invite-modal-backdrop';
+    modal.innerHTML = `
+      <div class="invite-modal">
+        <h3>Ask ${escapeHtml(toUsername)} something</h3>
+        <p>They'll see this pinned above the album whenever they open the link.</p>
+        <textarea id="promptQuestionInput" maxlength="200" placeholder="What do you want to ask them?"></textarea>
+        <div class="invite-modal-row">
+          <button class="invite-modal-skip" type="button" id="promptModalCancel">Cancel</button>
+          <button class="invite-modal-send" type="button" id="promptModalSend">Send</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    requestAnimationFrame(() => modal.classList.add('show'));
+
+    const close = () => { modal.classList.remove('show'); setTimeout(() => modal.remove(), 220); };
+    modal.querySelector('#promptModalCancel').addEventListener('click', close);
+    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+    modal.querySelector('#promptModalSend').addEventListener('click', async () => {
+      const question = modal.querySelector('#promptQuestionInput').value.trim();
+      if (!question) return;
+
+      const sendBtn = modal.querySelector('#promptModalSend');
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending...';
+
+      try {
+        const { data, error } = await supabaseClient
+          .from('golden_hour_prompts')
+          .insert({
+            circle_id: circleId,
+            from_user_id: currentUser.id,
+            to_user_id: toUserId,
+            question,
+          })
+          .select('id')
+          .single();
+        if (error) throw error;
+
+        const link = `${window.location.origin}/circle?private&ID=${encodeURIComponent(circleId)}&prompt=${encodeURIComponent(data.id)}`;
+        await navigator.clipboard.writeText(link);
+        showToast('Question sent — link copied 🔗');
+        close();
+      } catch (err) {
+        showToast(err.message || 'Could not send question', 'error');
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send';
+      }
+    });
+  }
+
   function renderGalleryHeader(photos){
     const contributorIds = [...new Set(photos.map(p => p.user_id))];
     const facepile = contributorIds.slice(0, 5).map(uid => {
@@ -2641,6 +2717,18 @@
         <div class="gallery-meta">
           <div class="gallery-facepile">${facepile}</div>
           <span class="gallery-meta-text">${photos.length} memor${photos.length === 1 ? 'y' : 'ies'} from ${contributorIds.length} of you</span>
+        </div>` : ''}
+        ${members.filter(m => m.id !== currentUser?.id).length ? `
+        <div class="ask-strip">
+          <div class="ask-strip-label">Ask someone a question</div>
+          <div class="ask-strip-row">
+            ${members.filter(m => m.id !== currentUser?.id).map(m => `
+              <button class="ask-chip" type="button" data-user-id="${m.id}" data-username="${escapeHtml(m.username || 'Someone')}">
+                <span class="ask-chip-avatar">${m.avatar_url ? `<img src="${escapeHtml(m.avatar_url)}" alt="">` : initials(m.username || '?')}</span>
+                <span class="ask-chip-name">${escapeHtml(m.username || 'Someone')}</span>
+              </button>
+            `).join('')}
+          </div>
         </div>` : ''}
         <button class="gallery-add-btn" id="galleryAddBtn" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
@@ -2734,6 +2822,12 @@
       tile.addEventListener('click', () => {
         const idx = photos.findIndex(p => p.id === tile.dataset.photoId);
         if (idx > -1) openGalleryLightbox(photos, idx);
+      });
+    });
+    document.querySelectorAll('#galleryWrap .ask-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        if (!requireAuth()) return;
+        openSendPromptModal(chip.dataset.userId, chip.dataset.username);
       });
     });
   }
