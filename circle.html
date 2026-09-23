@@ -631,6 +631,40 @@
   .home-comment-rec-timer{
     font-family:var(--font-mono);font-size:11px;color:var(--danger);flex-shrink:0;min-width:32px;
   }
+
+  /* Hold-to-talk: press a post to record a voice reply, tap to open the thread */
+  .home-post-body{position:relative;cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;}
+  .home-post-body.holding-talk{background:rgba(224,67,63,.05);}
+  .home-post-body.holding-talk::after{
+    content:'';position:absolute;inset:0;border-radius:14px;pointer-events:none;
+    box-shadow:0 0 0 0 rgba(224,67,63,.35);animation:holdRing 1s ease-out infinite;
+  }
+  @keyframes holdRing{
+    0%{box-shadow:0 0 0 0 rgba(224,67,63,.35);}
+    100%{box-shadow:0 0 0 14px rgba(224,67,63,0);}
+  }
+  .hold-record-indicator{
+    display:none;position:absolute;left:50%;bottom:10px;transform:translateX(-50%);
+    align-items:center;gap:7px;background:var(--danger);color:#fff;border-radius:99px;
+    padding:6px 14px;font-family:var(--font-mono);font-size:11px;white-space:nowrap;
+    box-shadow:0 4px 14px rgba(0,0,0,.18);pointer-events:none;z-index:3;
+  }
+  .hold-record-indicator.show{display:flex;}
+  .hri-dot{width:7px;height:7px;border-radius:50%;background:#fff;animation:hriBlink 1s ease-in-out infinite;}
+  @keyframes hriBlink{ 0%,100%{opacity:1;} 50%{opacity:.25;} }
+
+  .hold-onboarding-tip{
+    position:absolute;left:50%;bottom:8px;transform:translateX(-50%);
+    display:flex;flex-direction:column;align-items:center;gap:2px;
+    pointer-events:none;z-index:3;animation:tipFade .35s ease-out;
+  }
+  .hold-onboarding-tip span:last-child{
+    background:var(--ink);color:#fff;font-family:var(--font-mono);font-size:10.5px;
+    border-radius:99px;padding:5px 12px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.18);
+  }
+  .hot-arrow{font-size:16px;color:var(--ink);animation:tipBounce 1s ease-in-out infinite;}
+  @keyframes tipBounce{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(5px);} }
+  @keyframes tipFade{ from{opacity:0;} to{opacity:1;} }
   .home-voice-bubble{
     background:#f7f7f8;border-radius:14px;padding:8px 13px;flex:1;min-width:0;
   }
@@ -2100,6 +2134,152 @@
     `;
   }
 
+  // Shared upload+insert+refresh used by both the mic button and hold-to-talk
+  async function sendVoiceComment(postId, blob, durationSeconds){
+    const path = `${currentUser.id}/${postId}/${Date.now()}.webm`;
+    const { error: uploadError } = await supabaseClient.storage
+      .from('voice-comments')
+      .upload(path, blob, { contentType: 'audio/webm' });
+    if (uploadError) throw uploadError;
+
+    const { error: insertError } = await supabaseClient.from('voice_comments').insert({
+      post_id: postId,
+      user_id: currentUser.id,
+      audio_url: path,
+      duration_seconds: durationSeconds
+    });
+    if (insertError) throw insertError;
+
+    const listEl = document.getElementById(`home-comment-list-${postId}`);
+    const comments = await loadComments(postId);
+    listEl.innerHTML = comments.map(renderCommentItem).join('');
+    const countEl = document.querySelector(`.home-comment-toggle[data-post-id="${postId}"] .home-comment-count`);
+    if (countEl) countEl.textContent = comments.length;
+  }
+
+  const HOLD_HINT_KEY = 'waater_hold_hint_seen';
+  function markVoiceHintSeen(){
+    try { localStorage.setItem(HOLD_HINT_KEY, '1'); } catch(e){}
+    document.querySelectorAll('.hold-onboarding-tip').forEach(t => t.remove());
+  }
+  function maybeShowVoiceOnboardingHint(){
+    let seen = false;
+    try { seen = !!localStorage.getItem(HOLD_HINT_KEY); } catch(e){}
+    if (seen) return;
+    const firstBody = document.querySelector('.home-post-card .home-post-body');
+    if (!firstBody || firstBody.querySelector('.hold-onboarding-tip')) return;
+    const tip = document.createElement('div');
+    tip.className = 'hold-onboarding-tip';
+    tip.innerHTML = `<span class="hot-arrow">↓</span><span>Press &amp; hold to talk back</span>`;
+    firstBody.appendChild(tip);
+    setTimeout(() => tip.remove(), 6000);
+  }
+
+  // Press and hold a post to record a voice reply; a plain tap opens the thread
+  // (text + voice comments), same as tapping the comment icon.
+  function attachHoldToTalk(){
+    document.querySelectorAll('.home-post-card').forEach(card => {
+      const postId = card.dataset.postId;
+      const body = card.querySelector('.home-post-body');
+      if (!body || body.dataset.holdBound) return;
+      body.dataset.holdBound = '1';
+
+      const indicator = document.createElement('div');
+      indicator.className = 'hold-record-indicator';
+      indicator.innerHTML = `<span class="hri-dot"></span><span>Recording — release to send</span><span class="hri-timer">0:00</span>`;
+      body.appendChild(indicator);
+      const timerLabel = indicator.querySelector('.hri-timer');
+
+      let pressTimer = null;
+      let isRecording = false;
+      let mediaRecorder = null;
+      let chunks = [];
+      let startTime = null;
+      let stream = null;
+      let timerInterval = null;
+      const HOLD_MS = 320;
+      const MAX_RECORDING_SECONDS = 60;
+      const MIN_VALID_SECONDS = 0.6;
+
+      const clearPressTimer = () => { if (pressTimer){ clearTimeout(pressTimer); pressTimer = null; } };
+
+      const teardown = () => {
+        clearInterval(timerInterval);
+        body.classList.remove('holding-talk');
+        indicator.classList.remove('show');
+        if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+        isRecording = false;
+      };
+
+      const beginRecording = async () => {
+        if (!requireAuth()) return;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch(err){
+          showToast('Microphone access denied or unavailable', 'error');
+          return;
+        }
+        mediaRecorder = new MediaRecorder(stream);
+        chunks = [];
+        mediaRecorder.ondataavailable = e => chunks.push(e.data);
+        mediaRecorder.onstop = async () => {
+          const durationSeconds = (Date.now() - startTime) / 1000;
+          teardown();
+          if (durationSeconds < MIN_VALID_SECONDS) return;
+          const blob = new Blob(chunks, { type: 'audio/webm' });
+          try {
+            await sendVoiceComment(postId, blob, durationSeconds);
+            showToast('Voice reply sent');
+            markVoiceHintSeen();
+          } catch (err) {
+            showToast(err.message || 'Could not send voice reply', 'error');
+          }
+        };
+
+        isRecording = true;
+        body.classList.add('holding-talk');
+        indicator.classList.add('show');
+        startTime = Date.now();
+        mediaRecorder.start();
+        timerInterval = setInterval(() => {
+          const secs = Math.floor((Date.now() - startTime) / 1000);
+          timerLabel.textContent = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+          if (secs >= MAX_RECORDING_SECONDS) mediaRecorder.stop();
+        }, 200);
+      };
+
+      const isInteractiveTarget = (target) =>
+        target.closest('.home-post-actions, .home-comments, .home-post-delete, .whisper-reveal, audio, video, a, button');
+
+      const onDown = (e) => {
+        if (isInteractiveTarget(e.target)) return;
+        clearPressTimer();
+        pressTimer = setTimeout(() => { pressTimer = null; beginRecording(); }, HOLD_MS);
+      };
+
+      const onUp = (e) => {
+        if (pressTimer){
+          clearPressTimer();
+          if (!isInteractiveTarget(e.target)) openComments(postId);
+          return;
+        }
+        if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+      };
+
+      const onCancel = () => {
+        clearPressTimer();
+        if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+      };
+
+      body.addEventListener('mousedown', onDown);
+      body.addEventListener('touchstart', onDown, { passive: true });
+      body.addEventListener('mouseup', onUp);
+      body.addEventListener('touchend', onUp);
+      body.addEventListener('mouseleave', onCancel);
+      body.addEventListener('touchcancel', onCancel);
+    });
+  }
+
   async function loadComments(postId){
     const [{ data: textRows }, { data: voiceRows }] = await Promise.all([
       supabaseClient.from('post_comments').select('id, user_id, content, created_at').eq('post_id', postId),
@@ -2207,6 +2387,9 @@
   });
 
   function wireHomeActions(){
+    attachHoldToTalk();
+    maybeShowVoiceOnboardingHint();
+
     document.querySelectorAll('.whisper-reveal').forEach(el => {
       el.addEventListener('click', () => {
         const card = el.closest('.home-post-card');
@@ -2337,28 +2520,10 @@
 
             const durationSeconds = (Date.now() - startTime) / 1000;
             const blob = new Blob(chunks, { type: 'audio/webm' });
-            const path = `${currentUser.id}/${postId}/${Date.now()}.webm`;
 
             btn.disabled = true;
             try {
-              const { error: uploadError } = await supabaseClient.storage
-                .from('voice-comments')
-                .upload(path, blob, { contentType: 'audio/webm' });
-              if (uploadError) throw uploadError;
-
-              const { error: insertError } = await supabaseClient.from('voice_comments').insert({
-                post_id: postId,
-                user_id: currentUser.id,
-                audio_url: path,
-                duration_seconds: durationSeconds
-              });
-              if (insertError) throw insertError;
-
-              const listEl = document.getElementById(`home-comment-list-${postId}`);
-              const comments = await loadComments(postId);
-              listEl.innerHTML = comments.map(renderCommentItem).join('');
-              const countEl = document.querySelector(`.home-comment-toggle[data-post-id="${postId}"] .home-comment-count`);
-              if (countEl) countEl.textContent = comments.length;
+              await sendVoiceComment(postId, blob, durationSeconds);
               showToast('Voice comment posted');
             } catch (err) {
               showToast(err.message || 'Could not post voice comment', 'error');
