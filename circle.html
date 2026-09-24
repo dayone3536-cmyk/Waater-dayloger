@@ -1406,6 +1406,52 @@
   }
   .album-modal-pinned-q .pin-ic{flex-shrink:0;}
 
+  /* ---- Golden Hour — feed card (open to everyone, gated to 5-6pm, 1/day) ---- */
+  .gh-card{
+    position:relative;overflow:hidden;margin:0 0 16px;padding:16px 18px;border-radius:18px;
+    background:linear-gradient(135deg,#fff7ec 0%,var(--accent-soft) 55%,#fff 100%);
+    border:1px solid var(--accent-2);
+    animation:promptPinIn .4s var(--ease-spring) both;
+  }
+  .gh-card::after{
+    content:'';position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,177,153,.55),transparent 70%);pointer-events:none;
+  }
+  .gh-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+  .gh-dot{width:7px;height:7px;border-radius:50%;background:var(--grey);flex-shrink:0;}
+  .gh-dot.live{background:var(--accent);box-shadow:0 0 0 0 rgba(255,90,54,.55);animation:ghPulse 1.6s ease-out infinite;}
+  @keyframes ghPulse{
+    0%{box-shadow:0 0 0 0 rgba(255,90,54,.55);}
+    70%{box-shadow:0 0 0 8px rgba(255,90,54,0);}
+    100%{box-shadow:0 0 0 0 rgba(255,90,54,0);}
+  }
+  .gh-eyebrow{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;}
+  .gh-countdown{font-family:var(--font-mono);font-size:10.5px;color:var(--accent);font-weight:600;letter-spacing:.02em;}
+  .gh-question{font-family:var(--font-serif);font-size:14.5px;line-height:1.45;color:var(--ink);margin-bottom:12px;}
+  .gh-chip-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;position:relative;z-index:1;}
+  .gh-chip{
+    flex-shrink:0;display:inline-flex;align-items:center;gap:7px;padding:6px 13px 6px 6px;
+    border-radius:99px;background:#fff;border:1px solid var(--accent-2);
+    font-family:var(--font-display);font-weight:500;font-size:13px;color:var(--ink);
+    transition:background .15s ease, transform .15s var(--ease-spring), border-color .15s ease;
+  }
+  .gh-chip:hover{background:var(--accent-soft);}
+  .gh-chip:active{transform:scale(.96);}
+  .gh-chip.disabled{opacity:.5;background:#f6f6f4;border-color:var(--line);cursor:default;}
+  .gh-chip-avatar{
+    width:24px;height:24px;border-radius:50%;flex-shrink:0;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#ffd8c9,var(--accent));color:#fff;
+    font-family:var(--font-display);font-weight:700;font-size:10px;
+  }
+  .gh-chip-avatar img{width:100%;height:100%;object-fit:cover;}
+  .gh-testmode{
+    margin-top:10px;padding:8px 10px;border-radius:10px;background:#14151a;color:#fff;
+    font-family:var(--font-mono);font-size:10px;line-height:1.5;display:flex;align-items:center;
+    justify-content:space-between;gap:8px;position:relative;z-index:1;
+  }
+  .gh-testmode button{color:var(--accent-2);font-family:var(--font-mono);font-size:10px;text-decoration:underline;flex-shrink:0;}
+
   /* ---- Latest memory — one featured slot, set apart from the grid
      so the newest addition always gets a moment before the archive starts ---- */
   .gallery-hero{position:relative;z-index:1;margin-top:18px;}
@@ -2736,6 +2782,177 @@
   }
 
   // =========================================================
+  // GOLDEN HOUR — gating (5-6pm, once a day) + the feed card
+  // =========================================================
+  const GOLDEN_HOUR_START = 17; // 5pm
+  const GOLDEN_HOUR_END = 18;   // 6pm
+  const GH_OVERRIDE_KEY = 'waater_gh_test_override';
+
+  // Testing helper: visit this page once with ?ghtest=1 in the URL and
+  // Golden Hour will stay "live" on this device/browser until you visit
+  // with ?ghtest=0 (or clear it from the test banner on the card).
+  (function applyGoldenHourTestParam(){
+    const v = params.get('ghtest');
+    if (v === '1') localStorage.setItem(GH_OVERRIDE_KEY, '1');
+    if (v === '0') localStorage.removeItem(GH_OVERRIDE_KEY);
+  })();
+
+  function isGoldenHourOverrideOn(){
+    return localStorage.getItem(GH_OVERRIDE_KEY) === '1';
+  }
+
+  function isGoldenHourNow(){
+    if (isGoldenHourOverrideOn()) return true;
+    const h = new Date().getHours();
+    return h >= GOLDEN_HOUR_START && h < GOLDEN_HOUR_END;
+  }
+
+  function msUntilHour(hour){
+    const now = new Date();
+    const t = new Date(now);
+    t.setHours(hour, 0, 0, 0);
+    if (t <= now) t.setDate(t.getDate() + 1);
+    return t - now;
+  }
+
+  function formatCountdown(ms){
+    ms = Math.max(0, ms);
+    const totalSec = Math.floor(ms / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
+  async function hasSentGoldenHourPromptToday(){
+    if (isGoldenHourOverrideOn()) return false; // testing: never block yourself
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const { data, error } = await supabaseClient
+      .from('golden_hour_prompts')
+      .select('id')
+      .eq('circle_id', circleId)
+      .eq('from_user_id', currentUser.id)
+      .gte('created_at', startOfDay.toISOString())
+      .limit(1);
+    if (error){ console.error('hasSentGoldenHourPromptToday failed', error); return false; }
+    return !!(data && data.length);
+  }
+
+  let goldenHourAskedToday = false;
+  let goldenHourTimer = null;
+  let ghLastLiveState = null;
+
+  async function initGoldenHourCard(){
+    if (!currentUser) return;
+    goldenHourAskedToday = isGoldenHourNow() ? await hasSentGoldenHourPromptToday() : false;
+    renderGoldenHourCard();
+  }
+
+  function renderGoldenHourCard(){
+    const card = document.getElementById('goldenHourCard');
+    if (!card) return;
+    const others = members.filter(m => m.id !== currentUser?.id);
+    if (!others.length){ card.style.display = 'none'; return; }
+    card.style.display = '';
+
+    const live = isGoldenHourNow();
+
+    if (live && !goldenHourAskedToday){
+      const chips = others.map(m => `
+        <button class="gh-chip" type="button" data-user-id="${m.id}" data-username="${escapeHtml(m.username || 'Someone')}">
+          <span class="gh-chip-avatar">${m.avatar_url ? `<img src="${escapeHtml(m.avatar_url)}" alt="">` : initials(m.username || '?')}</span>
+          <span>${escapeHtml(m.username || 'Someone')}</span>
+        </button>
+      `).join('');
+      card.innerHTML = `
+        <div class="gh-head">
+          <span class="gh-dot live"></span>
+          <span class="gh-eyebrow">Golden Hour is live</span>
+          <span class="gh-countdown" id="ghCountdown"></span>
+        </div>
+        <div class="gh-question">Ask someone here the thing you'd only ever ask anonymously. One question, once a day.</div>
+        <div class="gh-chip-row">${chips}</div>
+      `;
+    } else if (live && goldenHourAskedToday){
+      card.innerHTML = `
+        <div class="gh-head">
+          <span class="gh-dot live"></span>
+          <span class="gh-eyebrow">Golden Hour is live</span>
+          <span class="gh-countdown" id="ghCountdown"></span>
+        </div>
+        <div class="gh-question">You've sent your question for today. Come back tomorrow at 5.</div>
+      `;
+    } else {
+      card.innerHTML = `
+        <div class="gh-head">
+          <span class="gh-dot"></span>
+          <span class="gh-eyebrow">Golden Hour opens in <span class="gh-countdown" id="ghCountdown"></span></span>
+        </div>
+        <div class="gh-question">Every day from 5–6pm, everyone gets one anonymous question to send someone in this circle.</div>
+        <div class="gh-chip-row">${others.map(m => `
+          <span class="gh-chip disabled" data-username="${escapeHtml(m.username || 'Someone')}">
+            <span class="gh-chip-avatar">${m.avatar_url ? `<img src="${escapeHtml(m.avatar_url)}" alt="">` : initials(m.username || '?')}</span>
+            <span>${escapeHtml(m.username || 'Someone')}</span>
+          </span>`).join('')}</div>
+      `;
+    }
+
+    if (isGoldenHourOverrideOn()){
+      card.insertAdjacentHTML('beforeend', `
+        <div class="gh-testmode">
+          <span>🧪 Test mode — Golden Hour forced open on this device</span>
+          <button type="button" id="ghTestOff">Turn off</button>
+        </div>`);
+      const off = document.getElementById('ghTestOff');
+      if (off) off.addEventListener('click', () => {
+        localStorage.removeItem(GH_OVERRIDE_KEY);
+        initGoldenHourCard();
+      });
+    }
+
+    wireGoldenHourCard();
+    startGoldenHourTicker();
+  }
+
+  function wireGoldenHourCard(){
+    document.querySelectorAll('#goldenHourCard .gh-chip[data-user-id]').forEach(chip => {
+      chip.addEventListener('click', () => {
+        if (!requireAuth()) return;
+        openSendPromptModal(chip.dataset.userId, chip.dataset.username);
+      });
+    });
+    document.querySelectorAll('#goldenHourCard .gh-chip.disabled').forEach(chip => {
+      chip.addEventListener('click', () => showToast("Golden Hour isn't open yet — come back at 5pm", 'error'));
+    });
+  }
+
+  function startGoldenHourTicker(){
+    clearInterval(goldenHourTimer);
+    ghLastLiveState = isGoldenHourNow();
+    updateGoldenHourCountdownText();
+    goldenHourTimer = setInterval(() => {
+      const nowLive = isGoldenHourNow();
+      if (nowLive !== ghLastLiveState){
+        ghLastLiveState = nowLive;
+        clearInterval(goldenHourTimer);
+        initGoldenHourCard();
+        return;
+      }
+      updateGoldenHourCountdownText();
+    }, 1000);
+  }
+
+  function updateGoldenHourCountdownText(){
+    const target = document.getElementById('ghCountdown');
+    if (!target){ clearInterval(goldenHourTimer); return; }
+    target.textContent = isGoldenHourNow()
+      ? formatCountdown(msUntilHour(GOLDEN_HOUR_END))
+      : formatCountdown(msUntilHour(GOLDEN_HOUR_START));
+  }
+
+  // =========================================================
   // GOLDEN HOUR — send a prompt to another member
   // =========================================================
   function openSendPromptModal(toUserId, toUsername){
@@ -2762,6 +2979,15 @@
       const question = modal.querySelector('#promptQuestionInput').value.trim();
       if (!question) return;
 
+      if (!isGoldenHourNow()){
+        showToast("Golden Hour just closed — try again tomorrow at 5", 'error');
+        return;
+      }
+      if (await hasSentGoldenHourPromptToday()){
+        showToast("You've already sent your question for today", 'error');
+        return;
+      }
+
       const sendBtn = modal.querySelector('#promptModalSend');
       sendBtn.disabled = true;
       sendBtn.textContent = 'Sending...';
@@ -2782,6 +3008,8 @@
         const link = `${window.location.origin}/circle?private&ID=${encodeURIComponent(circleId)}&prompt=${encodeURIComponent(data.id)}`;
         await navigator.clipboard.writeText(link);
         showToast('Question sent — link copied 🔗');
+        goldenHourAskedToday = true;
+        renderGoldenHourCard();
         close();
       } catch (err) {
         showToast(err.message || 'Could not send question', 'error');
@@ -2821,7 +3049,7 @@
         </div>` : ''}
         ${members.filter(m => m.id !== currentUser?.id).length ? `
         <div class="ask-strip">
-          <div class="ask-strip-label">Ask someone a question</div>
+          <div class="ask-strip-label">${isGoldenHourNow() ? 'Golden Hour is live — ask someone a question' : 'Ask someone a question · Golden Hour is 5–6pm'}</div>
           <div class="ask-strip-row">
             ${members.filter(m => m.id !== currentUser?.id).map(m => `
               <button class="ask-chip" type="button" data-user-id="${m.id}" data-username="${escapeHtml(m.username || 'Someone')}">
@@ -2926,8 +3154,16 @@
       });
     });
     document.querySelectorAll('#galleryWrap .ask-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
+      chip.addEventListener('click', async () => {
         if (!requireAuth()) return;
+        if (!isGoldenHourNow()){
+          showToast("Golden Hour isn't open yet — come back between 5–6pm", 'error');
+          return;
+        }
+        if (await hasSentGoldenHourPromptToday()){
+          showToast("You've already sent your question for today", 'error');
+          return;
+        }
         openSendPromptModal(chip.dataset.userId, chip.dataset.username);
       });
     });
@@ -3286,6 +3522,8 @@
           </div>
         </div>
 
+        <div class="gh-card" id="goldenHourCard" style="display:none;"></div>
+
         <button class="home-fab" id="homeFab" title="New post" aria-label="New post">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
         </button>
@@ -3597,6 +3835,7 @@
 
     await refreshHomeFeed();
     initAlbum();
+    initGoldenHourCard();
     subscribeToCircleActivity();
 
     // Play the ceremony without blocking the feed load beneath it.
