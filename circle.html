@@ -1408,49 +1408,49 @@
 
   /* ---- Golden Hour — feed card (open to everyone, gated to 5-6pm, 1/day) ---- */
   .gh-card{
-    position:relative;overflow:hidden;margin:0 0 16px;padding:16px 18px;border-radius:18px;
-    background:linear-gradient(135deg,#fff7ec 0%,var(--accent-soft) 55%,#fff 100%);
+    position:relative;overflow:hidden;margin:0 0 14px;padding:12px 14px;border-radius:15px;
+    background:linear-gradient(135deg,#fff7ec 0%,var(--accent-soft) 65%,#fff 100%);
     border:1px solid var(--accent-2);
     animation:promptPinIn .4s var(--ease-spring) both;
   }
   .gh-card::after{
-    content:'';position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;
-    background:radial-gradient(circle,rgba(255,177,153,.55),transparent 70%);pointer-events:none;
+    content:'';position:absolute;top:-30px;right:-30px;width:72px;height:72px;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,177,153,.45),transparent 70%);pointer-events:none;
   }
-  .gh-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
-  .gh-dot{width:7px;height:7px;border-radius:50%;background:var(--grey);flex-shrink:0;}
+  .gh-head{display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap;}
+  .gh-dot{width:6px;height:6px;border-radius:50%;background:var(--grey);flex-shrink:0;}
   .gh-dot.live{background:var(--accent);box-shadow:0 0 0 0 rgba(255,90,54,.55);animation:ghPulse 1.6s ease-out infinite;}
   @keyframes ghPulse{
     0%{box-shadow:0 0 0 0 rgba(255,90,54,.55);}
-    70%{box-shadow:0 0 0 8px rgba(255,90,54,0);}
+    70%{box-shadow:0 0 0 6px rgba(255,90,54,0);}
     100%{box-shadow:0 0 0 0 rgba(255,90,54,0);}
   }
-  .gh-eyebrow{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;}
-  .gh-countdown{font-family:var(--font-mono);font-size:10.5px;color:var(--accent);font-weight:600;letter-spacing:.02em;}
-  .gh-question{font-family:var(--font-serif);font-size:14.5px;line-height:1.45;color:var(--ink);margin-bottom:12px;}
-  .gh-chip-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;position:relative;z-index:1;}
+  .gh-eyebrow{font-family:var(--font-mono);font-size:10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;}
+  .gh-countdown{font-family:var(--font-mono);font-size:10px;color:var(--accent);font-weight:600;letter-spacing:.02em;}
+  .gh-question{font-family:var(--font-serif);font-size:13.5px;line-height:1.4;color:var(--ink);margin-bottom:9px;}
+  .gh-chip-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;position:relative;z-index:1;}
   .gh-chip{
-    flex-shrink:0;display:inline-flex;align-items:center;gap:7px;padding:6px 13px 6px 6px;
+    flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:4px 11px 4px 4px;
     border-radius:99px;background:#fff;border:1px solid var(--accent-2);
-    font-family:var(--font-display);font-weight:500;font-size:13px;color:var(--ink);
+    font-family:var(--font-display);font-weight:500;font-size:12px;color:var(--ink);
     transition:background .15s ease, transform .15s var(--ease-spring), border-color .15s ease;
   }
   .gh-chip:hover{background:var(--accent-soft);}
   .gh-chip:active{transform:scale(.96);}
   .gh-chip.disabled{opacity:.5;background:#f6f6f4;border-color:var(--line);cursor:default;}
   .gh-chip-avatar{
-    width:24px;height:24px;border-radius:50%;flex-shrink:0;overflow:hidden;
+    width:20px;height:20px;border-radius:50%;flex-shrink:0;overflow:hidden;
     display:flex;align-items:center;justify-content:center;
     background:linear-gradient(135deg,#ffd8c9,var(--accent));color:#fff;
-    font-family:var(--font-display);font-weight:700;font-size:10px;
+    font-family:var(--font-display);font-weight:700;font-size:9px;
   }
   .gh-chip-avatar img{width:100%;height:100%;object-fit:cover;}
   .gh-testmode{
-    margin-top:10px;padding:8px 10px;border-radius:10px;background:#14151a;color:#fff;
-    font-family:var(--font-mono);font-size:10px;line-height:1.5;display:flex;align-items:center;
+    margin-top:8px;padding:6px 9px;border-radius:9px;background:#14151a;color:#fff;
+    font-family:var(--font-mono);font-size:9.5px;line-height:1.5;display:flex;align-items:center;
     justify-content:space-between;gap:8px;position:relative;z-index:1;
   }
-  .gh-testmode button{color:var(--accent-2);font-family:var(--font-mono);font-size:10px;text-decoration:underline;flex-shrink:0;}
+  .gh-testmode button{color:var(--accent-2);font-family:var(--font-mono);font-size:9.5px;text-decoration:underline;flex-shrink:0;}
 
   /* ---- Latest memory — one featured slot, set apart from the grid
      so the newest addition always gets a moment before the archive starts ---- */
@@ -2869,28 +2869,28 @@
       card.innerHTML = `
         <div class="gh-head">
           <span class="gh-dot live"></span>
-          <span class="gh-eyebrow">Golden Hour is live</span>
+          <span class="gh-eyebrow">Golden Hour · live</span>
           <span class="gh-countdown" id="ghCountdown"></span>
         </div>
-        <div class="gh-question">Ask someone here the thing you'd only ever ask anonymously. One question, once a day.</div>
+        <div class="gh-question">Say the thing you'd never say with your name on it. They won't know it was you.</div>
         <div class="gh-chip-row">${chips}</div>
       `;
     } else if (live && goldenHourAskedToday){
       card.innerHTML = `
         <div class="gh-head">
           <span class="gh-dot live"></span>
-          <span class="gh-eyebrow">Golden Hour is live</span>
+          <span class="gh-eyebrow">Golden Hour · live</span>
           <span class="gh-countdown" id="ghCountdown"></span>
         </div>
-        <div class="gh-question">You've sent your question for today. Come back tomorrow at 5.</div>
+        <div class="gh-question">Sent. Somewhere in this circle, someone's about to wonder who asked. Back tomorrow at 5.</div>
       `;
     } else {
       card.innerHTML = `
         <div class="gh-head">
           <span class="gh-dot"></span>
-          <span class="gh-eyebrow">Golden Hour opens in <span class="gh-countdown" id="ghCountdown"></span></span>
+          <span class="gh-eyebrow">Golden Hour in <span class="gh-countdown" id="ghCountdown"></span></span>
         </div>
-        <div class="gh-question">Every day from 5–6pm, everyone gets one anonymous question to send someone in this circle.</div>
+        <div class="gh-question">One hour a day, one anonymous question — the one you'd never ask out loud.</div>
         <div class="gh-chip-row">${others.map(m => `
           <span class="gh-chip disabled" data-username="${escapeHtml(m.username || 'Someone')}">
             <span class="gh-chip-avatar">${m.avatar_url ? `<img src="${escapeHtml(m.avatar_url)}" alt="">` : initials(m.username || '?')}</span>
