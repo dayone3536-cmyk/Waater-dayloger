@@ -1204,6 +1204,36 @@
   }
   .album-canvas-wrap canvas{width:100%;height:100%;object-fit:cover;}
   .album-canvas-placeholder{color:#7c7f88;font-family:var(--font-mono);font-size:11px;text-align:center;padding:20px;}
+
+  .album-canvas-loading{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:11px;color:#fff;z-index:2;animation:riseIn .25s ease both;
+  }
+  .album-canvas-loading .ring{
+    width:30px;height:30px;border-radius:50%;border:3px solid rgba(255,255,255,.18);border-top-color:var(--accent-2);
+    animation:spin .8s linear infinite;
+  }
+  .album-canvas-loading .txt{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.03em;color:rgba(255,255,255,.75);}
+
+  .album-canvas-uploading{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:9px;background:rgba(10,10,12,.6);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:3;
+    animation:promptPinIn .25s var(--ease-spring) both;
+  }
+  .album-canvas-uploading .ring{
+    width:32px;height:32px;border-radius:50%;border:3px solid rgba(255,255,255,.22);border-top-color:var(--accent);
+    animation:spin .7s linear infinite;
+  }
+  .album-canvas-uploading .txt{font-family:var(--font-display);font-weight:600;font-size:12.5px;color:#fff;}
+  .album-canvas-uploading .sub{font-family:var(--font-mono);font-size:9.5px;color:rgba(255,255,255,.65);margin-top:-3px;}
+  .album-upload-bar{width:110px;height:3px;border-radius:99px;background:rgba(255,255,255,.2);overflow:hidden;margin-top:2px;}
+  .album-upload-bar::after{
+    content:'';display:block;width:36%;height:100%;border-radius:99px;
+    background:linear-gradient(90deg,var(--accent-2),var(--accent));
+    animation:ghBarSlide 1.1s ease-in-out infinite;
+  }
+  @keyframes ghBarSlide{ 0%{transform:translateX(-120%);} 100%{transform:translateX(390%);} }
+  .album-pick-btn:disabled{opacity:.4;}
   .album-pick-row{display:flex;gap:8px;margin-bottom:14px;}
   .album-pick-btn{
     flex:1;border:1px solid var(--line-strong);border-radius:12px;padding:10px;
@@ -3343,9 +3373,22 @@
 
     function handleFile(file){
       if (!file) return;
+      canvas = null;
+      canvasWrap.innerHTML = `
+        <div class="album-canvas-loading">
+          <span class="ring"></span>
+          <span class="txt">Bringing your photo in…</span>
+        </div>`;
+      postBtn.disabled = true;
       const reader = new FileReader();
+      reader.onerror = () => {
+        canvasWrap.innerHTML = `<div class="album-canvas-placeholder">Couldn't read that photo — try again.</div>`;
+      };
       reader.onload = (e) => {
         const img = new Image();
+        img.onerror = () => {
+          canvasWrap.innerHTML = `<div class="album-canvas-placeholder">Couldn't read that photo — try again.</div>`;
+        };
         img.onload = () => {
           sourceImg = img;
           drawWithFilter('none');
@@ -3368,8 +3411,37 @@
 
     postBtn.addEventListener('click', async () => {
       if (!canvas || !albumId) return;
+      const takeBtn = modal.querySelector('#albumTakePhoto');
+      const pickBtn = modal.querySelector('#albumPickPhoto');
       postBtn.disabled = true;
       postBtn.innerHTML = `<span class="mini-spinner"></span> Posting...`;
+      takeBtn.disabled = true;
+      pickBtn.disabled = true;
+      filterRow.style.pointerEvents = 'none';
+      filterRow.style.opacity = '.4';
+      captionInput.disabled = true;
+
+      const overlay = document.createElement('div');
+      overlay.className = 'album-canvas-uploading';
+      overlay.innerHTML = `
+        <span class="ring"></span>
+        <span class="txt">Saving to the album…</span>
+        <span class="sub">Just this circle will ever see it</span>
+        <span class="album-upload-bar"></span>
+      `;
+      canvasWrap.appendChild(overlay);
+
+      const resetControls = () => {
+        overlay.remove();
+        postBtn.disabled = false;
+        postBtn.textContent = 'Post to album';
+        takeBtn.disabled = false;
+        pickBtn.disabled = false;
+        filterRow.style.pointerEvents = '';
+        filterRow.style.opacity = '';
+        captionInput.disabled = false;
+      };
+
       try {
         const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.9));
         const path = `${albumId}/${Date.now()}-${currentUser.id}.jpg`;
@@ -3402,9 +3474,8 @@
         close();
         await refreshAlbumGallery();
       } catch (err) {
+        resetControls();
         showToast(err.message || 'Could not post photo', 'error');
-        postBtn.disabled = false;
-        postBtn.textContent = 'Post to album';
       }
     });
   }
