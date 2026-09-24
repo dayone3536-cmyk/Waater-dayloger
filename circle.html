@@ -2217,9 +2217,12 @@
       let startTime = null;
       let stream = null;
       let timerInterval = null;
+      let startX = 0, startY = 0;
+      let cancelledByScroll = false;
       const HOLD_MS = 320;
       const MAX_RECORDING_SECONDS = 60;
       const MIN_VALID_SECONDS = 0.6;
+      const MOVE_CANCEL_PX = 10; // finger moving this much = scrolling, not holding
 
       const clearPressTimer = () => { if (pressTimer){ clearTimeout(pressTimer); pressTimer = null; } };
 
@@ -2245,6 +2248,7 @@
         mediaRecorder.onstop = async () => {
           const durationSeconds = (Date.now() - startTime) / 1000;
           teardown();
+          if (cancelledByScroll){ cancelledByScroll = false; return; }
           if (durationSeconds < MIN_VALID_SECONDS) return;
           const blob = new Blob(chunks, { type: 'audio/webm' });
           try {
@@ -2271,10 +2275,31 @@
       const isInteractiveTarget = (target) =>
         target.closest('.home-post-actions, .home-comments, .home-post-delete, .whisper-reveal, audio, video, a, button');
 
+      const pointOf = (e) => (e.touches && e.touches[0]) ? e.touches[0] : e;
+
       const onDown = (e) => {
         if (isInteractiveTarget(e.target)) return;
+        const p = pointOf(e);
+        startX = p.clientX; startY = p.clientY;
         clearPressTimer();
         pressTimer = setTimeout(() => { pressTimer = null; beginRecording(); }, HOLD_MS);
+      };
+
+      const onMove = (e) => {
+        if (!pressTimer && !isRecording) return;
+        const p = pointOf(e);
+        const dx = Math.abs(p.clientX - startX);
+        const dy = Math.abs(p.clientY - startY);
+        if (dx > MOVE_CANCEL_PX || dy > MOVE_CANCEL_PX){
+          // This is a scroll, not a hold — bail out without sending anything.
+          clearPressTimer();
+          if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive'){
+            // Discard rather than send: onstop still fires, but we mark it as
+            // a cancel so the recording is thrown away instead of posted.
+            cancelledByScroll = true;
+            mediaRecorder.stop();
+          }
+        }
       };
 
       const onUp = (e) => {
@@ -2293,6 +2318,8 @@
 
       body.addEventListener('mousedown', onDown);
       body.addEventListener('touchstart', onDown, { passive: true });
+      body.addEventListener('mousemove', onMove);
+      body.addEventListener('touchmove', onMove, { passive: true });
       body.addEventListener('mouseup', onUp);
       body.addEventListener('touchend', onUp);
       body.addEventListener('mouseleave', onCancel);
