@@ -50,6 +50,42 @@
     *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important;}
   }
 
+  /* Modal Overlay & Styles */
+  .modal-overlay{
+    position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(20,21,26,.4);
+    display:flex;align-items:center;justify-content:center;z-index:1000;
+    padding:16px;animation:fadeIn .2s ease;
+  }
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+  
+  .modal{
+    background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(20,21,26,.3);
+    padding:32px;max-width:420px;width:100%;animation:slideUp .3s var(--ease);
+  }
+  @keyframes slideUp{from{transform:translateY(20px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  
+  .modal h2{font-family:var(--font-display);font-size:20px;font-weight:600;margin-bottom:12px;}
+  .modal p{color:var(--ink-soft);margin-bottom:20px;font-size:15px;line-height:1.5;}
+  
+  .circle-list-for-removal{display:flex;flex-direction:column;gap:8px;margin-bottom:24px;max-height:300px;overflow-y:auto;}
+  .circle-option{
+    display:flex;align-items:center;justify-content:space-between;padding:12px 14px;
+    background:#f7f7f8;border-radius:12px;transition:background .2s ease;
+  }
+  .circle-option:hover{background:#eaeaec;}
+  .circle-option span{font-weight:500;color:var(--ink);}
+  .remove-choice{
+    padding:6px 12px;border-radius:8px;font-size:13px;font-weight:600;
+    background:var(--danger);color:#fff;transition:background .2s ease;
+  }
+  .remove-choice:hover{background:#c9302c;}
+  
+  .modal-actions{display:flex;gap:12px;justify-content:flex-end;}
+  .btn-secondary{padding:10px 16px;border-radius:10px;font-weight:600;background:#f3f3f4;color:var(--ink);transition:background .2s ease;}
+  .btn-secondary:hover{background:#eaeaec;}
+  .btn-primary{padding:10px 16px;border-radius:10px;font-weight:600;background:var(--accent);color:#fff;transition:background .2s ease;}
+  .btn-primary:hover{background:#e64a2a;}
+
   .app{display:flex;max-width:1180px;margin:0 auto;}
   .main{flex:1;min-width:0;border-left:1px solid var(--line);border-right:1px solid var(--line);}
 
@@ -4656,6 +4692,72 @@
 
 
   // =========================================================
+  // CIRCLE LIMIT MANAGEMENT
+  // =========================================================
+  const MAX_CIRCLES = 4;
+
+  // Get user's current circles count
+  async function getUserCircleCount(){
+    if (!currentUser) return 0;
+    const { data, error } = await supabaseClient
+      .from('circle_members')
+      .select('circle_id', { count: 'exact' })
+      .eq('user_id', currentUser.id);
+    return !error ? (data?.length || 0) : 0;
+  }
+
+  // Get user's circles for removal selection
+  async function getUserCircles(){
+    if (!currentUser) return [];
+    const { data, error } = await supabaseClient
+      .from('circle_members')
+      .select('circle_id, circles(id, name)')
+      .eq('user_id', currentUser.id);
+    return !error ? (data || []) : [];
+  }
+
+  // Show modal to select circle to remove
+  function showRemoveCircleModal(circlesToRemove, onConfirm){
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal modal-compact" role="dialog" aria-labelledby="modal-title">
+        <h2 id="modal-title">Circle Limit Reached</h2>
+        <p>You've reached the maximum of ${MAX_CIRCLES} circles. Select a circle to leave to join this new one:</p>
+        <div class="circle-list-for-removal">
+          ${circlesToRemove.map(c => `
+            <div class="circle-option" data-circle-id="${c.circle_id}">
+              <span>${c.circles?.name || 'Circle'}</span>
+              <button type="button" class="remove-choice">Leave</button>
+            </div>
+          `).join('')}
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" data-choice="cancel">Cancel</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+    
+    const handleCircleSelect = (circleId) => {
+      modal.remove();
+      onConfirm(circleId);
+    };
+
+    modal.querySelectorAll('.remove-choice').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const circleId = e.target.closest('.circle-option').dataset.circleId;
+        handleCircleSelect(circleId);
+      });
+    });
+
+    modal.querySelector('[data-choice="cancel"]').addEventListener('click', () => {
+      modal.remove();
+    });
+  }
+
+  // =========================================================
   // MAIN INIT
   // =========================================================
   async function init(){
@@ -4663,14 +4765,71 @@
 
       const inviteCode = params.get('code');
       if (inviteCode && !circleId){
-        if (!requireAuth(`/circle?code=${encodeURIComponent(inviteCode)}`)) return;
+        // Check if user is signed in
+        if (!currentUser){
+          // Not signed in - show sign-in prompt with invite preserved
+          document.getElementById('pageBody').innerHTML = `
+            <div class="page-error">
+              <h2>Sign in to join circle</h2>
+              <p>You need to sign in to accept this circle invitation.</p>
+              <button class="btn btn-primary" onclick="document.querySelector('.sidebar-signin').click()">Sign In</button>
+              <p style="margin-top: 12px; font-size: 14px; color: var(--grey);">Your invite code is preserved. After signing in, you'll be able to join the circle.</p>
+            </div>`;
+          return;
+        }
+
+        document.getElementById('pageBody').innerHTML = `<div class="page-loading">Checking circle access…</div>`;
+        
+        // Check current circle count
+        const circleCount = await getUserCircleCount();
+        
+        if (circleCount >= MAX_CIRCLES){
+          // User is at max capacity
+          document.getElementById('pageBody').innerHTML = `<div class="page-loading">Loading your circles…</div>`;
+          const userCircles = await getUserCircles();
+          
+          showRemoveCircleModal(userCircles, async (circleToRemove) => {
+            // Remove user from selected circle
+            const { error: removeError } = await supabaseClient
+              .from('circle_members')
+              .delete()
+              .eq('user_id', currentUser.id)
+              .eq('circle_id', circleToRemove);
+            
+            if (removeError){
+              document.getElementById('pageBody').innerHTML = `
+                <div class="page-error">
+                  <h2>Error leaving circle</h2>
+                  <p>${removeError.message} <a href="/circles">Back to your circles</a></p>
+                </div>`;
+              return;
+            }
+
+            // Now redeem the invite
+            document.getElementById('pageBody').innerHTML = `<div class="page-loading">Joining circle…</div>`;
+            const { data, error } = await supabaseClient.rpc('redeem_circle_invite', { p_code: inviteCode });
+            if (error || !data?.circle_id){
+              document.getElementById('pageBody').innerHTML = `
+                <div class="page-error">
+                  <h2>Invite invalid or expired</h2>
+                  <p>${error?.message || 'Could not join circle.'} <a href="/circles">Back to your circles</a></p>
+                </div>`;
+              return;
+            }
+            window.location.replace(`/circle?private&ID=${encodeURIComponent(data.circle_id)}`);
+          });
+          return;
+        }
+
+        // User has space, proceed with invite redemption
         document.getElementById('pageBody').innerHTML = `<div class="page-loading">Joining circle…</div>`;
         const { data, error } = await supabaseClient.rpc('redeem_circle_invite', { p_code: inviteCode });
         if (error || !data?.circle_id){
+          const errorMsg = error?.message || 'Could not join circle.';
           document.getElementById('pageBody').innerHTML = `
             <div class="page-error">
-              <h2>Invite invalid or expired</h2>
-              <p>${error?.message || ''} <a href="/circles">Back to your circles</a></p>
+              <h2>Cannot join circle</h2>
+              <p>${errorMsg} <a href="/circles">Back to your circles</a></p>
             </div>`;
           return;
         }
