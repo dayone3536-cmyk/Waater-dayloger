@@ -1347,6 +1347,29 @@
   }
   .ask-chip-avatar img{width:100%;height:100%;object-fit:cover;}
 
+  /* ---- Golden Hour — pinned prompt banner + in-modal question ---- */
+  .prompt-pin{
+    position:relative;margin:0 0 18px;padding:16px 18px;border-radius:16px;
+    background:linear-gradient(135deg,var(--accent-soft) 0%,#fff 100%);
+    border:1px solid var(--accent-2);
+    animation:promptPinIn .4s var(--ease-spring) both;
+  }
+  @keyframes promptPinIn{ from{opacity:0;transform:translateY(-6px);} to{opacity:1;transform:translateY(0);} }
+  .prompt-pin-label{font-family:var(--font-mono);font-size:10.5px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+  .prompt-pin-question{font-family:var(--font-serif);font-size:16px;line-height:1.4;color:var(--ink);margin-bottom:12px;}
+  .prompt-pin-answer{
+    background:var(--ink);color:#fff;font-family:var(--font-display);font-weight:600;font-size:12.5px;
+    padding:9px 16px;border-radius:99px;transition:background .15s ease, transform .15s var(--ease-spring);
+  }
+  .prompt-pin-answer:hover{background:#000;}
+  .prompt-pin-answer:active{transform:scale(.96);}
+  .album-modal-pinned-q{
+    display:flex;align-items:flex-start;gap:8px;margin:10px 0 14px;padding:11px 13px;
+    border-radius:12px;background:var(--accent-soft);border:1px solid var(--accent-2);
+    font-family:var(--font-serif);font-size:13.5px;line-height:1.4;color:var(--ink);
+  }
+  .album-modal-pinned-q .pin-ic{flex-shrink:0;}
+
   /* ---- Latest memory — one featured slot, set apart from the grid
      so the newest addition always gets a moment before the archive starts ---- */
   .gallery-hero{position:relative;z-index:1;margin-top:18px;}
@@ -2618,6 +2641,21 @@
   ];
 
   let albumId = null;
+  let activePrompt = null;
+
+  async function loadActivePrompt(){
+    const promptId = params.get('prompt');
+    if (!promptId || !currentUser) return null;
+    const { data, error } = await supabaseClient
+      .from('golden_hour_prompts')
+      .select('id, from_user_id, question, answered_at')
+      .eq('id', promptId)
+      .eq('to_user_id', currentUser.id)
+      .is('answered_at', null)
+      .maybeSingle();
+    if (error || !data) return null;
+    return data;
+  }
 
   async function getOrCreateAlbum(){
     const { data: existing } = await supabaseClient
@@ -2859,12 +2897,34 @@
     });
   }
 
+  function renderPinnedPromptBanner(){
+    if (!activePrompt) return '';
+    const asker = members.find(m => m.id === activePrompt.from_user_id);
+    const name = asker?.username || 'Someone';
+    return `
+      <div class="prompt-pin" id="promptPinBanner">
+        <div class="prompt-pin-label">✨ ${escapeHtml(name)} asked you</div>
+        <div class="prompt-pin-question">${escapeHtml(activePrompt.question)}</div>
+        <button class="prompt-pin-answer" id="promptPinAnswerBtn" type="button">Answer with a photo</button>
+      </div>
+    `;
+  }
+
+  function wirePinnedPromptBanner(){
+    const btn = document.getElementById('promptPinAnswerBtn');
+    if (btn) btn.addEventListener('click', () => {
+      if (!requireAuth()) return;
+      openAlbumCaptureModal(activePrompt);
+    });
+  }
+
   async function refreshAlbumGallery(){
     const wrap = document.getElementById('galleryWrap');
     if (!wrap) return;
     const photos = await loadAlbumPhotos();
-    wrap.innerHTML = renderAlbumGallery(photos);
+    wrap.innerHTML = renderPinnedPromptBanner() + renderAlbumGallery(photos);
     wireGalleryActions(photos);
+    wirePinnedPromptBanner();
     const countEl = document.getElementById('albumTabCount');
     if (countEl) countEl.textContent = photos.length ? `· ${photos.length}` : '';
   }
@@ -2923,13 +2983,18 @@
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
   }
 
-  function openAlbumCaptureModal(){
+  function openAlbumCaptureModal(promptToAnswer){
     const modal = document.createElement('div');
     modal.className = 'album-modal-backdrop';
     modal.innerHTML = `
       <div class="album-modal">
         <h3>Add to the album</h3>
         <p class="hint">Stays private to this circle, forever.</p>
+        ${promptToAnswer ? `
+        <div class="album-modal-pinned-q">
+          <span class="pin-ic">📌</span>
+          <span>${escapeHtml(promptToAnswer.question)}</span>
+        </div>` : ''}
         <div class="album-canvas-wrap" id="albumCanvasWrap">
           <div class="album-canvas-placeholder">Take a photo or choose one from your gallery</div>
         </div>
@@ -2946,7 +3011,7 @@
         <input type="file" accept="image/*" capture="environment" id="albumFileCamera" style="display:none;">
         <input type="file" accept="image/*" id="albumFileGallery" style="display:none;">
         <div class="album-filter-row" id="albumFilterRow" style="display:none;"></div>
-        <textarea id="albumCaptionInput" maxlength="140" placeholder="Say something about this one... (optional)"></textarea>
+        <textarea id="albumCaptionInput" maxlength="140" placeholder="${promptToAnswer ? 'Answer their question... (optional)' : 'Say something about this one... (optional)'}"></textarea>
         <div class="album-modal-row">
           <button class="album-modal-cancel" type="button" id="albumModalCancel">Cancel</button>
           <button class="album-modal-post" type="button" id="albumModalPost" disabled>Post to album</button>
@@ -3035,14 +3100,25 @@
           .upload(path, blob, { contentType: 'image/jpeg' });
         if (uploadError) throw uploadError;
 
-        const { error: insertError } = await supabaseClient.from('album_photos').insert({
+        const { data: newPhoto, error: insertError } = await supabaseClient.from('album_photos').insert({
           album_id: albumId,
           user_id: currentUser.id,
           photo_url: path,
           filter_applied: activeFilterId,
           caption: captionInput.value.trim() || null,
-        });
+        }).select('id').single();
         if (insertError) throw insertError;
+
+        if (promptToAnswer){
+          await supabaseClient
+            .from('golden_hour_prompts')
+            .update({ answered_at: new Date().toISOString(), answered_photo_id: newPhoto?.id })
+            .eq('id', promptToAnswer.id);
+          activePrompt = null;
+          const url = new URL(window.location.href);
+          url.searchParams.delete('prompt');
+          window.history.replaceState(null, '', url.pathname + url.search);
+        }
 
         showToast('Added to the album 📸');
         close();
@@ -3057,7 +3133,12 @@
 
   async function initAlbum(){
     albumId = await getOrCreateAlbum();
+    activePrompt = await loadActivePrompt();
     await refreshAlbumGallery();
+    if (activePrompt){
+      switchHomeView('album');
+      document.getElementById('viewAlbum')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
   function switchHomeView(view){
