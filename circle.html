@@ -3012,7 +3012,13 @@
         renderGoldenHourCard();
         close();
       } catch (err) {
-        showToast(err.message || 'Could not send question', 'error');
+        if (err.code === '23505'){
+          showToast("You've already sent your question for today", 'error');
+          goldenHourAskedToday = true;
+          renderGoldenHourCard();
+        } else {
+          showToast(err.message || 'Could not send question', 'error');
+        }
         sendBtn.disabled = false;
         sendBtn.textContent = 'Send';
       }
