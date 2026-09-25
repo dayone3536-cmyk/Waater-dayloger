@@ -680,12 +680,17 @@
     100%{box-shadow:0 0 0 14px rgba(224,67,63,0);}
   }
   .hold-record-indicator{
-    display:none;position:absolute;left:50%;bottom:10px;transform:translateX(-50%);
+    display:flex;position:absolute;left:50%;bottom:10px;transform:translateX(-50%) scale(.85);
     align-items:center;gap:7px;background:var(--danger);color:#fff;border-radius:99px;
     padding:6px 14px;font-family:var(--font-mono);font-size:11px;white-space:nowrap;
     box-shadow:0 4px 14px rgba(0,0,0,.18);pointer-events:none;z-index:3;
+    opacity:0;visibility:hidden;
+    transition:opacity .14s ease, transform .14s cubic-bezier(.34,1.56,.64,1), visibility 0s linear .14s;
   }
-  .hold-record-indicator.show{display:flex;}
+  .hold-record-indicator.show{
+    opacity:1;visibility:visible;transform:translateX(-50%) scale(1);
+    transition:opacity .1s ease, transform .1s cubic-bezier(.34,1.56,.64,1), visibility 0s;
+  }
   .hri-dot{width:7px;height:7px;border-radius:50%;background:#fff;animation:hriBlink 1s ease-in-out infinite;}
   @keyframes hriBlink{ 0%,100%{opacity:1;} 50%{opacity:.25;} }
 
@@ -2438,12 +2443,14 @@
 
       let pressTimer = null;
       let isRecording = false;
+      let releasing = false; // UI already snapped back; recorder is still finishing in the background
       let mediaRecorder = null;
       let chunks = [];
       let startTime = null;
       let stream = null;
       let timerInterval = null;
       let startX = 0, startY = 0;
+      let activePointerId = null;
       let cancelledByScroll = false;
       const HOLD_MS = 320;
       const MAX_RECORDING_SECONDS = 60;
@@ -2452,12 +2459,19 @@
 
       const clearPressTimer = () => { if (pressTimer){ clearTimeout(pressTimer); pressTimer = null; } };
 
-      const teardown = () => {
+      // Snaps the UI back to idle the instant the user lets go. This is
+      // intentionally separate from stopping the actual MediaRecorder:
+      // on some phones the recorder can take a beat to flush and fire
+      // 'onstop', and waiting for that before updating the UI is exactly
+      // what made release feel laggy/buggy. The UI now never waits on it.
+      const hideRecordingUI = () => {
         clearInterval(timerInterval);
         body.classList.remove('holding-talk');
         indicator.classList.remove('show');
+      };
+
+      const stopTracks = () => {
         if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-        isRecording = false;
       };
 
       const beginRecording = async () => {
@@ -2468,12 +2482,19 @@
           showToast('Microphone access denied or unavailable', 'error');
           return;
         }
+        // The user may have already released while the mic permission
+        // prompt was pending — don't start recording into a UI that has
+        // already snapped back to idle.
+        if (releasing){ stream.getTracks().forEach(t => t.stop()); stream = null; return; }
+
         mediaRecorder = new MediaRecorder(stream);
         chunks = [];
         mediaRecorder.ondataavailable = e => chunks.push(e.data);
         mediaRecorder.onstop = async () => {
-          const durationSeconds = (Date.now() - startTime) / 1000;
-          teardown();
+          const durationSeconds = startTime ? (Date.now() - startTime) / 1000 : 0;
+          stopTracks();
+          isRecording = false;
+          releasing = false;
           if (cancelledByScroll){ cancelledByScroll = false; return; }
           if (durationSeconds < MIN_VALID_SECONDS) return;
           const blob = new Blob(chunks, { type: 'audio/webm' });
@@ -2489,67 +2510,88 @@
         isRecording = true;
         body.classList.add('holding-talk');
         indicator.classList.add('show');
+        if (navigator.vibrate) navigator.vibrate(12);
         startTime = Date.now();
         mediaRecorder.start();
         timerInterval = setInterval(() => {
           const secs = Math.floor((Date.now() - startTime) / 1000);
           timerLabel.textContent = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
-          if (secs >= MAX_RECORDING_SECONDS) mediaRecorder.stop();
+          if (secs >= MAX_RECORDING_SECONDS) finishRecording(false);
         }, 200);
+      };
+
+      // The single exit path for a live recording: hide the UI now,
+      // stop the recorder in the background. Called on release, on
+      // scroll-cancel, on pointercancel, and on hitting the max length.
+      const finishRecording = (cancel) => {
+        cancelledByScroll = cancel;
+        releasing = true;
+        hideRecordingUI();
+        if (mediaRecorder && mediaRecorder.state !== 'inactive'){
+          mediaRecorder.stop();
+        } else {
+          stopTracks();
+          isRecording = false;
+          releasing = false;
+        }
       };
 
       const isInteractiveTarget = (target) =>
         target.closest('.home-post-actions, .home-comments, .home-post-delete, .whisper-reveal, audio, video, a, button');
 
-      const pointOf = (e) => (e.touches && e.touches[0]) ? e.touches[0] : e;
-
-      const onDown = (e) => {
+      // Pointer Events (not separate mouse/touch listeners) so a real touch
+      // can't also replay as a synthetic mousedown/mouseup a moment later —
+      // that ghost event was what made release feel unreliable, since it
+      // could quietly re-arm the press timer or re-open the thread right
+      // after a recording had just been sent. setPointerCapture keeps every
+      // move/up event routed here even if the finger drifts off this card.
+      const onPointerDown = (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
         if (isInteractiveTarget(e.target)) return;
-        const p = pointOf(e);
-        startX = p.clientX; startY = p.clientY;
+        activePointerId = e.pointerId;
+        startX = e.clientX; startY = e.clientY;
+        releasing = false;
         clearPressTimer();
+        if (body.setPointerCapture){
+          try { body.setPointerCapture(e.pointerId); } catch(err){}
+        }
         pressTimer = setTimeout(() => { pressTimer = null; beginRecording(); }, HOLD_MS);
       };
 
-      const onMove = (e) => {
+      const onPointerMove = (e) => {
+        if (e.pointerId !== activePointerId) return;
         if (!pressTimer && !isRecording) return;
-        const p = pointOf(e);
-        const dx = Math.abs(p.clientX - startX);
-        const dy = Math.abs(p.clientY - startY);
+        const dx = Math.abs(e.clientX - startX);
+        const dy = Math.abs(e.clientY - startY);
         if (dx > MOVE_CANCEL_PX || dy > MOVE_CANCEL_PX){
           // This is a scroll, not a hold — bail out without sending anything.
           clearPressTimer();
-          if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive'){
-            // Discard rather than send: onstop still fires, but we mark it as
-            // a cancel so the recording is thrown away instead of posted.
-            cancelledByScroll = true;
-            mediaRecorder.stop();
-          }
+          if (isRecording) finishRecording(true);
         }
       };
 
-      const onUp = (e) => {
+      const onPointerUp = (e) => {
+        if (e.pointerId !== activePointerId) return;
+        activePointerId = null;
         if (pressTimer){
           clearPressTimer();
           if (!isInteractiveTarget(e.target)) openComments(postId);
           return;
         }
-        if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+        if (isRecording) finishRecording(false);
       };
 
-      const onCancel = () => {
+      const onPointerCancel = (e) => {
+        if (e.pointerId !== activePointerId) return;
+        activePointerId = null;
         clearPressTimer();
-        if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+        if (isRecording) finishRecording(true);
       };
 
-      body.addEventListener('mousedown', onDown);
-      body.addEventListener('touchstart', onDown, { passive: true });
-      body.addEventListener('mousemove', onMove);
-      body.addEventListener('touchmove', onMove, { passive: true });
-      body.addEventListener('mouseup', onUp);
-      body.addEventListener('touchend', onUp);
-      body.addEventListener('mouseleave', onCancel);
-      body.addEventListener('touchcancel', onCancel);
+      body.addEventListener('pointerdown', onPointerDown);
+      body.addEventListener('pointermove', onPointerMove);
+      body.addEventListener('pointerup', onPointerUp);
+      body.addEventListener('pointercancel', onPointerCancel);
     });
   }
 
