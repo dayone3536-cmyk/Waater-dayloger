@@ -1437,56 +1437,76 @@
   /* ---- Golden Hour — dramatic blurred reveal card ----
      The question arrives blurred behind glass; tapping "reveal" clears the
      blur with a pop + camera-flash so opening it actually feels like a
-     moment, instead of just reading pre-rendered text. */
+     moment, instead of just reading pre-rendered text. Lives at the very
+     top of the main feed now — the first thing you see, not something
+     buried in a tab. */
   .gh-reveal{
-    position:relative;margin:0 0 18px;padding:22px 20px 20px;border-radius:20px;
-    overflow:hidden;text-align:center;
-    background:linear-gradient(150deg,#171016 0%,#241a17 55%,#171016 100%);
-    border:1px solid rgba(255,177,153,.22);
-    box-shadow:0 24px 50px -22px rgba(0,0,0,.55);
-    animation:promptPinIn .4s var(--ease-spring) both;
+    position:relative;margin:0 0 18px;padding:30px 22px 26px;border-radius:24px;
+    overflow:hidden;text-align:center;isolation:isolate;
+    background:linear-gradient(150deg,#15100c 0%,#2b1c12 45%,#1c130e 78%,#100b08 100%);
+    border:1px solid rgba(255,196,120,.28);
+    box-shadow:0 30px 60px -22px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06);
+    animation:ghRevealIn .55s var(--ease-spring) both;
   }
+  @keyframes ghRevealIn{from{opacity:0;transform:translateY(-10px) scale(.98);}to{opacity:1;transform:translateY(0) scale(1);}}
+  /* slow drifting gold shimmer around the border, so the card never sits
+     fully still — reads as "something is happening here" at a glance */
+  .gh-reveal::before{
+    content:'';position:absolute;inset:0;border-radius:inherit;padding:1px;z-index:0;pointer-events:none;
+    background:conic-gradient(from var(--gh-a,0deg), transparent 0 20%, rgba(255,196,120,.9) 30%, transparent 45%, rgba(255,90,54,.55) 65%, transparent 80%);
+    -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude;
+    animation:ghBorderSpin 6s linear infinite;
+  }
+  @keyframes ghBorderSpin{to{--gh-a:360deg;}}
+  @property --gh-a{ syntax:'<angle>'; inherits:false; initial-value:0deg; }
   .gh-reveal-glow{
-    position:absolute;top:-90px;left:50%;transform:translateX(-50%);width:220px;height:220px;
-    border-radius:50%;pointer-events:none;
-    background:radial-gradient(circle, rgba(255,90,54,.4), transparent 70%);
+    position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:260px;height:260px;
+    border-radius:50%;pointer-events:none;z-index:0;
+    background:radial-gradient(circle, rgba(255,177,90,.5), rgba(255,90,54,.18) 55%, transparent 75%);
     animation:ghGlowPulse 3.2s ease-in-out infinite;
   }
-  @keyframes ghGlowPulse{0%,100%{opacity:.55;transform:translateX(-50%) scale(1);}50%{opacity:1;transform:translateX(-50%) scale(1.18);}}
+  @keyframes ghGlowPulse{0%,100%{opacity:.6;transform:translateX(-50%) scale(1);}50%{opacity:1;transform:translateX(-50%) scale(1.22);}}
   .gh-reveal-eyebrow{
     position:relative;z-index:1;display:inline-flex;align-items:center;gap:7px;justify-content:center;
-    font-family:var(--font-mono);font-size:10.5px;color:var(--accent-2);text-transform:uppercase;
-    letter-spacing:.09em;margin-bottom:16px;width:100%;
+    font-family:var(--font-mono);font-size:11px;color:#ffcf9e;text-transform:uppercase;
+    letter-spacing:.12em;margin-bottom:18px;width:100%;
   }
-  .gh-reveal-eyebrow .gh-dot.live{background:var(--accent);}
-  .gh-reveal-stage{position:relative;z-index:1;min-height:70px;display:flex;align-items:center;justify-content:center;padding:0 4px;}
+  .gh-reveal-eyebrow .gh-dot.live{background:#ff9a4d;box-shadow:0 0 0 0 rgba(255,154,77,.55);animation:ghPulse 1.6s ease-out infinite;}
+  .gh-reveal-stage{position:relative;z-index:1;min-height:78px;display:flex;align-items:center;justify-content:center;padding:0 6px;}
   .gh-reveal-blur{
-    font-family:var(--font-serif);font-size:17.5px;line-height:1.5;color:#fff;
-    filter:blur(10px);opacity:.5;user-select:none;transform:scale(.96);
-    transition:filter .8s var(--ease), opacity .8s var(--ease), transform .8s var(--ease-spring);
+    font-family:var(--font-serif);font-size:19px;line-height:1.5;color:#fff;
+    filter:blur(11px);opacity:.5;user-select:none;transform:scale(.95);
+    transition:filter .9s var(--ease), opacity .9s var(--ease), transform .9s var(--ease-spring);
   }
   .gh-reveal.revealed .gh-reveal-blur{
     filter:blur(0);opacity:1;transform:scale(1);
     animation:ghRevealPop .6s var(--ease-spring);
   }
-  @keyframes ghRevealPop{0%{transform:scale(.9);}55%{transform:scale(1.04);}100%{transform:scale(1);}}
+  @keyframes ghRevealPop{0%{transform:scale(.88);}55%{transform:scale(1.05);}100%{transform:scale(1);}}
   .gh-reveal-tap{
     position:absolute;z-index:2;display:inline-flex;align-items:center;gap:8px;
-    padding:11px 20px;border-radius:99px;color:#fff;
-    background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.32);
+    padding:12px 22px;border-radius:99px;color:#fff;
+    background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.34);
     -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
-    font-family:var(--font-display);font-weight:600;font-size:13px;letter-spacing:.01em;
+    font-family:var(--font-display);font-weight:600;font-size:13.5px;letter-spacing:.01em;
     transition:background .15s ease, transform .15s var(--ease-spring);
     animation:ghTapFloat 2.2s ease-in-out infinite;
   }
-  .gh-reveal-tap:hover{background:rgba(255,255,255,.18);}
+  .gh-reveal-tap:hover{background:rgba(255,255,255,.2);}
   .gh-reveal-tap:active{transform:scale(.94);}
   @keyframes ghTapFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
   .gh-reveal.revealed .gh-reveal-tap{display:none;}
-  .gh-reveal .prompt-pin-answer{
-    position:relative;z-index:1;display:none;margin-top:18px;background:var(--accent);
+  .gh-reveal-from{
+    position:relative;z-index:1;font-family:var(--font-mono);font-size:10.5px;color:rgba(255,255,255,.4);
+    margin-top:14px;letter-spacing:.03em;
   }
-  .gh-reveal .prompt-pin-answer:hover{background:#e64a2a;}
+  .gh-reveal .prompt-pin-answer{
+    position:relative;z-index:1;display:none;margin-top:20px;align-items:center;gap:8px;
+    background:linear-gradient(135deg,#ff9a4d,var(--accent));box-shadow:0 10px 24px -8px rgba(255,90,54,.6);
+  }
+  .gh-reveal .prompt-pin-answer svg{width:14px;height:14px;stroke:#fff;flex-shrink:0;}
+  .gh-reveal .prompt-pin-answer:hover{filter:brightness(1.06);}
   .gh-reveal.revealed .prompt-pin-answer{display:inline-flex;animation:promptPinIn .4s var(--ease-spring) .12s both;}
   /* full-screen flash fired the instant a question is revealed */
   .gh-flash{
@@ -1494,6 +1514,33 @@
     animation:ghFlashFade .5s ease forwards;
   }
   @keyframes ghFlashFade{from{opacity:.5;}to{opacity:0;}}
+
+  /* ---- Golden Hour — voice reply modal (record → preview → send) ---- */
+  .gh-voice-stage{display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px 0 6px;}
+  .gh-voice-record-btn{
+    position:relative;width:80px;height:80px;border-radius:50%;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#ff9a4d,var(--accent));color:#fff;
+    box-shadow:0 14px 30px -10px rgba(255,90,54,.6);
+    transition:transform .15s var(--ease-spring);
+  }
+  .gh-voice-record-btn svg{width:26px;height:26px;stroke:#fff;position:relative;z-index:1;}
+  .gh-voice-record-btn:active{transform:scale(.94);}
+  .gh-voice-record-btn.recording{background:linear-gradient(135deg,#ff6a52,var(--danger));animation:ghMicPulse 1.1s ease-in-out infinite;}
+  .gh-voice-record-btn .gh-voice-stop-icon{width:22px;height:22px;border-radius:5px;background:#fff;display:none;}
+  .gh-voice-record-btn.recording .gh-voice-mic-icon{display:none;}
+  .gh-voice-record-btn.recording .gh-voice-stop-icon{display:block;}
+  @keyframes ghMicPulse{0%,100%{box-shadow:0 0 0 0 rgba(224,67,63,.45), 0 14px 30px -10px rgba(255,90,54,.6);}50%{box-shadow:0 0 0 14px rgba(224,67,63,0), 0 14px 30px -10px rgba(255,90,54,.6);}}
+  .gh-voice-hint{font-family:var(--font-display);font-weight:500;font-size:12.5px;color:var(--ink-soft);}
+  .gh-voice-timer{font-family:var(--font-mono);font-size:13px;color:var(--danger);letter-spacing:.02em;}
+  .gh-voice-preview{width:100%;display:flex;flex-direction:column;align-items:center;gap:10px;padding:6px 0 4px;}
+  .gh-voice-preview audio{width:100%;}
+  .gh-voice-rerecord{font-family:var(--font-mono);font-size:11px;color:var(--grey);text-decoration:underline;text-underline-offset:2px;}
+  .gh-voice-rerecord:hover{color:var(--ink);}
+  #ghVoiceCaption{
+    width:100%;margin-top:12px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);
+    font-family:var(--font-serif);font-size:13.5px;resize:none;min-height:44px;
+  }
 
   .album-modal-pinned-q{
     display:flex;align-items:flex-start;gap:8px;margin:10px 0 14px;padding:11px 13px;
@@ -1524,6 +1571,31 @@
   .gh-eyebrow{font-family:var(--font-mono);font-size:10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;}
   .gh-countdown{font-family:var(--font-mono);font-size:10px;color:var(--accent);font-weight:600;letter-spacing:.02em;}
   .gh-question{font-family:var(--font-serif);font-size:13.5px;line-height:1.4;color:var(--ink);margin-bottom:9px;}
+  /* ---- Golden Hour — a voice reply, once it lands in the feed ---- */
+  .home-post-card.gh-answer{
+    background:linear-gradient(150deg,#171016 0%,#241a17 55%,#171016 100%);
+    border:1px solid rgba(255,177,153,.22);
+    box-shadow:0 20px 40px -20px rgba(0,0,0,.5);
+  }
+  .home-post-card.gh-answer .home-post-head .who b{color:#ffd9b0;}
+  .home-post-card.gh-answer .home-post-head .who span{color:rgba(255,255,255,.4);}
+  .home-post-card.gh-answer .home-post-actions{border-top-color:rgba(255,177,153,.15);}
+  .home-post-card.gh-answer .home-action-btn{color:rgba(255,255,255,.55);}
+  .home-post-card.gh-answer .home-action-btn svg{stroke:rgba(255,255,255,.55);}
+  .home-post-card.gh-answer .home-comments{border-top-color:rgba(255,177,153,.15);}
+  .home-post-card.gh-answer .home-comment-input{background:#1e1712;border-color:#3a2a1f;color:#eee;}
+  .gh-answer-tag{
+    display:inline-flex;align-items:center;gap:6px;margin-bottom:10px;padding:4px 10px 4px 4px;
+    border-radius:99px;background:rgba(255,154,77,.14);border:1px solid rgba(255,177,153,.3);
+    font-family:var(--font-mono);font-size:10px;color:#ffcf9e;text-transform:uppercase;letter-spacing:.06em;
+  }
+  .gh-answer-tag .gh-ic{width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,#ff9a4d,var(--accent));display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;}
+  .gh-answer-question{
+    font-family:var(--font-serif);font-size:14.5px;font-style:italic;line-height:1.5;color:#f1cba0;
+    padding-left:10px;border-left:2px solid rgba(255,177,153,.4);margin-bottom:10px;
+  }
+  .home-post-card.gh-answer .home-voice-bubble{background:#221812;border:1px solid rgba(255,177,153,.2);}
+  .home-post-card.gh-answer .home-voice-bubble b{color:#ffd9b0;}
   .gh-chip-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;position:relative;z-index:1;}
   .gh-chip{
     flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:4px 11px 4px 4px;
@@ -2022,8 +2094,8 @@
           revealedPromptIds.delete(activePrompt.id);
           const asker = members.find(m => m.id === activePrompt.from_user_id);
           showToast(`✨ ${asker?.username || 'Someone'} just asked you something`);
-          switchHomeView('album');
-          await refreshAlbumGallery();
+          switchHomeView('feed');
+          await refreshGoldenHourReveal();
           document.getElementById('promptPinBanner')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       )
@@ -2262,7 +2334,7 @@
 
     let query = supabaseClient
       .from('posts')
-      .select('id, user_id, caption, media_url, media_type, duration_seconds, created_at, score, likes_count, comment_count, is_anonymous')
+      .select('id, user_id, caption, media_url, media_type, duration_seconds, created_at, score, likes_count, comment_count, is_anonymous, gh_question, gh_asker_name')
       .eq('circle_id', circleId);
 
     if (sort === 'top') query = query.order('score', { ascending: false });
@@ -2312,6 +2384,7 @@
   // =========================================================
   function renderHomePostCard(post, isLiked){
     const isAnonPost = post.is_anonymous;
+    const isGhAnswer = !!post.gh_question;
     const name = isAnonPost ? 'Anonymous' : (post.profiles?.username || 'someone');
 
     const avatarHtml = isAnonPost
@@ -2334,7 +2407,7 @@
       : '';
     const isOwnPost = currentUser && post.user_id === currentUser.id;
     return `
-      <div class="home-post-card${isAnonPost ? ' whisper' : ''}" data-post-id="${post.id}">
+      <div class="home-post-card${isAnonPost ? ' whisper' : ''}${isGhAnswer ? ' gh-answer' : ''}" data-post-id="${post.id}">
         <div class="home-post-head">
           <div class="avatar${isAnonPost ? ' anon-avatar' : ''}">${avatarHtml}</div>
           <div class="who"><b style="${isAnonPost ? 'color:var(--grey);font-style:italic;' : ''}">${escapeHtml(name)}</b><span>${timeAgo(post.created_at)}</span></div>
@@ -2344,6 +2417,9 @@
           </button>` : ''}
         </div>
         <div class="home-post-body${isAnonPost ? ' whisper-reveal' : ''}">
+          ${isGhAnswer ? `
+          <div class="gh-answer-tag"><span class="gh-ic">🌇</span><span>Golden Hour reply${post.gh_asker_name ? ' to ' + escapeHtml(post.gh_asker_name) : ''}</span></div>
+          <div class="gh-answer-question">${escapeHtml(post.gh_question)}</div>` : ''}
           ${post.caption ? `<div class="home-post-text">${escapeHtml(post.caption)}</div>` : ''}
           ${mediaHtml}
         </div>
@@ -3378,7 +3454,11 @@
             <span aria-hidden="true">👁️</span><span>Tap to reveal</span>
           </button>`}
         </div>
-        <button class="prompt-pin-answer" id="promptPinAnswerBtn" type="button">Answer with a photo</button>
+        <button class="prompt-pin-answer" id="promptPinAnswerBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          <span>Reply with a voice</span>
+        </button>
+        <div class="gh-reveal-from">only ${escapeHtml(name)} will hear your reply</div>
       </div>
     `;
   }
@@ -3399,17 +3479,27 @@
     });
     if (answerBtn) answerBtn.addEventListener('click', () => {
       if (!requireAuth()) return;
-      openAlbumCaptureModal(activePrompt);
+      openGoldenHourVoiceReplyModal(activePrompt);
     });
+  }
+
+  // Renders the reveal card into its slot at the top of the main feed
+  // (this used to live inside the Album tab — moving it to the feed means
+  // the person can't miss it, since the feed is the first thing they see).
+  async function refreshGoldenHourReveal(){
+    const slot = document.getElementById('ghPinSlot');
+    if (!slot) return;
+    activePrompt = await loadActivePrompt();
+    slot.innerHTML = renderPinnedPromptBanner();
+    wirePinnedPromptBanner();
   }
 
   async function refreshAlbumGallery(){
     const wrap = document.getElementById('galleryWrap');
     if (!wrap) return;
     const photos = await loadAlbumPhotos();
-    wrap.innerHTML = renderPinnedPromptBanner() + renderAlbumGallery(photos);
+    wrap.innerHTML = renderAlbumGallery(photos);
     wireGalleryActions(photos);
-    wirePinnedPromptBanner();
     const countEl = document.getElementById('albumTabCount');
     if (countEl) countEl.textContent = photos.length ? `· ${photos.length}` : '';
   }
@@ -3636,18 +3726,6 @@
         }).select('id').single();
         if (insertError) throw insertError;
 
-        if (promptToAnswer){
-          await supabaseClient
-            .from('golden_hour_prompts')
-            .update({ answered_at: new Date().toISOString(), answered_photo_id: newPhoto?.id })
-            .eq('id', promptToAnswer.id);
-          revealedPromptIds.delete(promptToAnswer.id);
-          activePrompt = null;
-          const url = new URL(window.location.href);
-          url.searchParams.delete('prompt');
-          window.history.replaceState(null, '', url.pathname + url.search);
-        }
-
         showToast('Added to the album 📸');
         close();
         await refreshAlbumGallery();
@@ -3658,14 +3736,184 @@
     });
   }
 
+  // Golden Hour — reply to a pinned question with a recorded voice note.
+  // Records straight into the browser (MediaRecorder, same as the regular
+  // voice-post button), lets the person preview/re-record before sending,
+  // then posts it to the main feed — tagged with the question it answers.
+  function openGoldenHourVoiceReplyModal(promptToAnswer){
+    if (!promptToAnswer) return;
+    const asker = members.find(m => m.id === promptToAnswer.from_user_id);
+    const askerName = asker?.username || 'Someone';
+
+    const modal = document.createElement('div');
+    modal.className = 'album-modal-backdrop';
+    modal.innerHTML = `
+      <div class="album-modal">
+        <h3>Reply with your voice</h3>
+        <p class="hint">Only ${escapeHtml(askerName)} will hear this.</p>
+        <div class="album-modal-pinned-q">
+          <span class="pin-ic">🌇</span>
+          <span>${escapeHtml(promptToAnswer.question)}</span>
+        </div>
+        <div class="gh-voice-stage" id="ghVoiceStage">
+          <button class="gh-voice-record-btn" id="ghVoiceRecordBtn" type="button" aria-label="Record">
+            <svg class="gh-voice-mic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            <span class="gh-voice-stop-icon"></span>
+          </button>
+          <span class="gh-voice-hint" id="ghVoiceHint">Tap to record</span>
+          <span class="gh-voice-timer" id="ghVoiceTimer" style="display:none;">0:00</span>
+        </div>
+        <textarea id="ghVoiceCaption" maxlength="140" placeholder="Add a caption... (optional)" style="display:none;"></textarea>
+        <div class="album-modal-row">
+          <button class="album-modal-cancel" type="button" id="ghVoiceCancel">Cancel</button>
+          <button class="album-modal-post" type="button" id="ghVoiceSend" disabled>Send reply</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    requestAnimationFrame(() => modal.classList.add('show'));
+
+    const stage = modal.querySelector('#ghVoiceStage');
+    const recordBtn = modal.querySelector('#ghVoiceRecordBtn');
+    const hint = modal.querySelector('#ghVoiceHint');
+    const timerEl = modal.querySelector('#ghVoiceTimer');
+    const captionInput = modal.querySelector('#ghVoiceCaption');
+    const sendBtn = modal.querySelector('#ghVoiceSend');
+    const cancelBtn = modal.querySelector('#ghVoiceCancel');
+
+    const MAX_SECONDS = 90;
+    let recorder = null;
+    let chunks = [];
+    let stream = null;
+    let startTime = null;
+    let timerInterval = null;
+    let recordedBlob = null;
+    let durationSeconds = 0;
+
+    const close = () => {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      clearInterval(timerInterval);
+      modal.classList.remove('show');
+      setTimeout(() => modal.remove(), 220);
+    };
+    cancelBtn.addEventListener('click', close);
+    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+    function renderPreview(){
+      const url = URL.createObjectURL(recordedBlob);
+      stage.innerHTML = `
+        <div class="gh-voice-preview">
+          <audio src="${url}" controls controlsList="nodownload noremoteplayback" oncontextmenu="return false;"></audio>
+          <button class="gh-voice-rerecord" type="button" id="ghVoiceRerecord">Re-record</button>
+        </div>
+      `;
+      stage.querySelector('#ghVoiceRerecord').addEventListener('click', () => {
+        recordedBlob = null;
+        sendBtn.disabled = true;
+        renderIdleStage();
+      });
+      captionInput.style.display = 'block';
+      sendBtn.disabled = false;
+    }
+
+    function renderIdleStage(){
+      stage.innerHTML = `
+        <button class="gh-voice-record-btn" id="ghVoiceRecordBtn" type="button" aria-label="Record">
+          <svg class="gh-voice-mic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          <span class="gh-voice-stop-icon"></span>
+        </button>
+        <span class="gh-voice-hint" id="ghVoiceHint">Tap to record</span>
+        <span class="gh-voice-timer" id="ghVoiceTimer" style="display:none;">0:00</span>
+      `;
+      wireRecordBtn(stage.querySelector('#ghVoiceRecordBtn'), stage.querySelector('#ghVoiceHint'), stage.querySelector('#ghVoiceTimer'));
+    }
+
+    function wireRecordBtn(btn, hintEl, timerEl){
+      btn.addEventListener('click', async () => {
+        if (btn.classList.contains('recording')){ recorder.stop(); return; }
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          recorder = new MediaRecorder(stream);
+          chunks = [];
+          recorder.ondataavailable = (e) => chunks.push(e.data);
+          recorder.onstop = () => {
+            stream.getTracks().forEach(t => t.stop());
+            clearInterval(timerInterval);
+            durationSeconds = (Date.now() - startTime) / 1000;
+            recordedBlob = new Blob(chunks, { type: 'audio/webm' });
+            renderPreview();
+          };
+          recorder.start();
+          startTime = Date.now();
+          btn.classList.add('recording');
+          hintEl.textContent = 'Recording — tap to stop';
+          timerEl.style.display = 'inline';
+          if (navigator.vibrate) navigator.vibrate(15);
+          timerInterval = setInterval(() => {
+            const secs = Math.floor((Date.now() - startTime) / 1000);
+            timerEl.textContent = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+            if (secs >= MAX_SECONDS) recorder.stop();
+          }, 250);
+        } catch (err) {
+          showToast('Microphone access denied or unavailable', 'error');
+        }
+      });
+    }
+    wireRecordBtn(recordBtn, hint, timerEl);
+
+    sendBtn.addEventListener('click', async () => {
+      if (!recordedBlob || !currentUser) return;
+      sendBtn.disabled = true;
+      cancelBtn.disabled = true;
+      sendBtn.innerHTML = `<span class="mini-spinner"></span> Sending...`;
+
+      try {
+        const path = `${currentUser.id}/${circleId}/${Date.now()}-gh.webm`;
+        const { error: uploadError } = await supabaseClient.storage
+          .from('voice-posts')
+          .upload(path, recordedBlob, { contentType: 'audio/webm' });
+        if (uploadError) throw uploadError;
+
+        const { error: insertError } = await supabaseClient.from('posts').insert({
+          circle_id: circleId,
+          user_id: currentUser.id,
+          caption: captionInput.value.trim() || null,
+          media_url: path,
+          media_type: 'voice',
+          duration_seconds: durationSeconds,
+          is_anonymous: false,
+          gh_question: promptToAnswer.question,
+          gh_asker_name: askerName,
+        });
+        if (insertError) throw insertError;
+
+        await supabaseClient
+          .from('golden_hour_prompts')
+          .update({ answered_at: new Date().toISOString() })
+          .eq('id', promptToAnswer.id);
+
+        revealedPromptIds.delete(promptToAnswer.id);
+        activePrompt = null;
+        const url = new URL(window.location.href);
+        url.searchParams.delete('prompt');
+        window.history.replaceState(null, '', url.pathname + url.search);
+
+        showToast('Reply sent 🎤');
+        close();
+        document.getElementById('ghPinSlot').innerHTML = '';
+        await refreshHomeFeed();
+      } catch (err) {
+        sendBtn.disabled = false;
+        cancelBtn.disabled = false;
+        sendBtn.textContent = 'Send reply';
+        showToast(err.message || 'Could not send your reply', 'error');
+      }
+    });
+  }
+
   async function initAlbum(){
     albumId = await getOrCreateAlbum();
-    activePrompt = await loadActivePrompt();
     await refreshAlbumGallery();
-    if (activePrompt){
-      switchHomeView('album');
-      document.getElementById('viewAlbum')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
   }
 
   function switchHomeView(view){
@@ -3737,6 +3985,7 @@
       </div>
 
       <div class="view-panel active" id="viewFeed">
+        <div class="gh-pin-slot" id="ghPinSlot"></div>
         <div class="home-composer" id="homeComposer">
           <textarea id="homeComposerText" placeholder="Tell your circle about your day — just between you all..." rows="1"></textarea>
           <div class="home-composer-media" id="homeMediaField" style="display:none;">
@@ -4089,6 +4338,7 @@
     setupComposerBehavior();
 
     await refreshHomeFeed();
+    refreshGoldenHourReveal();
     initAlbum();
     initGoldenHourCard();
     subscribeToCircleActivity();
