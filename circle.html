@@ -1429,6 +1429,67 @@
   }
   .prompt-pin-answer:hover{background:#000;}
   .prompt-pin-answer:active{transform:scale(.96);}
+  /* ---- Golden Hour — dramatic blurred reveal card ----
+     The question arrives blurred behind glass; tapping "reveal" clears the
+     blur with a pop + camera-flash so opening it actually feels like a
+     moment, instead of just reading pre-rendered text. */
+  .gh-reveal{
+    position:relative;margin:0 0 18px;padding:22px 20px 20px;border-radius:20px;
+    overflow:hidden;text-align:center;
+    background:linear-gradient(150deg,#171016 0%,#241a17 55%,#171016 100%);
+    border:1px solid rgba(255,177,153,.22);
+    box-shadow:0 24px 50px -22px rgba(0,0,0,.55);
+    animation:promptPinIn .4s var(--ease-spring) both;
+  }
+  .gh-reveal-glow{
+    position:absolute;top:-90px;left:50%;transform:translateX(-50%);width:220px;height:220px;
+    border-radius:50%;pointer-events:none;
+    background:radial-gradient(circle, rgba(255,90,54,.4), transparent 70%);
+    animation:ghGlowPulse 3.2s ease-in-out infinite;
+  }
+  @keyframes ghGlowPulse{0%,100%{opacity:.55;transform:translateX(-50%) scale(1);}50%{opacity:1;transform:translateX(-50%) scale(1.18);}}
+  .gh-reveal-eyebrow{
+    position:relative;z-index:1;display:inline-flex;align-items:center;gap:7px;justify-content:center;
+    font-family:var(--font-mono);font-size:10.5px;color:var(--accent-2);text-transform:uppercase;
+    letter-spacing:.09em;margin-bottom:16px;width:100%;
+  }
+  .gh-reveal-eyebrow .gh-dot.live{background:var(--accent);}
+  .gh-reveal-stage{position:relative;z-index:1;min-height:70px;display:flex;align-items:center;justify-content:center;padding:0 4px;}
+  .gh-reveal-blur{
+    font-family:var(--font-serif);font-size:17.5px;line-height:1.5;color:#fff;
+    filter:blur(10px);opacity:.5;user-select:none;transform:scale(.96);
+    transition:filter .8s var(--ease), opacity .8s var(--ease), transform .8s var(--ease-spring);
+  }
+  .gh-reveal.revealed .gh-reveal-blur{
+    filter:blur(0);opacity:1;transform:scale(1);
+    animation:ghRevealPop .6s var(--ease-spring);
+  }
+  @keyframes ghRevealPop{0%{transform:scale(.9);}55%{transform:scale(1.04);}100%{transform:scale(1);}}
+  .gh-reveal-tap{
+    position:absolute;z-index:2;display:inline-flex;align-items:center;gap:8px;
+    padding:11px 20px;border-radius:99px;color:#fff;
+    background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.32);
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+    font-family:var(--font-display);font-weight:600;font-size:13px;letter-spacing:.01em;
+    transition:background .15s ease, transform .15s var(--ease-spring);
+    animation:ghTapFloat 2.2s ease-in-out infinite;
+  }
+  .gh-reveal-tap:hover{background:rgba(255,255,255,.18);}
+  .gh-reveal-tap:active{transform:scale(.94);}
+  @keyframes ghTapFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
+  .gh-reveal.revealed .gh-reveal-tap{display:none;}
+  .gh-reveal .prompt-pin-answer{
+    position:relative;z-index:1;display:none;margin-top:18px;background:var(--accent);
+  }
+  .gh-reveal .prompt-pin-answer:hover{background:#e64a2a;}
+  .gh-reveal.revealed .prompt-pin-answer{display:inline-flex;animation:promptPinIn .4s var(--ease-spring) .12s both;}
+  /* full-screen flash fired the instant a question is revealed */
+  .gh-flash{
+    position:fixed;inset:0;z-index:9999;pointer-events:none;background:#fff;
+    animation:ghFlashFade .5s ease forwards;
+  }
+  @keyframes ghFlashFade{from{opacity:.5;}to{opacity:0;}}
+
   .album-modal-pinned-q{
     display:flex;align-items:flex-start;gap:8px;margin:10px 0 14px;padding:11px 13px;
     border-radius:12px;background:var(--accent-soft);border:1px solid var(--accent-2);
@@ -1934,6 +1995,36 @@
       .subscribe();
   }
   window.addEventListener('beforeunload', () => { if (circleChannel) supabaseClient.removeChannel(circleChannel); });
+
+  // Live delivery for Golden Hour questions. Sending previously only put a
+  // link on the sender's clipboard — if the recipient was sitting right on
+  // this page when it was sent, nothing told them a question had arrived.
+  let goldenHourPromptChannel = null;
+  function subscribeToGoldenHourPrompts(){
+    if (goldenHourPromptChannel || !circle?.is_private || !currentUser) return;
+    goldenHourPromptChannel = supabaseClient
+      .channel(`gh-prompts-${circleId}-${currentUser.id}`)
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'golden_hour_prompts', filter: `to_user_id=eq.${currentUser.id}` },
+        async (payload) => {
+          if (!payload.new || payload.new.circle_id !== circleId || payload.new.answered_at) return;
+          activePrompt = {
+            id: payload.new.id,
+            from_user_id: payload.new.from_user_id,
+            question: payload.new.question,
+            answered_at: payload.new.answered_at,
+          };
+          revealedPromptIds.delete(activePrompt.id);
+          const asker = members.find(m => m.id === activePrompt.from_user_id);
+          showToast(`✨ ${asker?.username || 'Someone'} just asked you something`);
+          switchHomeView('album');
+          await refreshAlbumGallery();
+          document.getElementById('promptPinBanner')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      )
+      .subscribe();
+  }
+  window.addEventListener('beforeunload', () => { if (goldenHourPromptChannel) supabaseClient.removeChannel(goldenHourPromptChannel); });
 
   async function renderSidebar(){
     const { data } = await supabaseClient.auth.getSession();
@@ -2754,18 +2845,42 @@
 
   let albumId = null;
   let activePrompt = null;
+  // Which prompt ids the recipient has already tapped to reveal this
+  // session — so re-rendering the album (e.g. after posting something else)
+  // doesn't blur an already-revealed question again.
+  const revealedPromptIds = new Set();
 
   async function loadActivePrompt(){
+    if (!currentUser) return null;
+
+    // A deep link (?prompt=<id>) is honoured first, but it's no longer the
+    // *only* way to see a question. Previously, if the recipient opened the
+    // circle normally instead of the exact clipboard link, this returned
+    // null and they'd never learn a question was waiting for them.
     const promptId = params.get('prompt');
-    if (!promptId || !currentUser) return null;
+    if (promptId){
+      const { data, error } = await supabaseClient
+        .from('golden_hour_prompts')
+        .select('id, from_user_id, question, answered_at')
+        .eq('id', promptId)
+        .eq('to_user_id', currentUser.id)
+        .is('answered_at', null)
+        .maybeSingle();
+      if (!error && data) return data;
+      // Link was stale, already answered, or wrong — fall through and still
+      // check for whatever's actually waiting, instead of showing nothing.
+    }
+
     const { data, error } = await supabaseClient
       .from('golden_hour_prompts')
       .select('id, from_user_id, question, answered_at')
-      .eq('id', promptId)
       .eq('to_user_id', currentUser.id)
+      .eq('circle_id', circleId)
       .is('answered_at', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
-    if (error || !data) return null;
+    if (error){ console.error('loadActivePrompt failed', error); return null; }
     return data;
   }
 
@@ -3209,18 +3324,38 @@
     if (!activePrompt) return '';
     const asker = members.find(m => m.id === activePrompt.from_user_id);
     const name = asker?.username || 'Someone';
+    const alreadyRevealed = revealedPromptIds.has(activePrompt.id);
     return `
-      <div class="prompt-pin" id="promptPinBanner">
-        <div class="prompt-pin-label">✨ ${escapeHtml(name)} asked you</div>
-        <div class="prompt-pin-question">${escapeHtml(activePrompt.question)}</div>
+      <div class="gh-reveal${alreadyRevealed ? ' revealed' : ''}" id="promptPinBanner">
+        <div class="gh-reveal-glow" aria-hidden="true"></div>
+        <div class="gh-reveal-eyebrow"><span class="gh-dot live"></span>${escapeHtml(name)} asked you something</div>
+        <div class="gh-reveal-stage">
+          <div class="gh-reveal-blur">${escapeHtml(activePrompt.question)}</div>
+          ${alreadyRevealed ? '' : `
+          <button class="gh-reveal-tap" id="ghRevealTapBtn" type="button">
+            <span aria-hidden="true">👁️</span><span>Tap to reveal</span>
+          </button>`}
+        </div>
         <button class="prompt-pin-answer" id="promptPinAnswerBtn" type="button">Answer with a photo</button>
       </div>
     `;
   }
 
   function wirePinnedPromptBanner(){
-    const btn = document.getElementById('promptPinAnswerBtn');
-    if (btn) btn.addEventListener('click', () => {
+    const banner = document.getElementById('promptPinBanner');
+    const tapBtn = document.getElementById('ghRevealTapBtn');
+    const answerBtn = document.getElementById('promptPinAnswerBtn');
+    if (tapBtn && banner) tapBtn.addEventListener('click', () => {
+      revealedPromptIds.add(activePrompt.id);
+      banner.classList.add('revealed');
+      tapBtn.remove();
+      if (navigator.vibrate) navigator.vibrate([15, 40, 15]);
+      const flash = document.createElement('div');
+      flash.className = 'gh-flash';
+      document.body.appendChild(flash);
+      setTimeout(() => flash.remove(), 500);
+    });
+    if (answerBtn) answerBtn.addEventListener('click', () => {
       if (!requireAuth()) return;
       openAlbumCaptureModal(activePrompt);
     });
@@ -3464,6 +3599,7 @@
             .from('golden_hour_prompts')
             .update({ answered_at: new Date().toISOString(), answered_photo_id: newPhoto?.id })
             .eq('id', promptToAnswer.id);
+          revealedPromptIds.delete(promptToAnswer.id);
           activePrompt = null;
           const url = new URL(window.location.href);
           url.searchParams.delete('prompt');
@@ -3914,6 +4050,7 @@
     initAlbum();
     initGoldenHourCard();
     subscribeToCircleActivity();
+    subscribeToGoldenHourPrompts();
 
     // Play the ceremony without blocking the feed load beneath it.
     if (shouldWelcome) playWelcomeCeremony(welcomeNote, welcomeInviter);
