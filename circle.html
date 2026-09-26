@@ -1551,28 +1551,37 @@
   }
   .album-modal-pinned-q .pin-ic{flex-shrink:0;}
 
-  /* ---- Golden Hour — feed card (open to everyone, gated to 5-6pm, 1/day) ---- */
+  /* ---- Golden Hour — feed card (open to everyone, gated to 5-6pm, 1/day) ----
+     Redesigned for breathing room: generous padding, the countdown pulled
+     out into its own quiet pill instead of being wedged into the eyebrow
+     line, and more air between question and chips. */
   .gh-card{
-    position:relative;overflow:hidden;margin:0 0 14px;padding:12px 14px;border-radius:15px;
-    background:linear-gradient(135deg,#fff7ec 0%,var(--accent-soft) 65%,#fff 100%);
-    border:1px solid var(--accent-2);
+    position:relative;overflow:hidden;margin:0 0 22px;padding:24px 22px 22px;border-radius:22px;
+    background:linear-gradient(160deg,#fffaf6 0%,var(--accent-soft) 72%,#fff 100%);
+    border:1px solid rgba(255,177,153,.5);
+    box-shadow:0 1px 0 rgba(255,255,255,.7) inset, 0 18px 40px -26px rgba(255,90,54,.4);
     animation:promptPinIn .4s var(--ease-spring) both;
   }
   .gh-card::after{
-    content:'';position:absolute;top:-30px;right:-30px;width:72px;height:72px;border-radius:50%;
-    background:radial-gradient(circle,rgba(255,177,153,.45),transparent 70%);pointer-events:none;
+    content:'';position:absolute;top:-46px;right:-46px;width:120px;height:120px;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,177,153,.35),transparent 72%);pointer-events:none;
   }
-  .gh-head{display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap;}
-  .gh-dot{width:6px;height:6px;border-radius:50%;background:var(--grey);flex-shrink:0;}
-  .gh-dot.live{background:var(--accent);box-shadow:0 0 0 0 rgba(255,90,54,.55);animation:ghPulse 1.6s ease-out infinite;}
+  .gh-head{position:relative;z-index:1;display:flex;align-items:center;gap:9px;margin-bottom:16px;flex-wrap:wrap;row-gap:8px;}
+  .gh-dot{width:7px;height:7px;border-radius:50%;background:var(--grey);flex-shrink:0;}
+  .gh-dot.live{background:var(--accent);box-shadow:0 0 0 0 rgba(255,90,54,.55);animation:ghPulse 1.8s ease-out infinite;}
   @keyframes ghPulse{
-    0%{box-shadow:0 0 0 0 rgba(255,90,54,.55);}
-    70%{box-shadow:0 0 0 6px rgba(255,90,54,0);}
+    0%{box-shadow:0 0 0 0 rgba(255,90,54,.5);}
+    70%{box-shadow:0 0 0 8px rgba(255,90,54,0);}
     100%{box-shadow:0 0 0 0 rgba(255,90,54,0);}
   }
-  .gh-eyebrow{font-family:var(--font-mono);font-size:10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;}
-  .gh-countdown{font-family:var(--font-mono);font-size:10px;color:var(--accent);font-weight:600;letter-spacing:.02em;}
-  .gh-question{font-family:var(--font-serif);font-size:13.5px;line-height:1.4;color:var(--ink);margin-bottom:9px;}
+  .gh-eyebrow{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em;}
+  .gh-countdown{
+    font-family:var(--font-mono);font-size:11.5px;color:var(--accent);font-weight:600;
+    letter-spacing:.02em;font-variant-numeric:tabular-nums;
+    padding:3px 10px;border-radius:99px;background:rgba(255,90,54,.1);
+    margin-left:2px;white-space:nowrap;
+  }
+  .gh-question{font-family:var(--font-serif);font-size:15.5px;line-height:1.58;color:var(--ink);margin-bottom:18px;letter-spacing:-.002em;position:relative;z-index:1;max-width:34em;}
   /* ---- Golden Hour — a voice reply, once it lands in the feed ---- */
   .home-post-card.gh-answer{
     background:linear-gradient(150deg,#171016 0%,#241a17 55%,#171016 100%);
@@ -1598,27 +1607,28 @@
   }
   .home-post-card.gh-answer .home-voice-bubble{background:#221812;border:1px solid rgba(255,177,153,.2);}
   .home-post-card.gh-answer .home-voice-bubble b{color:#ffd9b0;}
-  .gh-chip-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;position:relative;z-index:1;}
+  .gh-chip-row{position:relative;z-index:1;display:flex;gap:9px;overflow-x:auto;padding:2px 2px 5px;-webkit-overflow-scrolling:touch;}
   .gh-chip{
-    flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:4px 11px 4px 4px;
+    flex-shrink:0;display:inline-flex;align-items:center;gap:8px;padding:7px 15px 7px 7px;
     border-radius:99px;background:#fff;border:1px solid var(--accent-2);
-    font-family:var(--font-display);font-weight:500;font-size:12px;color:var(--ink);
-    transition:background .15s ease, transform .15s var(--ease-spring), border-color .15s ease;
+    font-family:var(--font-display);font-weight:500;font-size:12.5px;color:var(--ink);
+    box-shadow:0 1px 3px rgba(20,21,26,.05);
+    transition:background .15s ease, transform .15s var(--ease-spring), border-color .15s ease, box-shadow .15s ease;
   }
-  .gh-chip:hover{background:var(--accent-soft);}
+  .gh-chip:hover{background:var(--accent-soft);box-shadow:0 6px 14px -6px rgba(255,90,54,.35);}
   .gh-chip:active{transform:scale(.96);}
-  .gh-chip.disabled{opacity:.5;background:#f6f6f4;border-color:var(--line);cursor:default;}
+  .gh-chip.disabled{opacity:.5;background:#f6f6f4;border-color:var(--line);box-shadow:none;cursor:default;}
   .gh-chip-avatar{
-    width:20px;height:20px;border-radius:50%;flex-shrink:0;overflow:hidden;
+    width:23px;height:23px;border-radius:50%;flex-shrink:0;overflow:hidden;
     display:flex;align-items:center;justify-content:center;
     background:linear-gradient(135deg,#ffd8c9,var(--accent));color:#fff;
-    font-family:var(--font-display);font-weight:700;font-size:9px;
+    font-family:var(--font-display);font-weight:700;font-size:9.5px;
   }
   .gh-chip-avatar img{width:100%;height:100%;object-fit:cover;}
   .gh-testmode{
-    margin-top:8px;padding:6px 9px;border-radius:9px;background:#14151a;color:#fff;
+    position:relative;z-index:1;margin-top:16px;padding:10px 13px;border-radius:12px;background:#14151a;color:#fff;
     font-family:var(--font-mono);font-size:9.5px;line-height:1.5;display:flex;align-items:center;
-    justify-content:space-between;gap:8px;position:relative;z-index:1;
+    justify-content:space-between;gap:8px;
   }
   .gh-testmode button{color:var(--accent-2);font-family:var(--font-mono);font-size:9.5px;text-decoration:underline;flex-shrink:0;}
 
