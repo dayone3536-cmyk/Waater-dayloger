@@ -299,6 +299,41 @@
   .page-error h2{font-family:var(--font-display);font-size:18px;color:var(--ink);margin-bottom:8px;font-weight:700;}
   .page-error a{color:var(--accent);text-decoration:underline;}
 
+  /* =========================================================
+     WATER LOADER — three glasses, poured in random order/amounts
+     while something loads. The randomness is the point: nobody
+     can predict which glass fills next or when one tips over and
+     resets, so watching it is more interesting than a still label.
+     ========================================================= */
+  .water-loader{padding:52px 22px 34px;text-align:center;}
+  .wl-glasses{display:flex;gap:16px;justify-content:center;align-items:flex-end;height:92px;margin-bottom:16px;}
+  .wl-glass{
+    position:relative;width:42px;height:86px;flex-shrink:0;
+    border:2px solid var(--ink);border-top:none;border-radius:0 0 9px 9px;
+    overflow:hidden;background:linear-gradient(180deg, rgba(0,0,0,.02), rgba(0,0,0,.05));
+    transition:transform .18s var(--ease-spring);
+  }
+  .wl-glass.wl-pour{transform:translateY(-2px) scale(1.03);}
+  .wl-water{
+    position:absolute;left:0;right:0;bottom:0;height:0%;
+    background:linear-gradient(180deg, #8fd3ff, #4fa3f0);
+    transition:height .6s cubic-bezier(.32,1.15,.4,1);
+  }
+  .wl-water::after{
+    content:'';position:absolute;top:-2px;left:0;right:0;height:4px;
+    background:radial-gradient(ellipse at 50% 40%, #c7e8ff, #4fa3f0);
+  }
+  .wl-shine{position:absolute;top:6px;left:6px;width:3px;height:55%;background:rgba(255,255,255,.55);border-radius:2px;pointer-events:none;}
+  .wl-bubble{
+    position:absolute;bottom:2px;width:4px;height:4px;border-radius:50%;
+    background:rgba(255,255,255,.85);animation:wlBubbleRise 1.1s ease-out forwards;pointer-events:none;
+  }
+  @keyframes wlBubbleRise{
+    0%{transform:translateY(0) scale(.6);opacity:.9;}
+    100%{transform:translateY(-64px) scale(1);opacity:0;}
+  }
+  .wl-label{font-family:var(--font-mono);font-size:12px;color:var(--grey);letter-spacing:.02em;}
+
   .home-hero{
     padding:30px 22px 20px;
     background:linear-gradient(180deg, var(--accent-soft), rgba(255,241,236,0) 70%);
@@ -1914,6 +1949,75 @@
 
 <script>
   function escapeHtml(str){ const d=document.createElement('div'); d.textContent=str??''; return d.innerHTML; }
+
+  // ============================================================
+  // WATER LOADER — replaces plain "Loading…" text wherever the
+  // person is waiting on something (checking an invite, joining a
+  // circle, the feed underneath the welcome ceremony). Three glasses
+  // fill in a random order, by random amounts, on a random clock —
+  // occasionally one tips past the brim and resets — so there's
+  // always something unpredictable to watch instead of a still label.
+  // Purely decorative: it never affects what happens once loading ends.
+  // ============================================================
+  let __wlTimer = null;
+  let __wlSeq = 0;
+  function renderWaterLoader(label){
+    return `
+      <div class="water-loader" data-water-loader>
+        <div class="wl-glasses">
+          <div class="wl-glass"><div class="wl-water"></div><div class="wl-shine"></div></div>
+          <div class="wl-glass"><div class="wl-water"></div><div class="wl-shine"></div></div>
+          <div class="wl-glass"><div class="wl-water"></div><div class="wl-shine"></div></div>
+        </div>
+        <div class="wl-label">${escapeHtml(label)}</div>
+      </div>
+    `;
+  }
+  // Animates every [data-water-loader] currently in the page (there can be
+  // more than one at once, e.g. the feed and album tabs loading together).
+  // Re-calling this after new loaders are inserted is safe — it just keeps
+  // driving whatever's on the page and stops on its own once none are left.
+  function mountWaterLoader(){
+    const mySeq = ++__wlSeq;
+    if (__wlTimer) clearTimeout(__wlTimer);
+    const pour = (glassEl, levels, i) => {
+      const water = glassEl.querySelector('.wl-water');
+      const next = levels[i] + 14 + Math.random() * 24;
+      glassEl.classList.add('wl-pour');
+      setTimeout(() => glassEl.classList.remove('wl-pour'), 450);
+      if (next > 90){
+        // tips past the brim — reset to a fresh random amount rather than
+        // just topping out, so a glass never goes "stale" at the top
+        water.style.height = '96%';
+        setTimeout(() => {
+          levels[i] = 8 + Math.random() * 16;
+          water.style.height = levels[i] + '%';
+        }, 340);
+      } else {
+        levels[i] = next;
+        water.style.height = next + '%';
+      }
+      const bubble = document.createElement('div');
+      bubble.className = 'wl-bubble';
+      bubble.style.left = (6 + Math.random() * 26) + 'px';
+      glassEl.appendChild(bubble);
+      setTimeout(() => bubble.remove(), 1150);
+    };
+    const step = () => {
+      if (mySeq !== __wlSeq) return; // a newer mount call has taken over
+      const loaders = document.querySelectorAll('[data-water-loader]');
+      if (!loaders.length){ __wlTimer = null; return; }
+      loaders.forEach(el => {
+        const levels = el.__wlLevels || (el.__wlLevels = [0, 0, 0]);
+        const glasses = el.querySelectorAll('.wl-glass');
+        const howMany = Math.random() < 0.22 ? 2 : 1;
+        const order = [0, 1, 2].sort(() => Math.random() - 0.5).slice(0, howMany);
+        order.forEach(i => pour(glasses[i], levels, i));
+      });
+      __wlTimer = setTimeout(step, 550 + Math.random() * 900);
+    };
+    step();
+  }
   function initials(name){ return (name||'?').trim().slice(0,1).toUpperCase(); }
   function timeAgo(iso){
     const s = Math.floor((Date.now() - new Date(iso).getTime())/1000);
@@ -4181,16 +4285,17 @@
         </button>
 
         <div class="home-feed" id="homeFeed">
-          <div class="page-loading">Loading the feed…</div>
+          ${renderWaterLoader('Loading the feed…')}
         </div>
       </div>
 
       <div class="view-panel" id="viewAlbum">
         <div class="gallery-wrap" id="galleryWrap">
-          <div class="page-loading">Loading your memories…</div>
+          ${renderWaterLoader('Loading your memories…')}
         </div>
       </div>
     `;
+    mountWaterLoader();
 
     const textarea = document.getElementById('homeComposerText');
     const postBtn = document.getElementById('homePostBtn');
@@ -5691,6 +5796,11 @@
   // MAIN INIT
   // =========================================================
   async function init(){
+    // Swap the static "Loading circle…" label for the water loader the
+    // instant scripts run — covers every visit, joiners included.
+    document.getElementById('pageBody').innerHTML = renderWaterLoader('Loading circle…');
+    mountWaterLoader();
+
     await renderSidebar();
 
       const inviteCode = params.get('code');
@@ -5708,14 +5818,16 @@
           return;
         }
 
-        document.getElementById('pageBody').innerHTML = `<div class="page-loading">Checking circle access…</div>`;
+        document.getElementById('pageBody').innerHTML = renderWaterLoader('Checking circle access…');
+        mountWaterLoader();
         
         // Check current circle count
         const circleCount = await getUserCircleCount();
         
         if (circleCount >= MAX_CIRCLES){
           // User is at max capacity
-          document.getElementById('pageBody').innerHTML = `<div class="page-loading">Loading your circles…</div>`;
+          document.getElementById('pageBody').innerHTML = renderWaterLoader('Loading your circles…');
+          mountWaterLoader();
           const userCircles = await getUserCircles();
           
           showRemoveCircleModal(userCircles, async (circleToRemove) => {
@@ -5736,7 +5848,8 @@
             }
 
             // Now redeem the invite
-            document.getElementById('pageBody').innerHTML = `<div class="page-loading">Joining circle…</div>`;
+            document.getElementById('pageBody').innerHTML = renderWaterLoader('Joining circle…');
+            mountWaterLoader();
             const { data, error } = await supabaseClient.rpc('redeem_circle_invite', { p_code: inviteCode });
             if (error || !data?.circle_id){
               document.getElementById('pageBody').innerHTML = `
@@ -5752,7 +5865,8 @@
         }
 
         // User has space, proceed with invite redemption
-        document.getElementById('pageBody').innerHTML = `<div class="page-loading">Joining circle…</div>`;
+        document.getElementById('pageBody').innerHTML = renderWaterLoader('Joining circle…');
+        mountWaterLoader();
         const { data, error } = await supabaseClient.rpc('redeem_circle_invite', { p_code: inviteCode });
         if (error || !data?.circle_id){
           const errorMsg = error?.message || 'Could not join circle.';
