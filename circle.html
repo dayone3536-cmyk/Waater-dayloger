@@ -300,92 +300,90 @@
   .page-error a{color:var(--accent);text-decoration:underline;}
 
   /* =========================================================
-     WATER LOADER — four bold rounded-rectangle cups, dead center.
-     The middle two are a pendulum: one tips and pours its water
-     into the other, then the receiver tips back and pours it right
-     back — an endless, elegant back-and-forth. The outer two sit
-     still (one full, one empty) as a calm frame around the motion.
-     Pure CSS, one smooth loop — nothing random, nothing fussy.
+     LOADER — one bold mark, dead center, that lives and breathes.
+     Design intent (this is a ~3s wait, not a game to play):
+       - ONE focal shape, not a scene — a short wait wants a single
+         strong beat, not something busy to parse (busy reads as
+         cheap and is what made the old glasses annoying).
+       - A squash-and-stretch "breathe" with spring overshoot, so it
+         feels tactile and alive rather than a mechanical spin.
+       - A slow warm hue drift — colour-shifting reads as faster and
+         more likeable than a static/grey spinner.
+       - A soft light burst timed to the peak of every breath: a
+         small, honest payoff on a short loop, the same beat a
+         satisfying tap or a Duolingo ding rides on — not a
+         variable/randomised "slot machine" reward, on purpose.
+     Pure CSS, one loop, no JS driving it.
      ========================================================= */
   .water-loader{
-    padding:56px 22px 36px;text-align:center;
+    padding:56px 22px 40px;text-align:center;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     min-height:220px;
   }
-  .wl-row{
-    display:flex;gap:14px;align-items:flex-end;justify-content:center;
-    height:84px;margin-bottom:22px;
-    animation:wlFloat 3.2s ease-in-out infinite;
+  .wl-stage{
+    position:relative;width:120px;height:120px;
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:20px;
   }
-  @keyframes wlFloat{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-4px);} }
+  .wl-halo{
+    position:absolute;inset:0;border-radius:50%;
+    background:radial-gradient(circle, var(--accent) 0%, rgba(255,90,54,0) 68%);
+    opacity:.35;
+    animation:wlHalo 1.15s cubic-bezier(.4,0,.2,1) infinite;
+  }
+  .wl-mark{
+    position:relative;width:56px;height:56px;border-radius:20px;
+    background:linear-gradient(135deg, #ff7a4a, var(--accent) 60%, #ff3d6e);
+    background-size:200% 200%;
+    box-shadow:0 8px 24px -6px rgba(255,90,54,.55);
+    animation:wlBreathe 1.15s var(--ease-spring) infinite,
+              wlHue 3.45s ease-in-out infinite;
+  }
+  @keyframes wlBreathe{
+    0%,100%{ transform:scale(1); border-radius:20px; }
+    38%{ transform:scale(1.22); border-radius:32px; }
+    55%{ transform:scale(.94); border-radius:16px; }
+    72%{ transform:scale(1.04); border-radius:20px; }
+  }
+  @keyframes wlHalo{
+    0%,100%{ transform:scale(.72); opacity:.28; }
+    38%{ transform:scale(1.35); opacity:.5; }
+    100%{ transform:scale(.72); opacity:.28; }
+  }
+  @keyframes wlHue{
+    0%,100%{ background-position:0% 50%; }
+    50%{ background-position:100% 50%; }
+  }
 
-  .wl-cup{
-    position:relative;width:30px;height:64px;flex-shrink:0;
-    border-radius:11px;background:var(--line);overflow:hidden;
-    transform-origin:50% 100%;
+  .wl-spark{
+    position:absolute;top:50%;left:50%;width:6px;height:6px;border-radius:50%;
+    background:var(--accent);margin:-3px 0 0 -3px;opacity:0;
+    animation:wlSpark 1.15s cubic-bezier(.2,.8,.3,1) infinite;
   }
-  .wl-cup .wl-fill{
-    position:absolute;left:0;right:0;bottom:0;
-    border-radius:11px;background:var(--accent);
-  }
-  .wl-cup.is-full .wl-fill{ height:80%; }
-  .wl-cup.is-empty .wl-fill{ height:8%; }
-
-  .wl-cup.is-a{ animation:wlTiltA 3.6s cubic-bezier(.4,0,.2,1) infinite; }
-  .wl-cup.is-a .wl-fill{ animation:wlFillA 3.6s cubic-bezier(.4,0,.2,1) infinite; }
-  .wl-cup.is-b{ animation:wlTiltB 3.6s cubic-bezier(.4,0,.2,1) infinite; }
-  .wl-cup.is-b .wl-fill{ animation:wlFillB 3.6s cubic-bezier(.4,0,.2,1) infinite; }
-
-  .wl-spout{
-    position:absolute;top:-2px;width:9px;height:9px;border-radius:5px;
-    background:var(--accent);opacity:0;
-  }
-  .wl-cup.is-a .wl-spout{ right:-3px; animation:wlSpoutA 3.6s cubic-bezier(.4,0,.2,1) infinite; }
-  .wl-cup.is-b .wl-spout{ left:-3px; animation:wlSpoutB 3.6s cubic-bezier(.4,0,.2,1) infinite; }
-
-  @keyframes wlTiltA{
-    0%,15%{ transform:rotate(0deg); }
-    25%{ transform:rotate(34deg); }
-    35%,100%{ transform:rotate(0deg); }
-  }
-  @keyframes wlTiltB{
-    0%,65%{ transform:rotate(0deg); }
-    75%{ transform:rotate(-34deg); }
-    85%,100%{ transform:rotate(0deg); }
-  }
-  @keyframes wlFillA{
-    0%,15%{ height:80%; }
-    30%{ height:8%; }
-    65%{ height:8%; }
-    80%,100%{ height:80%; }
-  }
-  @keyframes wlFillB{
-    0%,15%{ height:8%; }
-    30%{ height:80%; }
-    65%{ height:80%; }
-    80%,100%{ height:8%; }
-  }
-  @keyframes wlSpoutA{
-    0%,18%,40%,100%{ opacity:0; transform:scale(.4); }
-    26%{ opacity:1; transform:scale(1); }
-  }
-  @keyframes wlSpoutB{
-    0%,68%,90%,100%{ opacity:0; transform:scale(.4); }
-    76%{ opacity:1; transform:scale(1); }
+  .wl-spark:nth-child(1){ --a:-90deg; animation-delay:.02s; }
+  .wl-spark:nth-child(2){ --a:-30deg; animation-delay:.05s; }
+  .wl-spark:nth-child(3){ --a:30deg;  animation-delay:.01s; }
+  .wl-spark:nth-child(4){ --a:90deg;  animation-delay:.06s; }
+  .wl-spark:nth-child(5){ --a:150deg; animation-delay:.03s; }
+  .wl-spark:nth-child(6){ --a:-150deg;animation-delay:.04s; }
+  @keyframes wlSpark{
+    0%,32%{ transform:rotate(var(--a)) translateX(0) scale(0); opacity:0; }
+    46%{ transform:rotate(var(--a)) translateX(46px) scale(1); opacity:1; }
+    68%,100%{ transform:rotate(var(--a)) translateX(64px) scale(0); opacity:0; }
   }
 
   .wl-label{
     font-family:var(--font-mono);font-size:12px;color:var(--grey);letter-spacing:.02em;
     display:flex;align-items:center;gap:2px;justify-content:center;
   }
-  .wl-label .wl-dot{ animation:wlDot 1.2s ease-in-out infinite; }
+  .wl-label .wl-dot{ animation:wlDot 1.15s ease-in-out infinite; }
   .wl-label .wl-dot:nth-child(2){ animation-delay:.15s; }
   .wl-label .wl-dot:nth-child(3){ animation-delay:.3s; }
   @keyframes wlDot{ 0%,60%,100%{ opacity:.25; } 30%{ opacity:1; } }
 
   @media (prefers-reduced-motion:reduce){
-    .wl-row, .wl-cup, .wl-cup .wl-fill, .wl-spout, .wl-label .wl-dot{ animation:none !important; }
-    .wl-cup.is-a .wl-fill, .wl-cup.is-b .wl-fill{ height:44%; }
+    .wl-mark, .wl-halo, .wl-spark, .wl-label .wl-dot{ animation:none !important; }
+    .wl-spark{ display:none; }
   }
 
   .home-hero{
@@ -2005,30 +2003,29 @@
   function escapeHtml(str){ const d=document.createElement('div'); d.textContent=str??''; return d.innerHTML; }
 
   // ============================================================
-  // WATER LOADER — replaces plain "Loading…" text wherever the
-  // person is waiting on something (checking an invite, joining a
-  // circle, the feed underneath the welcome ceremony). Four bold
-  // rounded-rectangle cups, centered: the outer two sit still (one
-  // full, one empty) and the inner two run an endless pendulum pour,
-  // tipping back and forth into each other. Pure CSS — one smooth
-  // loop, nothing random. Purely decorative: it never affects what
-  // happens once loading ends.
+  // LOADER — replaces plain "Loading…" text wherever the person is
+  // waiting a few seconds (checking an invite, joining a circle, the
+  // feed underneath the welcome ceremony). One bold mark, dead center:
+  // it breathes with a springy squash-and-stretch, drifts through a
+  // warm hue shift, and throws a small burst of light on every beat.
+  // Pure CSS — one loop, nothing random, nothing to "play." Purely
+  // decorative: it never affects what happens once loading ends.
   // ============================================================
   function renderWaterLoader(label){
     return `
       <div class="water-loader" data-water-loader>
-        <div class="wl-row">
-          <div class="wl-cup is-full"><div class="wl-fill"></div></div>
-          <div class="wl-cup is-a"><div class="wl-fill"></div><div class="wl-spout"></div></div>
-          <div class="wl-cup is-b"><div class="wl-fill"></div><div class="wl-spout"></div></div>
-          <div class="wl-cup is-empty"><div class="wl-fill"></div></div>
+        <div class="wl-stage">
+          <div class="wl-halo"></div>
+          <div class="wl-spark"></div><div class="wl-spark"></div><div class="wl-spark"></div>
+          <div class="wl-spark"></div><div class="wl-spark"></div><div class="wl-spark"></div>
+          <div class="wl-mark"></div>
         </div>
         <div class="wl-label">${escapeHtml(label)}<span class="wl-dot">.</span><span class="wl-dot">.</span><span class="wl-dot">.</span></div>
       </div>
     `;
   }
-  // The loader is pure CSS now (no per-frame JS driving it), so mounting
-  // is a no-op kept only so existing call sites don't need to change.
+  // The loader is pure CSS (no per-frame JS driving it), so mounting is a
+  // no-op kept only so existing call sites don't need to change.
   function mountWaterLoader(){}
   function initials(name){ return (name||'?').trim().slice(0,1).toUpperCase(); }
   function timeAgo(iso){
