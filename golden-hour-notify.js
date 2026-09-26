@@ -22,9 +22,10 @@
 //                         users span multiple timezones, "6pm" server-side and "6pm" on their
 //                         phone won't always agree. Worth fixing on the client side later if that
 //                         matters to you (store the recipient's timezone, gate both ends off it).
-//   EMAILJS_SERVICE_ID, EMAILJS_PUBLIC_KEY, EMAILJS_PRIVATE_KEY — already set for notification-cron.js
-//   EMAILJS_GH_TEMPLATE_ID — a NEW, separate EmailJS template for this notification (don't reuse
-//                            EMAILJS_TEMPLATE_ID — that's the regular post digest template)
+//   EMAILJS_SERVICE_ID, EMAILJS_PUBLIC_KEY, EMAILJS_PRIVATE_KEY — already set for notification-cron.js,
+//                        same EmailJS account, reused here
+//   EMAILJS_GH_TEMPLATE_ID — a NEW, separate EmailJS template (same account) for this notification
+//                            (don't reuse EMAILJS_TEMPLATE_ID — that's the regular post digest template)
 //   APP_URL — already set for notification-cron.js
 
 require('dotenv').config();
