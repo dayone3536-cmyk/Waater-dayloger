@@ -1291,6 +1291,15 @@
     transition:border-color .15s ease;
   }
   .invite-modal textarea:focus{border-color:var(--accent);}
+  .gh-send-as{display:flex;gap:8px;margin-top:12px;}
+  .gh-send-as-opt{
+    flex:1;display:flex;align-items:center;gap:7px;padding:10px 12px;border-radius:12px;
+    border:1px solid var(--line,#e6e3dd);cursor:pointer;font-family:var(--font-display);font-size:12.5px;font-weight:600;
+    transition:border-color .15s ease,background .15s ease;
+  }
+  .gh-send-as-opt:has(input:checked){border-color:var(--accent);background:rgba(255,90,54,.06);}
+  .gh-send-as-opt input{accent-color:var(--accent);}
+  .gh-send-as-note{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-soft);margin-top:8px;line-height:1.5;}
   .invite-modal-row{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}
   .invite-modal-skip{font-family:var(--font-display);font-weight:600;font-size:12.5px;color:var(--ink-soft);padding:9px 14px;border-radius:99px;}
   .invite-modal-skip:hover{background:#f7f7f8;}
@@ -1594,19 +1603,18 @@
     animation:ghRevealPop .6s var(--ease-spring);
   }
   @keyframes ghRevealPop{0%{transform:scale(.88);}55%{transform:scale(1.05);}100%{transform:scale(1);}}
-  .gh-reveal-tap{
+  /* Locked badge — replaces the old tap-to-reveal button. Not clickable;
+     it just tells you when the blur will lift on its own. */
+  .gh-reveal-lock{
     position:absolute;z-index:2;display:inline-flex;align-items:center;gap:8px;
-    padding:12px 22px;border-radius:99px;color:#fff;
+    padding:12px 22px;border-radius:99px;color:#fff;pointer-events:none;
     background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.34);
     -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
     font-family:var(--font-display);font-weight:600;font-size:13.5px;letter-spacing:.01em;
-    transition:background .15s ease, transform .15s var(--ease-spring);
     animation:ghTapFloat 2.2s ease-in-out infinite;
   }
-  .gh-reveal-tap:hover{background:rgba(255,255,255,.2);}
-  .gh-reveal-tap:active{transform:scale(.94);}
   @keyframes ghTapFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
-  .gh-reveal.revealed .gh-reveal-tap{display:none;}
+  .gh-reveal.revealed .gh-reveal-lock{display:none;}
   .gh-reveal-from{
     position:relative;z-index:1;font-family:var(--font-mono);font-size:10.5px;color:rgba(255,255,255,.4);
     margin-top:14px;letter-spacing:.03em;
@@ -2050,6 +2058,7 @@
 
   let currentUser = null;
   let currentUsername = null;
+  let currentUserGhChannel = 'unset'; // 'unset' | 'push' | 'email' — Golden Hour reveal notify preference
 
   function requireAuth(nextPath){
     if (currentUser) return true;
@@ -2274,10 +2283,13 @@
             from_user_id: payload.new.from_user_id,
             question: payload.new.question,
             answered_at: payload.new.answered_at,
+            created_at: payload.new.created_at,
+            is_anonymous: payload.new.is_anonymous,
           };
-          revealedPromptIds.delete(activePrompt.id);
-          const asker = members.find(m => m.id === activePrompt.from_user_id);
-          showToast(`✨ ${asker?.username || 'Someone'} just asked you something`);
+          revealNotifiedIds.delete(activePrompt.id);
+          // Always "Someone" here — who sent it stays hidden until the
+          // blur lifts on its own, regardless of the sender's choice.
+          showToast('✨ Someone just asked you something');
           switchHomeView('feed');
           await refreshGoldenHourReveal();
           document.getElementById('promptPinBanner')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2285,7 +2297,10 @@
       )
       .subscribe();
   }
-  window.addEventListener('beforeunload', () => { if (goldenHourPromptChannel) supabaseClient.removeChannel(goldenHourPromptChannel); });
+  window.addEventListener('beforeunload', () => {
+    if (goldenHourPromptChannel) supabaseClient.removeChannel(goldenHourPromptChannel);
+    clearInterval(promptRevealTicker);
+  });
 
   async function renderSidebar(){
     const { data } = await supabaseClient.auth.getSession();
@@ -2295,8 +2310,9 @@
       area.innerHTML = `<a href="/auth" class="sidebar-signin">Sign in</a>`;
       return;
     }
-    const { data: me } = await supabaseClient.from('profiles').select('username, avatar_url').eq('id', currentUser.id).maybeSingle();
+    const { data: me } = await supabaseClient.from('profiles').select('username, avatar_url, gh_notify_channel').eq('id', currentUser.id).maybeSingle();
     currentUsername = me?.username || currentUser.email || 'You';
+    currentUserGhChannel = me?.gh_notify_channel || 'unset';
     posthog.identify(currentUser.id, { username: currentUsername, email: currentUser.email });
     posthog.group('circle', circleId);
     const avatarHtml = me?.avatar_url ? `<img src="${escapeHtml(me.avatar_url)}" alt="">` : initials(currentUsername);
@@ -3214,10 +3230,10 @@
 
   let albumId = null;
   let activePrompt = null;
-  // Which prompt ids the recipient has already tapped to reveal this
-  // session — so re-rendering the album (e.g. after posting something else)
-  // doesn't blur an already-revealed question again.
-  const revealedPromptIds = new Set();
+  // Which prompt ids we've already fired the reveal flash/notification for
+  // this session — so the auto-reveal ticker doesn't re-trigger it on every
+  // tick, and re-rendering doesn't re-blur a question whose time already came.
+  const revealNotifiedIds = new Set();
 
   async function loadActivePrompt(){
     if (!currentUser) return null;
@@ -3230,7 +3246,7 @@
     if (promptId){
       const { data, error } = await supabaseClient
         .from('golden_hour_prompts')
-        .select('id, from_user_id, question, answered_at')
+        .select('id, from_user_id, question, answered_at, created_at, is_anonymous')
         .eq('id', promptId)
         .eq('to_user_id', currentUser.id)
         .is('answered_at', null)
@@ -3242,7 +3258,7 @@
 
     const { data, error } = await supabaseClient
       .from('golden_hour_prompts')
-      .select('id, from_user_id, question, answered_at')
+      .select('id, from_user_id, question, answered_at, created_at, is_anonymous')
       .eq('to_user_id', currentUser.id)
       .eq('circle_id', circleId)
       .is('answered_at', null)
@@ -3319,6 +3335,19 @@
     if (isGoldenHourOverrideOn()) return true;
     const h = new Date().getHours();
     return h >= GOLDEN_HOUR_START && h < GOLDEN_HOUR_END;
+  }
+
+  // A prompt unlocks at 6pm on the day it was sent (prompts can only be
+  // sent 5-6pm, so this is always "later today" relative to created_at).
+  function goldenHourRevealTime(prompt){
+    const d = new Date(prompt.created_at || Date.now());
+    d.setHours(GOLDEN_HOUR_END, 0, 0, 0);
+    return d.getTime();
+  }
+  function isPromptRevealed(prompt){
+    if (!prompt) return false;
+    if (isGoldenHourOverrideOn()) return true; // test mode: skip the wait
+    return Date.now() >= goldenHourRevealTime(prompt);
   }
 
   function msUntilHour(hour){
@@ -3475,8 +3504,19 @@
     modal.innerHTML = `
       <div class="invite-modal">
         <h3>Ask ${escapeHtml(toUsername)} something</h3>
-        <p>They'll see this pinned above the album whenever they open the link.</p>
+        <p>They'll see a blurred card waiting for them — it only unlocks once Golden Hour ends.</p>
         <textarea id="promptQuestionInput" maxlength="200" placeholder="What do you want to ask them?"></textarea>
+        <div class="gh-send-as" role="radiogroup" aria-label="Send as">
+          <label class="gh-send-as-opt">
+            <input type="radio" name="ghSendAs" value="anon" checked>
+            <span>Send anonymously</span>
+          </label>
+          <label class="gh-send-as-opt">
+            <input type="radio" name="ghSendAs" value="self">
+            <span>Send as yourself</span>
+          </label>
+        </div>
+        <p class="gh-send-as-note">Either way, ${escapeHtml(toUsername)} only sees "Someone asked you something" until the blur lifts.</p>
         <div class="invite-modal-row">
           <button class="invite-modal-skip" type="button" id="promptModalCancel">Cancel</button>
           <button class="invite-modal-send" type="button" id="promptModalSend">Send</button>
@@ -3492,6 +3532,7 @@
     modal.querySelector('#promptModalSend').addEventListener('click', async () => {
       const question = modal.querySelector('#promptQuestionInput').value.trim();
       if (!question) return;
+      const isAnon = modal.querySelector('input[name="ghSendAs"]:checked')?.value !== 'self';
 
       if (!isGoldenHourNow()){
         showToast("Golden Hour just closed — try again tomorrow at 5", 'error');
@@ -3514,6 +3555,7 @@
             from_user_id: currentUser.id,
             to_user_id: toUserId,
             question,
+            is_anonymous: isAnon,
           })
           .select('id')
           .single();
@@ -3691,19 +3733,24 @@
 
   function renderPinnedPromptBanner(){
     if (!activePrompt) return '';
-    const asker = members.find(m => m.id === activePrompt.from_user_id);
-    const name = asker?.username || 'Someone';
-    const alreadyRevealed = revealedPromptIds.has(activePrompt.id);
+    const revealed = isPromptRevealed(activePrompt);
+    // Identity stays hidden — "Someone" — until the blur lifts on its own,
+    // no matter which option the sender picked when they sent it.
+    let name = 'Someone';
+    if (revealed){
+      const asker = members.find(m => m.id === activePrompt.from_user_id);
+      name = activePrompt.is_anonymous ? 'Anonymous' : (asker?.username || 'Someone');
+    }
     return `
-      <div class="gh-reveal${alreadyRevealed ? ' revealed' : ''}" id="promptPinBanner">
+      <div class="gh-reveal${revealed ? ' revealed' : ''}" id="promptPinBanner" data-prompt-id="${activePrompt.id}">
         <div class="gh-reveal-glow" aria-hidden="true"></div>
-        <div class="gh-reveal-eyebrow"><span class="gh-dot live"></span>${escapeHtml(name)} asked you something</div>
+        <div class="gh-reveal-eyebrow"><span class="gh-dot live"></span><span id="ghRevealEyebrowText">${escapeHtml(name)} asked you something</span></div>
         <div class="gh-reveal-stage">
           <div class="gh-reveal-blur">${escapeHtml(activePrompt.question)}</div>
-          ${alreadyRevealed ? '' : `
-          <button class="gh-reveal-tap" id="ghRevealTapBtn" type="button">
-            <span aria-hidden="true">👁️</span><span>Tap to reveal</span>
-          </button>`}
+          ${revealed ? '' : `
+          <div class="gh-reveal-lock" id="ghRevealLock">
+            <span aria-hidden="true">🔒</span><span>Unlocks in <span id="ghRevealCountdown">${formatCountdown(msUntilHour(GOLDEN_HOUR_END))}</span></span>
+          </div>`}
         </div>
         <button class="prompt-pin-answer" id="promptPinAnswerBtn" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
@@ -3715,23 +3762,50 @@
   }
 
   function wirePinnedPromptBanner(){
-    const banner = document.getElementById('promptPinBanner');
-    const tapBtn = document.getElementById('ghRevealTapBtn');
     const answerBtn = document.getElementById('promptPinAnswerBtn');
-    if (tapBtn && banner) tapBtn.addEventListener('click', () => {
-      revealedPromptIds.add(activePrompt.id);
+    if (answerBtn) answerBtn.addEventListener('click', () => {
+      if (!requireAuth()) return;
+      openGoldenHourVoiceReplyModal(activePrompt);
+    });
+    if (activePrompt && isPromptRevealed(activePrompt)) revealNotifiedIds.add(activePrompt.id);
+    startPromptRevealTicker();
+  }
+
+  // Fires the pop + flash + notification the moment a pending prompt's
+  // blur is due to lift — whether the person is staring at the card when
+  // it happens, or opens the tab again after 6pm has already passed.
+  let promptRevealTicker = null;
+  function startPromptRevealTicker(){
+    clearInterval(promptRevealTicker);
+    promptRevealTicker = setInterval(() => {
+      if (!activePrompt || activePrompt.answered_at){ clearInterval(promptRevealTicker); return; }
+      const countdownEl = document.getElementById('ghRevealCountdown');
+      if (countdownEl) countdownEl.textContent = formatCountdown(msUntilHour(GOLDEN_HOUR_END));
+      if (revealNotifiedIds.has(activePrompt.id) || !isPromptRevealed(activePrompt)) return;
+      revealNotifiedIds.add(activePrompt.id);
+      triggerPromptReveal(activePrompt);
+    }, 1000);
+  }
+
+  function triggerPromptReveal(prompt){
+    const banner = document.getElementById('promptPinBanner');
+    const asker = members.find(m => m.id === prompt.from_user_id);
+    const name = prompt.is_anonymous ? 'Anonymous' : (asker?.username || 'Someone');
+    if (banner && banner.dataset.promptId === String(prompt.id) && !banner.classList.contains('revealed')){
       banner.classList.add('revealed');
-      tapBtn.remove();
+      const eyebrowText = document.getElementById('ghRevealEyebrowText');
+      if (eyebrowText) eyebrowText.textContent = `${name} asked you something`;
+      document.getElementById('ghRevealLock')?.remove();
       if (navigator.vibrate) navigator.vibrate([15, 40, 15]);
       const flash = document.createElement('div');
       flash.className = 'gh-flash';
       document.body.appendChild(flash);
       setTimeout(() => flash.remove(), 500);
-    });
-    if (answerBtn) answerBtn.addEventListener('click', () => {
-      if (!requireAuth()) return;
-      openGoldenHourVoiceReplyModal(activePrompt);
-    });
+    }
+    showToast(`🌇 Golden Hour's over — ${name === 'Anonymous' ? "your question" : name + "'s question"} is revealed`);
+    // No local Notification() call here anymore — the golden-hour-notify
+    // cron sends a real push (or email) server-side now, so firing one
+    // here too would just double-notify anyone with the tab open.
   }
 
   // Renders the reveal card into its slot at the top of the main feed
@@ -3743,6 +3817,123 @@
     activePrompt = await loadActivePrompt();
     slot.innerHTML = renderPinnedPromptBanner();
     wirePinnedPromptBanner();
+    maybePromptGoldenHourNotify();
+  }
+
+  // =========================================================
+  // GOLDEN HOUR — reveal notification preference (push vs. email)
+  // Shown once per person, only when they actually have a pending,
+  // unrevealed question waiting — not on every page load.
+  // =========================================================
+  const VAPID_PUBLIC_KEY = 'BCF1ZKxia_XUAstPJrcYUqocuUO85i1gXozMtOoBZxJxqB3y7Sihi5cj0UW2cBtiHUQwZhb2UqYDOk9dzC_B090';
+
+  function urlBase64ToUint8Array(base64String){
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+  }
+
+  async function registerServiceWorker(){
+    if (!('serviceWorker' in navigator)) return null;
+    try { return await navigator.serviceWorker.register('/sw.js'); }
+    catch (err){ console.error('Service worker registration failed:', err); return null; }
+  }
+
+  async function subscribeToPush(){
+    if (!('PushManager' in window) || !currentUser) return;
+    const registration = await registerServiceWorker();
+    if (!registration) return;
+    try {
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription){
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        });
+      }
+      const raw = subscription.toJSON();
+      const { error } = await supabaseClient.from('push_subscriptions').upsert(
+        { user_id: currentUser.id, endpoint: raw.endpoint, p256dh: raw.keys.p256dh, auth: raw.keys.auth },
+        { onConflict: 'endpoint' }
+      );
+      if (error) throw error;
+    } catch (err){ console.error('Push subscription failed:', err); }
+  }
+
+  async function setGhNotifyChannel(channel){
+    currentUserGhChannel = channel;
+    if (!currentUser) return;
+    const { error } = await supabaseClient.from('profiles').update({ gh_notify_channel: channel }).eq('id', currentUser.id);
+    if (error) console.error('setGhNotifyChannel failed', error);
+  }
+
+  // Decides whether to ask, silently reconcile, or do nothing — the actual
+  // Yes/No prompt only ever shows when there's a real pending question AND
+  // the person hasn't already told us push or email before.
+  async function maybePromptGoldenHourNotify(){
+    if (!currentUser || !activePrompt || isPromptRevealed(activePrompt)) return;
+
+    if (!('Notification' in window) || !('PushManager' in window)){
+      if (currentUserGhChannel !== 'email') await setGhNotifyChannel('email');
+      return;
+    }
+    if (Notification.permission === 'denied'){
+      if (currentUserGhChannel !== 'email') await setGhNotifyChannel('email');
+      return;
+    }
+    if (Notification.permission === 'granted'){
+      if (currentUserGhChannel !== 'push') await setGhNotifyChannel('push');
+      await subscribeToPush();
+      return;
+    }
+    // Notification.permission === 'default' — never decided before.
+    if (currentUserGhChannel !== 'unset') return;
+    showGoldenHourNotifyOverlay();
+  }
+
+  function showGoldenHourNotifyOverlay(){
+    if (document.getElementById('ghNotifOverlay')) return;
+    const overlay = document.createElement('div');
+    overlay.className = 'invite-modal-backdrop';
+    overlay.id = 'ghNotifOverlay';
+    overlay.innerHTML = `
+      <div class="invite-modal">
+        <h3>Enable notifications</h3>
+        <p>We'll ping you the second Golden Hour ends and your card unblurs. Say no and we'll email you instead — this is just for Golden Hour, your other email settings aren't touched.</p>
+        <div class="invite-modal-row">
+          <button class="invite-modal-skip" type="button" id="ghNotifNoBtn">No, email me</button>
+          <button class="invite-modal-send" type="button" id="ghNotifYesBtn">Yes, notify me</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('show'));
+    const close = () => { overlay.classList.remove('show'); setTimeout(() => overlay.remove(), 220); };
+
+    overlay.querySelector('#ghNotifNoBtn').addEventListener('click', async () => {
+      await setGhNotifyChannel('email');
+      showToast("Got it — we'll email you when it unblurs 📧");
+      close();
+    });
+    overlay.querySelector('#ghNotifYesBtn').addEventListener('click', async () => {
+      close();
+      try {
+        const result = await Notification.requestPermission();
+        if (result === 'granted'){
+          await setGhNotifyChannel('push');
+          await subscribeToPush();
+          showToast('Notifications on 🔔');
+        } else {
+          // They said yes here but denied the real browser prompt — fall
+          // back to email rather than leaving them with nothing.
+          await setGhNotifyChannel('email');
+          showToast("No worries — we'll email you instead 📧");
+        }
+      } catch (err){
+        console.error('Notification permission request failed:', err);
+        await setGhNotifyChannel('email');
+      }
+    });
   }
 
   async function refreshAlbumGallery(){
@@ -3995,7 +4186,10 @@
   function openGoldenHourVoiceReplyModal(promptToAnswer){
     if (!promptToAnswer) return;
     const asker = members.find(m => m.id === promptToAnswer.from_user_id);
-    const askerName = asker?.username || 'Someone';
+    // Respect the sender's anonymity choice here too — this modal only
+    // opens once the card is already unblurred, but that reveal shows
+    // "Anonymous" for anon sends, so this name has to match.
+    const askerName = promptToAnswer.is_anonymous ? 'Anonymous' : (asker?.username || 'Someone');
 
     const modal = document.createElement('div');
     modal.className = 'album-modal-backdrop';
@@ -4147,7 +4341,8 @@
           .update({ answered_at: new Date().toISOString() })
           .eq('id', promptToAnswer.id);
 
-        revealedPromptIds.delete(promptToAnswer.id);
+        revealNotifiedIds.delete(promptToAnswer.id);
+        clearInterval(promptRevealTicker);
         activePrompt = null;
         const url = new URL(window.location.href);
         url.searchParams.delete('prompt');
