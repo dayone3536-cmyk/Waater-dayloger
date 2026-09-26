@@ -2028,7 +2028,6 @@
             A space just for the ${members.length} of you — nothing shared here ever leaves this circle
           </div>
         </div>
-        <button class="welcome-enter">I'm in</button>
       `;
       document.body.appendChild(overlay);
       requestAnimationFrame(() => overlay.classList.add('show'));
@@ -2036,7 +2035,9 @@
         overlay.classList.remove('show');
         setTimeout(() => { overlay.remove(); resolve(); }, 350);
       };
-      overlay.querySelector('.welcome-enter').addEventListener('click', finish);
+      // No button — the ceremony dismisses itself. 3s is enough time to read
+      // the headline + note without making the person tap anything to get in.
+      setTimeout(finish, 3000);
     });
   }
 
@@ -3999,15 +4000,21 @@
     const invitesToday = await loadInvitesToday();
 
     // Decide once per circle-session whether this visit deserves the ceremony.
-    const shouldWelcome = justJoined(meRow) && !sessionStorage.getItem(`welcomed_${circleId}`);
-    console.log('[welcome debug]', { meRow, shouldWelcome, alreadyFlagged: !!sessionStorage.getItem(`welcomed_${circleId}`) });
+    // The ceremony only makes sense for someone who was *invited* — the
+    // person who created the circle isn't "one of only N people chosen",
+    // they just made a group, so they never see it.
+    const justJoinedRecently = justJoined(meRow) && !sessionStorage.getItem(`welcomed_${circleId}`);
     let welcomeNote = null;
     let welcomeInviter = null;
-    if (shouldWelcome){
+    let shouldWelcome = false;
+    if (justJoinedRecently){
       sessionStorage.setItem(`welcomed_${circleId}`, '1');
       const w = await loadMyWelcomeNote();
-      welcomeNote = w.note;
-      welcomeInviter = w.inviter;
+      if (w.inviter){
+        welcomeNote = w.note;
+        welcomeInviter = w.inviter;
+        shouldWelcome = true;
+      }
     }
 
     body.innerHTML = `
