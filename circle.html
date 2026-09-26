@@ -2237,6 +2237,38 @@
   const PUBLIC_MARK = '/storage/v1/object/public/';
   const SIGN_MARK = '/storage/v1/object/sign/';
 
+  // =========================================================
+  // Voice recording — shared mic + encoder setup.
+  // Requesting a plain `{ audio: true }` stream and letting
+  // MediaRecorder pick its own (often very low) default bitrate is
+  // what caused the crackly/"krkr" playback. This asks for a clean
+  // mono signal with echo/noise/gain processing, and forces a real
+  // opus/AAC bitrate so voice notes come out clear.
+  // =========================================================
+  async function getVoiceStream(){
+    return navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        channelCount: 1,
+        sampleRate: 48000
+      }
+    });
+  }
+
+  function pickVoiceMimeType(){
+    const preferred = ['audio/webm;codecs=opus', 'audio/mp4;codecs=mp4a.40.2', 'audio/webm'];
+    return preferred.find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
+  }
+
+  function createVoiceRecorder(stream){
+    const mimeType = pickVoiceMimeType();
+    return new MediaRecorder(stream, mimeType
+      ? { mimeType, audioBitsPerSecond: 128000 }
+      : { audioBitsPerSecond: 128000 });
+  }
+
   // What we store in the DB is the object PATH. Rows created before the
   // switch hold a full public URL — we read the path back out of it.
   // Returns null for anything that isn't one of our files (external links).
@@ -2490,10 +2522,12 @@
 
   // Shared upload+insert+refresh used by both the mic button and hold-to-talk
   async function sendVoiceComment(postId, blob, durationSeconds){
-    const path = `${currentUser.id}/${postId}/${Date.now()}.webm`;
+    const mimeType = blob.type || 'audio/webm';
+    const ext = mimeType.includes('mp4') ? 'm4a' : 'webm';
+    const path = `${currentUser.id}/${postId}/${Date.now()}.${ext}`;
     const { error: uploadError } = await supabaseClient.storage
       .from('voice-comments')
-      .upload(path, blob, { contentType: 'audio/webm' });
+      .upload(path, blob, { contentType: mimeType });
     if (uploadError) throw uploadError;
 
     const { error: insertError } = await supabaseClient.from('voice_comments').insert({
@@ -2581,7 +2615,7 @@
       const beginRecording = async () => {
         if (!requireAuth()) return;
         try {
-          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream = await getVoiceStream();
         } catch(err){
           showToast('Microphone access denied or unavailable', 'error');
           return;
@@ -2591,7 +2625,7 @@
         // already snapped back to idle.
         if (releasing){ stream.getTracks().forEach(t => t.stop()); stream = null; return; }
 
-        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder = createVoiceRecorder(stream);
         chunks = [];
         mediaRecorder.ondataavailable = e => chunks.push(e.data);
         mediaRecorder.onstop = async () => {
@@ -2601,7 +2635,7 @@
           releasing = false;
           if (cancelledByScroll){ cancelledByScroll = false; return; }
           if (durationSeconds < MIN_VALID_SECONDS) return;
-          const blob = new Blob(chunks, { type: 'audio/webm' });
+          const blob = new Blob(chunks, { type: mediaRecorder.mimeType || 'audio/webm' });
           try {
             await sendVoiceComment(postId, blob, durationSeconds);
             showToast('Voice reply sent');
@@ -2929,8 +2963,8 @@
         }
 
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          mediaRecorder = new MediaRecorder(stream);
+          const stream = await getVoiceStream();
+          mediaRecorder = createVoiceRecorder(stream);
           chunks = [];
           mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
 
@@ -2941,7 +2975,7 @@
             btn.classList.remove('recording');
 
             const durationSeconds = (Date.now() - startTime) / 1000;
-            const blob = new Blob(chunks, { type: 'audio/webm' });
+            const blob = new Blob(chunks, { type: mediaRecorder.mimeType || 'audio/webm' });
 
             btn.disabled = true;
             try {
@@ -3864,15 +3898,15 @@
       btn.addEventListener('click', async () => {
         if (btn.classList.contains('recording')){ recorder.stop(); return; }
         try {
-          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          recorder = new MediaRecorder(stream);
+          stream = await getVoiceStream();
+          recorder = createVoiceRecorder(stream);
           chunks = [];
           recorder.ondataavailable = (e) => chunks.push(e.data);
           recorder.onstop = () => {
             stream.getTracks().forEach(t => t.stop());
             clearInterval(timerInterval);
             durationSeconds = (Date.now() - startTime) / 1000;
-            recordedBlob = new Blob(chunks, { type: 'audio/webm' });
+            recordedBlob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
             renderPreview();
           };
           recorder.start();
@@ -3900,10 +3934,12 @@
       sendBtn.innerHTML = `<span class="mini-spinner"></span> Sending...`;
 
       try {
-        const path = `${currentUser.id}/${circleId}/${Date.now()}-gh.webm`;
+        const ghMimeType = recordedBlob.type || 'audio/webm';
+        const ghExt = ghMimeType.includes('mp4') ? 'm4a' : 'webm';
+        const path = `${currentUser.id}/${circleId}/${Date.now()}-gh.${ghExt}`;
         const { error: uploadError } = await supabaseClient.storage
           .from('voice-posts')
-          .upload(path, recordedBlob, { contentType: 'audio/webm' });
+          .upload(path, recordedBlob, { contentType: ghMimeType });
         if (uploadError) throw uploadError;
 
         const { error: insertError } = await supabaseClient.from('posts').insert({
@@ -4199,8 +4235,8 @@
       }
 
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        voiceRecorder = new MediaRecorder(stream);
+        const stream = await getVoiceStream();
+        voiceRecorder = createVoiceRecorder(stream);
         voiceChunks = [];
         voiceRecorder.ondataavailable = (e) => voiceChunks.push(e.data);
 
@@ -4214,14 +4250,16 @@
           if (isAnon){ voiceChunks = []; showAnonVoiceNotice(); return; }
 
           const durationSeconds = (Date.now() - voiceStartTime) / 1000;
-          const blob = new Blob(voiceChunks, { type: 'audio/webm' });
-          const path = `${currentUser.id}/${circleId}/${Date.now()}.webm`;
+          const voiceMimeType = voiceRecorder.mimeType || 'audio/webm';
+          const voiceExt = voiceMimeType.includes('mp4') ? 'm4a' : 'webm';
+          const blob = new Blob(voiceChunks, { type: voiceMimeType });
+          const path = `${currentUser.id}/${circleId}/${Date.now()}.${voiceExt}`;
 
           voiceBtn.disabled = true;
           try {
             const { error: uploadError } = await supabaseClient.storage
               .from('voice-posts')
-              .upload(path, blob, { contentType: 'audio/webm' });
+              .upload(path, blob, { contentType: voiceMimeType });
             if (uploadError) throw uploadError;
 
             const { error: insertError } = await supabaseClient.from('posts').insert({
