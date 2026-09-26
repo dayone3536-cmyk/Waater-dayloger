@@ -237,9 +237,11 @@
     -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
     border:1px solid rgba(20,21,26,.06);
     box-shadow:0 14px 34px -10px rgba(20,21,26,.22), 0 2px 8px rgba(20,21,26,.05);
-    transition:transform .4s var(--ease), opacity .25s ease;
+    transition:transform .45s var(--ease), opacity .3s ease;
+    will-change:transform;
   }
-  .bottom-nav.hidden{transform:translateY(calc(100% + 32px));opacity:0;pointer-events:none;}
+  .bottom-nav.hidden,
+  .bottom-nav.scroll-hide{transform:translateY(calc(100% + 32px));opacity:0;pointer-events:none;}
   .tab{
     position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
     color:var(--grey);font-family:var(--font-display);font-weight:600;font-size:10.5px;letter-spacing:.005em;
@@ -5698,7 +5700,8 @@
     window.addEventListener('scroll', f, {passive:true}); f();
   }
 
-  // dock: light haptic tap, and tuck away while typing so the keyboard has room
+  // dock: light haptic tap, tuck away while typing so the keyboard has room,
+  // and melt out of the way while scrolling so reading isn't fought over
   var dock = document.querySelector('.bottom-nav');
   if (dock){
     dock.querySelectorAll('.tab').forEach(function(t){
@@ -5712,6 +5715,43 @@
     document.addEventListener('focusout', function(){
       setTimeout(function(){ if (!isField(document.activeElement)) dock.classList.remove('hidden'); }, 60);
     });
+
+    // scroll-aware reveal: hide on the way down, bring it back on the way up,
+    // and always settle it back in once scrolling stops
+    var mobileMQ = window.matchMedia('(max-width:899.98px)');
+    var lastY = Math.max(window.scrollY, 0);
+    var idleTimer = null;
+    var ticking = false;
+    var THRESHOLD = 8;      // ignore tiny jitters
+    var TOP_ZONE = 32;      // always show near the very top
+    var IDLE_MS = 650;      // settle back in once the thumb stops
+
+    var settle = function(){ dock.classList.remove('scroll-hide'); };
+
+    var evaluate = function(){
+      ticking = false;
+      if (!mobileMQ.matches){ settle(); return; }
+      var y = Math.max(window.scrollY, 0);
+      var delta = y - lastY;
+
+      if (y <= TOP_ZONE){
+        settle();
+      } else if (delta > THRESHOLD){
+        dock.classList.add('scroll-hide');     // scrolling down -> get out of the way
+      } else if (delta < -THRESHOLD){
+        settle();                              // scrolling up -> reader wants the nav back
+      }
+
+      lastY = y;
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(settle, IDLE_MS);
+    };
+
+    window.addEventListener('scroll', function(){
+      if (!ticking){ ticking = true; requestAnimationFrame(evaluate); }
+    }, {passive:true});
+
+    mobileMQ.addEventListener ? mobileMQ.addEventListener('change', settle) : mobileMQ.addListener(settle);
   }
 })();
 </script>
