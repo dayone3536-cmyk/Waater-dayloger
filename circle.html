@@ -4,6 +4,17 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<!-- PostHog analytics -->
+<script>
+  !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.uploadQueue=t.uploadQueue||[],t.uploadQueue.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+  posthog.init('phc_qJWqtKSqrCvpAurqjYjNjNbf9LaeAQwsSRonhUxxZFXG', {
+    api_host: 'https://us.i.posthog.com', // use https://eu.i.posthog.com if your project region is EU
+    person_profiles: 'identified_only',   // only creates profiles for people you identify() below
+    capture_pageview: true,
+    capture_pageleave: true,
+  });
+</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Circle — Waater</title>
@@ -2125,6 +2136,8 @@
     }
     const { data: me } = await supabaseClient.from('profiles').select('username, avatar_url').eq('id', currentUser.id).maybeSingle();
     currentUsername = me?.username || currentUser.email || 'You';
+    posthog.identify(currentUser.id, { username: currentUsername, email: currentUser.email });
+    posthog.group('circle', circleId);
     const avatarHtml = me?.avatar_url ? `<img src="${escapeHtml(me.avatar_url)}" alt="">` : initials(currentUsername);
     area.innerHTML = `
       <div class="sidebar-user">
@@ -2138,6 +2151,8 @@
       </div>
     `;
     document.getElementById('signOutBtn').addEventListener('click', async () => {
+      posthog.capture('signed_out');
+      posthog.reset();
       await supabaseClient.auth.signOut();
       window.location.href = '/';
     });
@@ -2488,6 +2503,7 @@
       duration_seconds: durationSeconds
     });
     if (insertError) throw insertError;
+    posthog.capture('comment_added', { post_id: postId, type: 'voice', duration_seconds: durationSeconds });
 
     const listEl = document.getElementById(`home-comment-list-${postId}`);
     const comments = await loadComments(postId);
@@ -2814,9 +2830,11 @@
             if (error) throw error;
             btn.classList.remove('liked');
             countEl.textContent = Math.max(0, Number(countEl.textContent) - 1);
+            posthog.capture('post_unliked', { post_id: postId });
           } else {
             const { error } = await supabaseClient.from('post_likes').insert({ post_id: postId, user_id: currentUser.id });
             if (error) throw error;
+            posthog.capture('post_liked', { post_id: postId });
             btn.classList.add('liked');
             btn.classList.add('pop', 'just-liked');
             setTimeout(() => btn.classList.remove('pop', 'just-liked'), 550);
@@ -2872,6 +2890,7 @@
         try {
           const { error } = await supabaseClient.from('post_comments').insert({ post_id: postId, user_id: currentUser.id, content: text });
           if (error) throw error;
+          posthog.capture('comment_added', { post_id: postId, type: 'text', length: text.length });
           input.value = '';
           const listEl = document.getElementById(`home-comment-list-${postId}`);
           const comments = await loadComments(postId);
@@ -3737,6 +3756,7 @@
           caption: captionInput.value.trim() || null,
         }).select('id').single();
         if (insertError) throw insertError;
+        posthog.capture('album_photo_added', { circle_id: circleId, filter_applied: activeFilterId, answered_prompt: !!promptToAnswer });
 
         showToast('Added to the album 📸');
         close();
@@ -3898,6 +3918,7 @@
           gh_asker_name: askerName,
         });
         if (insertError) throw insertError;
+        posthog.capture('golden_hour_prompt_answered', { circle_id: circleId, prompt_id: promptToAnswer.id, response_type: 'voice', duration_seconds: durationSeconds });
 
         await supabaseClient
           .from('golden_hour_prompts')
@@ -4153,6 +4174,7 @@
       if (voiceBtn.classList.contains('recording')){ showAnonVoiceNotice(); return; }
       requestWhisperMode(() => {
         setWhisperMode(true);
+        posthog.capture('anonymous_mode_enabled', { circle_id: circleId });
         showToast('Whisper mode — this one stays unsigned');
       });
     });
@@ -4212,6 +4234,7 @@
               is_anonymous: isAnon,
             });
             if (insertError) throw insertError;
+            posthog.capture('post_created', { circle_id: circleId, media_type: 'voice', duration_seconds: durationSeconds, is_anonymous: isAnon });
 
             textarea.value = ''; textarea.style.height = 'auto';
             setWhisperMode(false);
@@ -4265,6 +4288,12 @@
           is_anonymous: wasWhisper,
         });
         if (error) throw error;
+        posthog.capture('post_created', {
+          circle_id: circleId,
+          media_type: url ? (url.match(/\.(mp4|mov|webm)(\?|$)/i) ? 'video' : 'photo') : 'text',
+          is_anonymous: wasWhisper,
+          caption_length: content.length,
+        });
 
         textarea.value = ''; mediaUrl.value = ''; mediaField.style.display = 'none'; mediaToggle.classList.remove('active');
         setWhisperMode(false);
@@ -4313,6 +4342,7 @@
         }
         const { data, error } = rpcResult;
         if (error) throw error;
+        posthog.capture('invite_sent', { circle_id: circleId, has_note: !!note, invites_used_today: invitesUsedToday + 1 });
 
         invitesUsedToday += 1;
         const badge = document.getElementById('inviteCountBadge');
@@ -4758,6 +4788,7 @@
     try {
       const { error } = await supabaseClient.from('circle_members').insert({ circle_id: circleId, user_id: currentUser.id, role: 'member' });
       if (error) throw error;
+      posthog.capture('circle_joined', { circle_id: circleId });
       showToast('Joined the circle');
       myRole = 'member';
       members = await loadMembers();
