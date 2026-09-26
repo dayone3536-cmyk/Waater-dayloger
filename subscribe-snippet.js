@@ -6,7 +6,7 @@
 // Paste the PUBLIC VAPID key here (generated in step below). Safe to expose.
 
 
-const VAPID_PUBLIC_KEY = 'BCF1ZKxia_XUAstPJrcYUqocuUO85i1gXozMtOoBZxJxqB3y7Sihi5cj0UW2cBtiHUQwZhb2UqYDOk9dzC_B090' ;
+const VAPID_PUBLIC_KEY = 'BIalNH9oKrDmbPECZvnf1Eu2J7V7xj81xNMOS-MARE8zXNa3HqyI4HJjhRV5MnJY6-5tXpcv_CFKfxHEB4fFzJ8' ;
 
 
 
