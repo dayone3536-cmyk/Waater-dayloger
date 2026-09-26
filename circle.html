@@ -650,6 +650,16 @@
   .home-comment-delete:hover{color:var(--danger);}
   .home-comment-empty{font-family:var(--font-mono);font-size:11px;color:var(--grey);text-align:center;padding:8px 0 14px;}
   .home-comment-input-row{display:flex;gap:8px;align-items:center;}
+  /* One-time reassurance shown to a freshly-invited member right above the
+     reply box on the specific post they were invited to see — the exact
+     spot where "wait, who can see this?" hesitation shows up. */
+  .invite-reply-nudge{
+    display:flex;align-items:center;gap:7px;margin:0 0 10px;padding:8px 12px;
+    background:var(--accent-soft);border-radius:12px;
+    font-family:var(--font-mono);font-size:10.5px;letter-spacing:.01em;color:var(--ink-soft);
+    animation:tipFade .3s ease-out;
+  }
+  .invite-reply-nudge svg{width:13px;height:13px;stroke:var(--accent);flex-shrink:0;}
   .home-comment-input{
     flex:1;border:1px solid var(--line-strong);border-radius:99px;
     padding:9px 15px;font-family:var(--font-serif);font-size:13.5px;outline:none;
@@ -2025,7 +2035,11 @@
           ` : ''}
           <div class="welcome-privacy-line">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
-            A space just for the ${members.length} of you — nothing shared here ever leaves this circle
+            No public feed, no usernames, no strangers reading along — just the ${members.length} of you
+          </div>
+          <div class="welcome-privacy-line" style="margin-top:6px;">
+            <span style="font-size:12px;line-height:1;">📸</span>
+            Screenshots are blocked in here — whatever's said stays inside ${escapeHtml(circle.name)}
           </div>
         </div>
       `;
@@ -2071,6 +2085,39 @@
         close(val || null);
       });
       modal.addEventListener('click', (e) => { if (e.target === modal) close(null); });
+    });
+  }
+
+  // Cold-start nudge: shown to whichever member reaches for "invite" while
+  // the circle's feed is still empty — owner or not, since anyone with
+  // room left can invite. It's a beat of friction, not a gate — "Invite
+  // anyway" always works, it's just no longer the only button in the room.
+  // Clicking outside the modal cancels the invite entirely rather than
+  // defaulting to either choice.
+  function openEmptyCircleNudge(){
+    return new Promise(resolve => {
+      const modal = document.createElement('div');
+      modal.className = 'invite-modal-backdrop';
+      modal.innerHTML = `
+        <div class="invite-modal">
+          <h3>${escapeHtml(circle.name)} is still empty</h3>
+          <p>Whoever you invite next will land on a blank page. A single line from you gives them something to react to — and a much better reason to stick around.</p>
+          <div class="invite-modal-row">
+            <button class="invite-modal-skip" type="button" id="emptyNudgeInviteAnyway">Invite anyway</button>
+            <button class="invite-modal-send" type="button" id="emptyNudgeWrite">Write something first</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      requestAnimationFrame(() => modal.classList.add('show'));
+      const close = (choice) => {
+        modal.classList.remove('show');
+        setTimeout(() => modal.remove(), 220);
+        resolve(choice);
+      };
+      modal.querySelector('#emptyNudgeInviteAnyway').addEventListener('click', () => close('invite'));
+      modal.querySelector('#emptyNudgeWrite').addEventListener('click', () => close('write'));
+      modal.addEventListener('click', (e) => { if (e.target === modal) close('cancel'); });
     });
   }
 
@@ -2166,6 +2213,10 @@
   let circle = null;
   let myRole = null;
   let members = [];
+  // Whether the private circle's feed currently has any posts — kept in
+  // sync by refreshHomeFeed() and read by the invite button's cold-start
+  // nudge (see openEmptyCircleNudge).
+  let circleHasPosts = false;
   let currentSort = 'hot';
 
   async function loadCircle(){
@@ -2206,8 +2257,9 @@
       .filter(Boolean);
   }
 
-  // How many invites this owner has already created for this circle since
-  // midnight (local time). Backs the "N/2 today" badge and the client-side
+  // How many invites this member has already created for this circle since
+  // midnight (local time). Every member gets their own 2/day allowance —
+  // this isn't owner-only. Backs the "N/2 today" badge and the client-side
   // disable — the real enforcement lives in the DB trigger on circle_invites,
   // this is just so the button reflects it without a failed request first.
   // Assumes a `circle_invites` table with circle_id, created_by, created_at —
@@ -2800,6 +2852,26 @@
         : `<div class="home-comment-empty">No comments yet — be the first.</div>`;
       panel.dataset.loaded = '1';
     }
+  }
+
+  // Shown once, only to someone who was just invited, right on the post
+  // they were invited to see — opens the reply box for them and names
+  // exactly who can see it. This is the moment a newcomer coming from
+  // public, anonymous platforms hesitates ("is this like Reddit? who's
+  // actually watching?"), so the reassurance is concrete and local to
+  // the one reply that matters, not a generic app-wide banner.
+  async function showInviteReplyNudge(postId){
+    const panel = document.getElementById(`home-comments-${postId}`);
+    if (!panel) return;
+    await openComments(postId);
+    if (panel.querySelector('.invite-reply-nudge')) return;
+    const row = panel.querySelector('.home-comment-input-row');
+    if (!row || !row.parentElement) return;
+    const tip = document.createElement('div');
+    tip.className = 'invite-reply-nudge';
+    tip.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg><span>Only ${members.length} people will ever see this — say what you'd actually say</span>`;
+    row.parentElement.insertBefore(tip, row);
+    setTimeout(() => tip.remove(), 9000);
   }
 
   document.addEventListener('click', async (e) => {
@@ -4371,6 +4443,28 @@
         showToast("You've used both invites for today — try again tomorrow", 'error');
         return;
       }
+
+      // Soft nudge, not a gate: if this circle has zero posts, whoever gets
+      // invited next lands on a blank page and bounces. Give whoever's
+      // inviting a beat to seed it first — but never block the invite if
+      // they'd rather send it anyway. Applies to every member, not just
+      // the circle's owner — the invite button and its 2/day quota are
+      // already per-member (see loadInvitesToday), not owner-gated.
+      if (!circleHasPosts) {
+        posthog.capture('empty_circle_invite_nudge_shown', { circle_id: circleId });
+        const choice = await openEmptyCircleNudge();
+        posthog.capture('empty_circle_invite_nudge_choice', { circle_id: circleId, choice });
+        if (choice === 'write') {
+          const composer = document.getElementById('homeComposer');
+          const composerText = document.getElementById('homeComposerText');
+          if (composer) composer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setTimeout(() => composerText && composerText.focus(), 280);
+          return;
+        }
+        if (choice === 'cancel') return;
+        // choice === 'invite' falls through to send the invite as normal.
+      }
+
       const note = await openInviteModal();
       try {
         // Try passing the note through to the RPC. If the backend hasn't
@@ -4433,11 +4527,14 @@
 
     // Play the ceremony without blocking the feed load beneath it.
     if (shouldWelcome) playWelcomeCeremony(welcomeNote, welcomeInviter);
+
+    return { shouldWelcome };
   }
 
   async function refreshHomeFeed(){
     const feed = document.getElementById('homeFeed');
     const posts = await loadPosts('new');
+    circleHasPosts = posts.length > 0;
     if (posts.length === 0){
       feed.innerHTML = `
         <div class="home-empty">
@@ -5716,7 +5813,7 @@
         return;
       }
       enableScreenshotGuard();
-      await renderHomeMode();
+      const homeState = await renderHomeMode();
 
       const targetPostId = params.get('post');
       if (targetPostId) {
@@ -5726,6 +5823,9 @@
             card.scrollIntoView({ behavior: 'smooth', block: 'center' });
             card.classList.add('post-highlight');
             setTimeout(() => card.classList.remove('post-highlight'), 2200);
+            // Landing straight on the post they were invited to see is
+            // exactly when a brand-new member needs the reassurance most.
+            if (homeState?.shouldWelcome) showInviteReplyNudge(targetPostId);
           }
         }, 300);
       }
