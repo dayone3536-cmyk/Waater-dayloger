@@ -5731,23 +5731,27 @@
   // =========================================================
   const MAX_CIRCLES = 4;
 
-  // Get user's current circles count
+  // Get user's current PRIVATE circles count (public circles are unlimited
+  // and must never count against MAX_CIRCLES).
   async function getUserCircleCount(){
     if (!currentUser) return 0;
     const { data, error } = await supabaseClient
       .from('circle_members')
-      .select('circle_id', { count: 'exact' })
-      .eq('user_id', currentUser.id);
+      .select('circle_id, circles!inner(is_private)', { count: 'exact' })
+      .eq('user_id', currentUser.id)
+      .eq('circles.is_private', true);
     return !error ? (data?.length || 0) : 0;
   }
 
-  // Get user's circles for removal selection
+  // Get user's PRIVATE circles for the "leave one to join this one" modal —
+  // public circles should never show up here since they're unlimited.
   async function getUserCircles(){
     if (!currentUser) return [];
     const { data, error } = await supabaseClient
       .from('circle_members')
-      .select('circle_id, circles(id, name)')
-      .eq('user_id', currentUser.id);
+      .select('circle_id, circles!inner(id, name, is_private)')
+      .eq('user_id', currentUser.id)
+      .eq('circles.is_private', true);
     return !error ? (data || []) : [];
   }
 
