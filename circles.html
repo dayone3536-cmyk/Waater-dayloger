@@ -528,7 +528,7 @@
   .circle-invite-btn:disabled{opacity:.5;cursor:default;}
   .circle-invite-btn svg{width:14px;height:14px;stroke:#c24020;}
 
-  .circle-leave-btn{
+  .circle-leave-btn,.circle-delete-btn{
     display:flex;align-items:center;gap:7px;
     background:#fdeceb;
     color:var(--danger);
@@ -541,9 +541,9 @@
     justify-content:center;
     flex-shrink:0;
   }
-  .circle-leave-btn:hover{opacity:.85;}
-  .circle-leave-btn:active{transform:scale(.97);}
-  .circle-leave-btn:disabled{opacity:.5;cursor:default;}
+  .circle-leave-btn:hover,.circle-delete-btn:hover{opacity:.85;}
+  .circle-leave-btn:active,.circle-delete-btn:active{transform:scale(.97);}
+  .circle-leave-btn:disabled,.circle-delete-btn:disabled{opacity:.5;cursor:default;}
 
   /* ---------- invite result card, rebuilt with a countdown ring ---------- */
   .circle-invite-result{
@@ -775,6 +775,10 @@
     box-shadow:0 6px 16px rgba(255,90,54,.35);
   }
   .bf-modal-confirm:disabled{ opacity:.6; }
+  .bf-modal-confirm.danger{
+    background:linear-gradient(90deg,var(--danger),#eb5a56); color:#fff;
+    box-shadow:0 6px 16px rgba(224,67,63,.35);
+  }
 
   .circle-modal-icon{
     width:64px;height:64px;margin:0 auto 16px;
@@ -1196,7 +1200,9 @@
               </button>
               ${circle.myRole !== 'owner' ? `
                 <button class="circle-leave-btn" data-circle-id="${circle.id}">Leave</button>
-              ` : ''}
+              ` : `
+                <button class="circle-delete-btn" data-circle-id="${circle.id}" data-circle-name="${escapeHtml(circle.name)}">Delete</button>
+              `}
             </div>
             <div class="circle-invite-result" id="circle-invite-result-${circle.id}" style="display:none;"></div>
           </div>
@@ -1404,6 +1410,14 @@
           showToast(err.message || 'Could not leave circle', 'error');
           btn.disabled = false;
         }
+      });
+    });
+
+    document.querySelectorAll('.circle-delete-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (btn.disabled) return;
+        openDeleteCircleModal(btn.dataset.circleId, btn.dataset.circleName, btn);
       });
     });
 
@@ -1734,6 +1748,68 @@
         btn.textContent = 'Create circle';
         overlay.querySelector('#circleModalErrorSlot').innerHTML =
           `<p class="modal-error">${escapeHtml(friendlyCircleError(err))}</p>`;
+      }
+    });
+  }
+
+  // ---- delete-circle confirm modal (owner only, one tap + one confirm) ----
+  function openDeleteCircleModal(circleId, circleName, triggerBtn) {
+    const overlay = document.createElement('div');
+    overlay.className = 'bf-modal-overlay';
+    overlay.innerHTML = `
+      <div class="bf-modal">
+        <div class="circle-modal-icon" id="circleDeleteIcon" style="background:#fdeceb;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg>
+        </div>
+        <h3>Delete "${escapeHtml(circleName)}"?</h3>
+        <p style="margin-bottom:18px;">This removes the circle for everyone in it, along with its members and invites. This can't be undone.</p>
+
+        <div id="circleDeleteErrorSlot"></div>
+
+        <div class="bf-modal-actions">
+          <button class="bf-modal-cancel" id="circleDeleteCancel">Cancel</button>
+          <button class="bf-modal-confirm danger" id="circleDeleteConfirm">Delete circle</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('show'));
+
+    const close = () => {
+      overlay.classList.remove('show');
+      setTimeout(() => overlay.remove(), 200);
+    };
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    overlay.querySelector('#circleDeleteCancel').addEventListener('click', close);
+
+    let isDeleting = false;
+    overlay.querySelector('#circleDeleteConfirm').addEventListener('click', async () => {
+      if (isDeleting) return; // guard against a double-tap firing two deletes
+      isDeleting = true;
+      const btn = overlay.querySelector('#circleDeleteConfirm');
+      btn.disabled = true;
+      btn.innerHTML = `<span class="mini-spinner"></span> Deleting…`;
+      overlay.querySelector('#circleDeleteErrorSlot').innerHTML = '';
+
+      try {
+        const { error } = await supabaseClient
+          .from('circles')
+          .delete()
+          .eq('id', circleId)
+          .eq('created_by', currentUser.id);
+        if (error) throw error;
+
+        showToast(`${circleName} deleted`);
+        close();
+        renderPage();
+      } catch (err) {
+        console.error('Delete circle failed:', err);
+        isDeleting = false;
+        btn.disabled = false;
+        btn.textContent = 'Delete circle';
+        overlay.querySelector('#circleDeleteErrorSlot').innerHTML =
+          `<p class="modal-error">${escapeHtml(err.message || 'Could not delete circle')}</p>`;
+        if (triggerBtn) triggerBtn.disabled = false;
       }
     });
   }
