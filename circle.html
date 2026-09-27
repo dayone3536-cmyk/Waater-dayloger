@@ -719,7 +719,7 @@
   .home-us-btn svg{transition:transform .3s var(--ease-spring), fill .15s ease, stroke .15s ease;}
   .home-us-btn:active svg{transform:scale(.88);}
   .home-us-btn.in-us{color:var(--accent);}
-  .home-us-btn.in-us svg{stroke:var(--accent);fill:rgba(255,90,54,.18);}
+  .home-us-btn.in-us svg{stroke:var(--accent);fill:var(--accent);}
   .home-us-btn.in-us.just-added svg{animation:usPop .4s var(--ease-spring);}
   @keyframes usPop{ 0%{transform:scale(1);} 45%{transform:scale(1.3) rotate(-6deg);} 100%{transform:scale(1);} }
   .home-us-btn.in-us:not(.mine){cursor:default;}
@@ -2790,7 +2790,7 @@
     wrap.innerHTML = `
       <div class="home-empty">
         <div class="home-empty-orb">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 00-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 000-7.8z"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
         </div>
         <h3>Nothing in Us yet</h3>
         <p>Tap the heart on any post in the Feed to keep it here for good.</p>
@@ -2829,7 +2829,7 @@
     const isMineAdd = inUs && currentUser && memRef.added_by === currentUser.id;
     const usBtnHtml = `
       <button class="home-action-btn home-us-btn${inUs ? ' in-us' : ''}${isMineAdd ? ' mine' : ''}" data-post-id="${post.id}" data-memory-id="${memRef ? memRef.id : ''}" title="${!inUs ? 'Add to Us' : (isMineAdd ? 'Remove from Us' : 'Already in Us')}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 00-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 000-7.8z"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
       </button>`;
     const memoryMetaHtml = memoryMeta ? `
       <div class="memory-meta">
@@ -4704,7 +4704,7 @@
           Album <span class="count" id="albumTabCount"></span>
         </button>
         <button class="view-tab" data-view="us" type="button">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 00-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 000-7.8z"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
           Us <span class="count" id="usTabCount"></span>
         </button>
       </div>
