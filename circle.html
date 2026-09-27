@@ -471,11 +471,6 @@
   .home-composer-tool.recording{background:var(--danger);animation:micPulse 1.1s ease-in-out infinite;}
   .home-composer-tool.recording svg{stroke:#fff;}
 
-  #homeAnonToggle{background:#1a1b1f;}
-    #homeAnonToggle:hover{background:#000;}
-    #homeAnonToggle.active{background:#000;box-shadow:inset 0 0 0 2px #555;}
-  /* voice is dimmed (but still tappable, so it can explain why) while anonymous */
-  #homeVoiceBtn.voice-locked{opacity:.4;}
 
 
   .home-post-btn{
@@ -4447,30 +4442,10 @@
           <div class="home-composer-media" id="homeMediaField" style="display:none;">
             <input type="text" id="homeMediaUrl" placeholder="Paste an image or video URL...">
           </div>
-          <div class="composer-anon-banner" id="homeAnonBanner">
-            <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-              <path fill="#fff" d="M16 3C8.8 3 2.9 8.3 1.9 15.2c-.2 1.6 1 3 2.6 3h1.2l-1.5 2.8a1 1 0 001.8.9l1.9-3.7h16.2l1.9 3.7a1 1 0 001.8-.9L26.3 18.2h1.2c1.6 0 2.8-1.4 2.6-3C29.1 8.3 23.2 3 16 3z"/>
-              <circle cx="10.5" cy="15.5" r="2.2" fill="#14151a"/>
-              <circle cx="21.5" cy="15.5" r="2.2" fill="#14151a"/>
-              <rect x="13.5" y="14.5" width="5" height="1.6" fill="#14151a"/>
-            </svg>
-            <span>You're posting as <b>Anonymous</b> — this post is automatically deleted after 24 hours.</span>
-          </div>
           <div class="home-composer-row">
             <div class="home-composer-tools">
               <button class="home-composer-tool" id="homeMediaToggle" title="Add photo/video">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-              </button>
-              <button class="home-composer-tool" id="homeAnonToggle" title="Post anonymously">
-                
-                <svg viewBox="0 0 32 32" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
-                  <path fill="#fff" d="M16 3C8.8 3 2.9 8.3 1.9 15.2c-.2 1.6 1 3 2.6 3h1.2l-1.5 2.8a1 1 0 001.8.9l1.9-3.7h16.2l1.9 3.7a1 1 0 001.8-.9L26.3 18.2h1.2c1.6 0 2.8-1.4 2.6-3C29.1 8.3 23.2 3 16 3z"/>
-                  <circle cx="10.5" cy="15.5" r="2.8" fill="#14151a"/>
-                  <circle cx="21.5" cy="15.5" r="2.8" fill="#14151a"/>
-                  <rect x="13.5" y="14.5" width="5" height="2" fill="#14151a"/>
-                </svg>
-
-
               </button>
               <button class="home-composer-tool" id="homeVoiceBtn" title="Record a voice post">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
@@ -4525,84 +4500,6 @@
     mediaUrl.addEventListener('input', resetComposerTimer);
     textarea.addEventListener('focus', resetComposerTimer);
 
-    const anonToggle = document.getElementById('homeAnonToggle');
-    const homeComposerEl = document.getElementById('homeComposer');
-    const homeAnonBanner = document.getElementById('homeAnonBanner');
-    const NORMAL_PLACEHOLDER = "Tell your circle about your day — just between you all...";
-
-    // Rotating prompts shown (as the placeholder) only while whisper/anon
-    // mode is on — a new one swaps in every 5s. Every entry here is a real
-    // prompt (never the plain "normal mode" filler line), and the order is
-    // reshuffled each time whisper mode turns on so it doesn't feel static.
-    const WHISPER_PROMPTS = [
-      "What's the one thing you did but didn't get punished for?",
-      "What's a secret you've never told this circle?",
-      "What's something you'd only admit anonymously?",
-      "What's a lie you told that no one ever found out about?",
-      "What's the pettiest thing you've done recently?",
-      "What's on your mind that you can't say out loud?",
-      "What's something you're proud of but too embarrassed to share?",
-      "What's a thought you've had that surprised even you?",
-    ];
-    let whisperPromptTimer = null;
-    let whisperPromptIndex = 0;
-    let whisperPromptOrder = [];
-
-    const shuffledPromptOrder = () => {
-      const order = WHISPER_PROMPTS.map((_, i) => i);
-      for (let i = order.length - 1; i > 0; i--){
-        const j = Math.floor(Math.random() * (i + 1));
-        [order[i], order[j]] = [order[j], order[i]];
-      }
-      return order;
-    };
-
-    const stopWhisperPrompts = () => {
-      if (whisperPromptTimer){ clearInterval(whisperPromptTimer); whisperPromptTimer = null; }
-    };
-    const startWhisperPrompts = () => {
-      stopWhisperPrompts();
-      whisperPromptOrder = shuffledPromptOrder();
-      whisperPromptIndex = 0;
-      textarea.placeholder = WHISPER_PROMPTS[whisperPromptOrder[0]];
-      whisperPromptTimer = setInterval(() => {
-        // Don't yank the placeholder out from under someone who's typing —
-        // it's invisible anyway once there's text, so just keep advancing
-        // the index quietly and it'll show the right one if they clear it.
-        whisperPromptIndex = (whisperPromptIndex + 1) % whisperPromptOrder.length;
-        textarea.placeholder = WHISPER_PROMPTS[whisperPromptOrder[whisperPromptIndex]];
-      }, 5000);
-    };
-
-    let isAnon = false;
-    const setWhisperMode = (on) => {
-      isAnon = on;
-      anonToggle.classList.toggle('active', on);
-      const vb = document.getElementById('homeVoiceBtn');
-      if (vb) vb.classList.toggle('voice-locked', on);
-      homeAnonBanner.classList.toggle('show', on);
-      if (on){
-        startWhisperPrompts();
-      } else {
-        stopWhisperPrompts();
-        textarea.placeholder = NORMAL_PLACEHOLDER;
-      }
-    };
-    anonToggle.addEventListener('click', () => {
-      if (isAnon){
-        setWhisperMode(false);
-        showToast('Posting as yourself');
-        return;
-      }
-      // can't go anonymous mid-recording: the voice would give them away
-      if (voiceBtn.classList.contains('recording')){ showAnonVoiceNotice(); return; }
-      requestWhisperMode(() => {
-        setWhisperMode(true);
-        posthog.capture('anonymous_mode_enabled', { circle_id: circleId });
-        showToast('Whisper mode — this one stays unsigned');
-      });
-    });
-
     const voiceBtn = document.getElementById('homeVoiceBtn');
     const voiceTimer = document.getElementById('homeVoiceTimer');
     let voiceRecorder = null;
@@ -4613,9 +4510,6 @@
 
     voiceBtn.addEventListener('click', async () => {
       if (!requireAuth()) return;
-
-      // Voice notes can't be anonymous — friends would recognise the voice.
-      if (isAnon && !voiceBtn.classList.contains('recording')){ showAnonVoiceNotice(); return; }
 
       if (voiceBtn.classList.contains('recording')) {
         voiceRecorder.stop();
@@ -4633,9 +4527,6 @@
           clearInterval(voiceTimerInterval);
           voiceTimer.style.display = 'none';
           voiceBtn.classList.remove('recording');
-
-          // safety net: never upload a voice recording as an anonymous post
-          if (isAnon){ voiceChunks = []; showAnonVoiceNotice(); return; }
 
           const durationSeconds = (Date.now() - voiceStartTime) / 1000;
           const voiceMimeType = voiceRecorder.mimeType || 'audio/webm';
@@ -4657,13 +4548,11 @@
               media_url: path,
               media_type: 'voice',
               duration_seconds: durationSeconds,
-              is_anonymous: isAnon,
             });
             if (insertError) throw insertError;
-            posthog.capture('post_created', { circle_id: circleId, media_type: 'voice', duration_seconds: durationSeconds, is_anonymous: isAnon });
+            posthog.capture('post_created', { circle_id: circleId, media_type: 'voice', duration_seconds: durationSeconds });
 
             textarea.value = ''; textarea.style.height = 'auto';
-            setWhisperMode(false);
             refreshPostBtn();
 
             showToast('Voice post shared');
@@ -4702,7 +4591,6 @@
       isPosting = true;
       postBtn.disabled = true;
       postBtn.innerHTML = `<span class="mini-spinner"></span>`;
-      const wasWhisper = isAnon;
 
       try {
         const { error } = await supabaseClient.from('posts').insert({
@@ -4711,21 +4599,18 @@
           caption: content || null,
           media_url: url || null,
           media_type: url ? (url.match(/\.(mp4|mov|webm)(\?|$)/i) ? 'video' : 'photo') : null,
-          is_anonymous: wasWhisper,
         });
         if (error) throw error;
         posthog.capture('post_created', {
           circle_id: circleId,
           media_type: url ? (url.match(/\.(mp4|mov|webm)(\?|$)/i) ? 'video' : 'photo') : 'text',
-          is_anonymous: wasWhisper,
           caption_length: content.length,
         });
 
         textarea.value = ''; mediaUrl.value = ''; mediaField.style.display = 'none'; mediaToggle.classList.remove('active');
-        setWhisperMode(false);
         textarea.style.height = 'auto';
 
-        showToast(wasWhisper ? 'Posted to the circle — quietly' : 'Posted to the circle');
+        showToast('Posted to the circle');
 
         if (document.getElementById('homeComposer').classList.contains('overlay')) {
           closeComposerOverlay();
@@ -5808,121 +5693,23 @@
   }
 
   // =========================================================
-  // ANONYMOUS POSTS — pre-post notice, auto-expiry
+  // ANONYMOUS POSTS (public circles + Golden Hour only)
   //
-  // Anonymous ("whisper mode") posts always self-delete exactly 24 hours
-  // after they're created — not dependent on who has viewed them.
+  // The private-circle main feed no longer supports anonymous ("whisper
+  // mode") posting — that toggle/banner/notice flow was removed. Public
+  // circle threads (pcAnon, see renderPublicMode) still support it, and
+  // still self-delete exactly 24 hours after creation via the same
+  // `is_anonymous` column and cleanup RPC below.
   //
   // Requires (run once in the Supabase SQL editor):
   //   - the `cleanup_expired_anon_posts` RPC function, which deletes any
   //     row where is_anonymous = true and created_at < now() - 24h.
   // See circle-anon-expiry.sql for the migration.
   // =========================================================
-  const ANON_NOTICE_KEY = `anonNoticeSeen_${circleId}`;
-
-  function hasSeenAnonNotice(){
-    try { return localStorage.getItem(ANON_NOTICE_KEY) === '1'; } catch(_) { return false; }
-  }
-  function markAnonNoticeSeen(){
-    try { localStorage.setItem(ANON_NOTICE_KEY, '1'); } catch(_) {}
-  }
-
-  // Shown once, before someone's first anonymous post, so they know the
-  // trade-off up front rather than finding out after the fact.
-  function showAnonNoticeModal(onConfirm){
-    if (document.querySelector('.anon-notice-backdrop')) return;
-    const el = document.createElement('div');
-    el.className = 'sg-backdrop anon-notice-backdrop';
-    el.setAttribute('role', 'alertdialog');
-    el.setAttribute('aria-modal', 'true');
-    // static strings only (no user input), so innerHTML is safe here
-    el.innerHTML = `
-      <div class="sg-card">
-        <div class="anon-notice-icon">
-          <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-            <path fill="#fff" d="M16 3C8.8 3 2.9 8.3 1.9 15.2c-.2 1.6 1 3 2.6 3h1.2l-1.5 2.8a1 1 0 001.8.9l1.9-3.7h16.2l1.9 3.7a1 1 0 001.8-.9L26.3 18.2h1.2c1.6 0 2.8-1.4 2.6-3C29.1 8.3 23.2 3 16 3z"/>
-            <circle cx="10.5" cy="15.5" r="2.8" fill="#14151a"/>
-            <circle cx="21.5" cy="15.5" r="2.8" fill="#14151a"/>
-            <rect x="13.5" y="14.5" width="5" height="2" fill="#14151a"/>
-          </svg>
-        </div>
-        <h3>Posting anonymously</h3>
-        <p>Your identity will be hidden — no one in the circle, including admins, can tell it's you. This post automatically disappears 24 hours after you post it.</p>
-        <div class="anon-notice-actions">
-          <button class="sg-btn anon-notice-ghost" type="button" data-choice="cancel">Never mind</button>
-          <button class="sg-btn" type="button" data-choice="confirm">Got it, post anonymously</button>
-        </div>
-      </div>`;
-    document.body.appendChild(el);
-    requestAnimationFrame(() => el.classList.add('show'));
-
-    const close = (confirmed) => {
-      el.classList.remove('show');
-      setTimeout(() => el.remove(), 200);
-      if (confirmed){
-        markAnonNoticeSeen();
-        onConfirm();
-      }
-    };
-    el.querySelector('[data-choice="confirm"]').addEventListener('click', () => close(true));
-    el.querySelector('[data-choice="cancel"]').addEventListener('click', () => close(false));
-  }
-
-  // Shown whenever someone tries to post a voice note while anonymous.
-  // Voice can't be anonymous (friends know how each other sound), so we
-  // nudge them to type instead.
-  function showAnonVoiceNotice(){
-    if (document.querySelector('.anon-voice-backdrop')) return;
-    const el = document.createElement('div');
-    el.className = 'sg-backdrop anon-notice-backdrop anon-voice-backdrop';
-    el.setAttribute('role', 'alertdialog');
-    el.setAttribute('aria-modal', 'true');
-    // static strings only (no user input), so innerHTML is safe here
-    el.innerHTML = `
-      <div class="sg-card">
-        <div class="anon-notice-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
-            <path d="M19 10v2a7 7 0 01-14 0v-2"/>
-            <line x1="12" y1="19" x2="12" y2="23"/>
-            <line x1="8" y1="23" x2="16" y2="23"/>
-            <line x1="3" y1="3" x2="21" y2="21"/>
-          </svg>
-        </div>
-        <h3>Voice can give you away</h3>
-        <p>People know how you sound, so a voice note can't stay anonymous — they'd figure out it's you. Write it instead and it stays unsigned.</p>
-        <div class="anon-notice-actions">
-          <button class="sg-btn anon-notice-ghost" type="button" data-choice="cancel">Never mind</button>
-          <button class="sg-btn" type="button" data-choice="text">Write it instead</button>
-        </div>
-      </div>`;
-    document.body.appendChild(el);
-    requestAnimationFrame(() => el.classList.add('show'));
-
-    const close = (goText) => {
-      el.classList.remove('show');
-      setTimeout(() => el.remove(), 200);
-      if (goText){
-        const ta = document.getElementById('homeComposerText') || document.querySelector('#homeComposer textarea');
-        if (ta) ta.focus();
-      }
-    };
-    el.querySelector('[data-choice="text"]').addEventListener('click', () => close(true));
-    el.querySelector('[data-choice="cancel"]').addEventListener('click', () => close(false));
-  }
-
-  // Gate for turning whisper mode on: shows the one-time notice first,
-  // then runs `onEnabled` once the person has acknowledged it.
-  function requestWhisperMode(onEnabled){
-    if (hasSeenAnonNotice()){ onEnabled(); return; }
-    showAnonNoticeModal(onEnabled);
-  }
 
   // Best-effort cleanup, called opportunistically whenever the feed loads.
   // Deletes anonymous posts whose 24-hour window has passed. Safe to call
   // often — it's a no-op when nothing has expired yet.
-
-
      async function cleanupExpiredAnonPosts(){
       const { error } = await supabaseClient.rpc('cleanup_expired_anon_posts');
       if (error) console.error('cleanup_expired_anon_posts failed', error);
