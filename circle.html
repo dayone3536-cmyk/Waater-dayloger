@@ -711,6 +711,44 @@
     100%{opacity:0;transform:scale(1.9);}
   }
 
+  /* ============================================================
+     ADD TO US — heart-in-a-box toggle living in the post actions row.
+     Three states: default (not saved), in-us + mine (saved by me,
+     tap removes), in-us + not-mine (saved by someone else, inert).
+  ============================================================ */
+  .home-us-btn svg{transition:transform .3s var(--ease-spring), fill .15s ease, stroke .15s ease;}
+  .home-us-btn:active svg{transform:scale(.88);}
+  .home-us-btn.in-us{color:var(--accent);}
+  .home-us-btn.in-us svg{stroke:var(--accent);fill:rgba(255,90,54,.18);}
+  .home-us-btn.in-us.just-added svg{animation:usPop .4s var(--ease-spring);}
+  @keyframes usPop{ 0%{transform:scale(1);} 45%{transform:scale(1.3) rotate(-6deg);} 100%{transform:scale(1);} }
+  .home-us-btn.in-us:not(.mine){cursor:default;}
+  .home-us-btn.in-us:not(.mine):hover{color:var(--accent);}
+  .home-us-btn.in-us:not(.mine):hover svg{stroke:var(--accent);}
+
+  .memory-meta{
+    display:flex;flex-direction:column;gap:6px;
+    margin:0 16px 12px;padding:10px 13px;border-radius:12px;
+    background:var(--accent-soft);
+  }
+  .memory-meta-who{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:11px;color:var(--ink-soft);}
+  .memory-meta-who .avatar.mini{
+    width:20px;height:20px;border-radius:50%;flex-shrink:0;overflow:hidden;
+    background:linear-gradient(135deg,#ffd8c9,var(--accent));
+    display:flex;align-items:center;justify-content:center;color:#fff;
+    font-family:var(--font-display);font-weight:700;font-size:8.5px;
+  }
+  .memory-meta-who .avatar.mini img{width:100%;height:100%;object-fit:cover;}
+  .memory-meta-who b{color:var(--ink);font-weight:600;}
+  .memory-meta-caption{font-family:var(--font-serif);font-size:13.5px;color:var(--ink);line-height:1.45;white-space:pre-wrap;word-break:break-word;}
+
+  .us-caption-input{
+    width:100%;border:1px solid var(--line-strong);border-radius:12px;
+    padding:11px 13px;font-family:var(--font-serif);font-size:14.5px;
+    color:var(--ink);resize:vertical;min-height:70px;transition:border-color .15s ease;
+  }
+  .us-caption-input:focus{outline:none;border-color:var(--accent);}
+
   .home-comments{
     display:none;padding:2px 16px 16px;border-top:1px solid var(--line);
   }
@@ -2616,12 +2654,191 @@
   }
 
   // =========================================================
+  // US — the circle's shared memory vault. A row here doesn't copy a
+  // post, it references one (see circle_memories.post_id) — so its
+  // comments and likes stay the same live thread whether you're
+  // looking at it in the Feed or in Us.
+  // =========================================================
+  let memoryByPostId = {}; // post_id -> { id, added_by } — drives the heart icon's state in the Feed
+
+  async function loadMemoryMap(){
+    const { data, error } = await supabaseClient
+      .from('circle_memories')
+      .select('id, post_id, added_by')
+      .eq('circle_id', circleId);
+    memoryByPostId = {};
+    if (error) { console.error('loadMemoryMap failed', error); return; }
+    (data || []).forEach(m => { memoryByPostId[m.post_id] = m; });
+  }
+
+  async function loadUsMemories(){
+    const { data: rows, error } = await supabaseClient
+      .from('circle_memories')
+      .select('id, post_id, added_by, caption, created_at, posts(id, user_id, caption, media_url, media_type, duration_seconds, created_at, likes_count, comment_count, is_anonymous, gh_question, gh_asker_name)')
+      .eq('circle_id', circleId)
+      .order('created_at', { ascending: false });
+    if (error) { console.error('loadUsMemories failed', error); return []; }
+
+    const list = (rows || []).filter(r => r.posts); // drop rows whose post was hard-deleted
+    memoryByPostId = {};
+    list.forEach(r => { memoryByPostId[r.post_id] = { id: r.id, added_by: r.added_by }; });
+    if (list.length === 0) return [];
+
+    const userIds = [...new Set([...list.map(r => r.added_by), ...list.map(r => r.posts.user_id)])];
+    const { data: profs } = await supabaseClient.from('profiles').select('id, username, avatar_url').in('id', userIds);
+    const profileById = {};
+    (profs || []).forEach(p => { profileById[p.id] = p; });
+
+    let posts = list.map(r => ({
+      ...r.posts,
+      profiles: profileById[r.posts.user_id] || null,
+      _memory: {
+        id: r.id,
+        added_by: r.added_by,
+        added_by_profile: profileById[r.added_by] || null,
+        caption: r.caption,
+        added_at: r.created_at
+      }
+    }));
+    posts = await hydratePostMedia(posts);
+
+    const myLikes = await loadMyLikes(posts.map(p => p.id));
+    return posts.map(p => ({ post: p, isLiked: myLikes.has(p.id) }));
+  }
+
+  async function addToUs(postId, caption){
+    if (!requireAuth()) return false;
+    const { data, error } = await supabaseClient
+      .from('circle_memories')
+      .insert({
+        circle_id: circleId,
+        post_id: postId,
+        added_by: currentUser.id,
+        caption: caption ? caption.trim().slice(0, 300) : null
+      })
+      .select('id, post_id, added_by')
+      .single();
+    if (error){
+      if (error.code === '23505') { showToast('Already in Us'); return false; } // unique(post_id) — someone beat you to it
+      showToast(error.message || 'Could not add to Us', 'error');
+      return false;
+    }
+    memoryByPostId[postId] = { id: data.id, added_by: data.added_by };
+    posthog.capture('post_added_to_us', { post_id: postId, circle_id: circleId });
+    showToast('Added to Us ✨');
+    return true;
+  }
+
+  async function removeFromUs(memoryId, postId){
+    if (!currentUser) return false;
+    const { error } = await supabaseClient
+      .from('circle_memories')
+      .delete()
+      .eq('id', memoryId)
+      .eq('added_by', currentUser.id); // belt-and-suspenders alongside the RLS policy
+    if (error){
+      showToast(error.message || 'Could not remove from Us', 'error');
+      return false;
+    }
+    delete memoryByPostId[postId];
+    posthog.capture('post_removed_from_us', { post_id: postId, circle_id: circleId });
+    showToast('Removed from Us');
+    return true;
+  }
+
+  // Small inline modal asking for the optional "thought" — resolves to the
+  // caption string, or null if the person cancelled out of it.
+  function openAddToUsModal(){
+    return new Promise(resolve => {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML = `
+        <div class="modal">
+          <h2>Add to Us</h2>
+          <p>This post — and everything in its thread — joins your circle's shared vault. Every member can see it there.</p>
+          <textarea class="us-caption-input" id="usCaptionInput" placeholder="Add a caption (optional)" maxlength="300"></textarea>
+          <div class="modal-actions" style="margin-top:18px;">
+            <button class="btn-secondary" id="usModalCancel">Cancel</button>
+            <button class="btn-primary" id="usModalConfirm">Add to Us</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      const close = (val) => { overlay.remove(); resolve(val); };
+      overlay.querySelector('#usModalCancel').addEventListener('click', () => close(null));
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) close(null); });
+      overlay.querySelector('#usModalConfirm').addEventListener('click', () => {
+        close(overlay.querySelector('#usCaptionInput').value);
+      });
+      setTimeout(() => overlay.querySelector('#usCaptionInput')?.focus(), 50);
+    });
+  }
+
+  function updateUsTabCount(){
+    const el = document.getElementById('usTabCount');
+    if (el) el.textContent = Object.keys(memoryByPostId).length || '';
+  }
+
+  function maybeShowEmptyUsState(){
+    const feed = document.getElementById('usFeed');
+    if (feed && !feed.children.length) renderUsEmptyState();
+  }
+
+  function renderUsEmptyState(){
+    const wrap = document.getElementById('usWrap');
+    if (!wrap) return;
+    wrap.innerHTML = `
+      <div class="home-empty">
+        <div class="home-empty-orb">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 00-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 000-7.8z"/></svg>
+        </div>
+        <h3>Nothing in Us yet</h3>
+        <p>Tap the heart on any post in the Feed to keep it here for good.</p>
+      </div>
+    `;
+  }
+
+  async function initUs(){
+    await refreshUsFeed();
+  }
+
+  async function refreshUsFeed(){
+    const wrap = document.getElementById('usWrap');
+    const items = await loadUsMemories();
+    updateUsTabCount();
+    if (items.length === 0){
+      renderUsEmptyState();
+      return;
+    }
+    wrap.innerHTML = `<div class="home-feed" id="usFeed">${items.map(({ post, isLiked }) => renderHomePostCard(post, isLiked, post._memory)).join('')}</div>`;
+    wireHomeActions(document.getElementById('usFeed'));
+  }
+
+  // =========================================================
   // PRIVATE MODE — home feed
   // =========================================================
-  function renderHomePostCard(post, isLiked){
+  function renderHomePostCard(post, isLiked, memoryMeta){
     const isAnonPost = post.is_anonymous;
     const isGhAnswer = !!post.gh_question;
     const name = isAnonPost ? 'Anonymous' : (post.profiles?.username || 'someone');
+    // memoryMeta is passed explicitly when rendering inside the Us vault
+    // (it carries who added it + their caption). In the Feed, the same
+    // info — just whether/who — comes from the live memoryByPostId map.
+    const memRef = memoryMeta || memoryByPostId[post.id] || null;
+    const inUs = !!memRef;
+    const isMineAdd = inUs && currentUser && memRef.added_by === currentUser.id;
+    const usBtnHtml = `
+      <button class="home-action-btn home-us-btn${inUs ? ' in-us' : ''}${isMineAdd ? ' mine' : ''}" data-post-id="${post.id}" data-memory-id="${memRef ? memRef.id : ''}" title="${!inUs ? 'Add to Us' : (isMineAdd ? 'Remove from Us' : 'Already in Us')}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 00-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 000-7.8z"/></svg>
+      </button>`;
+    const memoryMetaHtml = memoryMeta ? `
+      <div class="memory-meta">
+        <div class="memory-meta-who">
+          <div class="avatar mini">${memoryMeta.added_by_profile?.avatar_url ? `<img src="${escapeHtml(memoryMeta.added_by_profile.avatar_url)}" alt="">` : initials(memoryMeta.added_by_profile?.username || 'someone')}</div>
+          <span>Added to Us by <b>${escapeHtml(memoryMeta.added_by_profile?.username || 'someone')}</b></span>
+        </div>
+        ${memoryMeta.caption ? `<div class="memory-meta-caption">${escapeHtml(memoryMeta.caption)}</div>` : ''}
+      </div>` : '';
 
     const avatarHtml = isAnonPost
       ? `<svg viewBox="0 0 32 32" style="width:70%;height:70%;" xmlns="http://www.w3.org/2000/svg">
@@ -2652,6 +2869,7 @@
             <svg viewBox="0 0 24 24" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
           </button>` : ''}
         </div>
+        ${memoryMetaHtml}
         <div class="home-post-body${isAnonPost ? ' whisper-reveal' : ''}">
           ${isGhAnswer ? `
           <div class="gh-answer-tag"><span class="gh-ic">🌇</span><span>Golden Hour reply${post.gh_asker_name ? ' to ' + escapeHtml(post.gh_asker_name) : ''}</span></div>
@@ -2679,6 +2897,7 @@
             <svg viewBox="0 0 24 24" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             <span class="home-comment-count">${post.comment_count || 0}</span>
           </button>
+          ${usBtnHtml}
         </div>
         <div class="home-comments" id="home-comments-${post.id}">
           <div class="home-comment-list" id="home-comment-list-${post.id}"></div>
@@ -2743,8 +2962,8 @@
 
   // Press and hold a post to record a voice reply; a plain tap opens the thread
   // (text + voice comments), same as tapping the comment icon.
-  function attachHoldToTalk(){
-    document.querySelectorAll('.home-post-card').forEach(card => {
+  function attachHoldToTalk(root = document){
+    root.querySelectorAll('.home-post-card').forEach(card => {
       const postId = card.dataset.postId;
       const body = card.querySelector('.home-post-body');
       if (!body || body.dataset.holdBound) return;
@@ -3036,18 +3255,18 @@
     }
   });
 
-  function wireHomeActions(){
-    attachHoldToTalk();
+  function wireHomeActions(root = document){
+    attachHoldToTalk(root);
     maybeShowVoiceOnboardingHint();
 
-    document.querySelectorAll('.whisper-reveal').forEach(el => {
+    root.querySelectorAll('.whisper-reveal').forEach(el => {
       el.addEventListener('click', () => {
         const card = el.closest('.home-post-card');
         if (card) card.classList.add('revealed');
       });
     });
 
-    document.querySelectorAll('.home-like-btn').forEach(btn => {
+    root.querySelectorAll('.home-like-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (!requireAuth()) return;
         if (btn.dataset.busy) return;
@@ -3079,11 +3298,11 @@
       });
     });
 
-    document.querySelectorAll('.home-comment-toggle').forEach(btn => {
+    root.querySelectorAll('.home-comment-toggle').forEach(btn => {
       btn.addEventListener('click', () => openComments(btn.dataset.postId));
     });
 
-    document.querySelectorAll('.home-post-delete').forEach(btn => {
+    root.querySelectorAll('.home-post-delete').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         if (!currentUser) return;
@@ -3099,8 +3318,10 @@
             .eq('user_id', currentUser.id);
           if (error) throw error;
           eraseMedia(fileRef);
-          const card = document.querySelector(`.home-post-card[data-post-id="${postId}"]`);
-          if (card) card.remove();
+          // A post can be showing in both the Feed and the Us vault at once —
+          // deleting it outright should pull it from wherever it's rendered.
+          document.querySelectorAll(`.home-post-card[data-post-id="${postId}"]`).forEach(card => card.remove());
+          delete memoryByPostId[postId];
           showToast('Post deleted');
         } catch (err) {
           btn.disabled = false;
@@ -3109,7 +3330,54 @@
       });
     });
 
-    document.querySelectorAll('.home-comment-input').forEach(input => {
+    root.querySelectorAll('.home-us-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (!requireAuth()) return;
+        if (btn.dataset.busy) return;
+        const postId = btn.dataset.postId;
+        const already = btn.classList.contains('in-us');
+        const isMineBtn = btn.classList.contains('mine');
+
+        if (already && !isMineBtn){
+          showToast('Already in Us — added by someone else');
+          return;
+        }
+
+        btn.dataset.busy = '1';
+        try {
+          if (already && isMineBtn){
+            if (!window.confirm('Remove this from Us?')) return;
+            const memoryId = btn.dataset.memoryId;
+            const ok = await removeFromUs(memoryId, postId);
+            if (ok){
+              btn.classList.remove('in-us', 'mine');
+              btn.dataset.memoryId = '';
+              btn.title = 'Add to Us';
+              const usTabCard = document.querySelector(`#usFeed .home-post-card[data-post-id="${postId}"]`);
+              if (usTabCard) usTabCard.remove();
+              maybeShowEmptyUsState();
+              updateUsTabCount();
+            }
+          } else {
+            const caption = await openAddToUsModal();
+            if (caption === null) return; // cancelled
+            const ok = await addToUs(postId, caption);
+            if (ok){
+              btn.classList.add('in-us', 'mine', 'just-added');
+              btn.dataset.memoryId = memoryByPostId[postId].id;
+              btn.title = 'Remove from Us';
+              setTimeout(() => btn.classList.remove('just-added'), 450);
+              updateUsTabCount();
+            }
+          }
+        } finally {
+          delete btn.dataset.busy;
+        }
+      });
+    });
+
+    root.querySelectorAll('.home-comment-input').forEach(input => {
       const postId = input.id.replace('home-comment-input-', '');
       const sendBtn = document.getElementById(`home-comment-send-${postId}`);
       input.addEventListener('input', () => { sendBtn.disabled = !input.value.trim(); });
@@ -3143,7 +3411,7 @@
       input.addEventListener('keydown', (e) => { if (e.key === 'Enter'){ e.preventDefault(); submit(); } });
     });
 
-    document.querySelectorAll('.home-comment-mic').forEach(btn => {
+    root.querySelectorAll('.home-comment-mic').forEach(btn => {
       const postId = btn.dataset.postId;
       let mediaRecorder = null;
       let chunks = [];
@@ -4365,8 +4633,10 @@
     document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('active', t.dataset.view === view));
     const feedPanel = document.getElementById('viewFeed');
     const albumPanel = document.getElementById('viewAlbum');
+    const usPanel = document.getElementById('viewUs');
     if (feedPanel) feedPanel.classList.toggle('active', view === 'feed');
     if (albumPanel) albumPanel.classList.toggle('active', view === 'album');
+    if (usPanel) usPanel.classList.toggle('active', view === 'us');
   }
 
   async function renderHomeMode(){
@@ -4433,6 +4703,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
           Album <span class="count" id="albumTabCount"></span>
         </button>
+        <button class="view-tab" data-view="us" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 00-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 000-7.8z"/></svg>
+          Us <span class="count" id="usTabCount"></span>
+        </button>
       </div>
 
       <div class="view-panel active" id="viewFeed">
@@ -4471,6 +4745,12 @@
       <div class="view-panel" id="viewAlbum">
         <div class="gallery-wrap" id="galleryWrap">
           ${renderWaterLoader('Loading your memories…')}
+        </div>
+      </div>
+
+      <div class="view-panel" id="viewUs">
+        <div class="us-wrap" id="usWrap">
+          ${renderWaterLoader('Loading Us…')}
         </div>
       </div>
     `;
@@ -4715,6 +4995,7 @@
     await refreshHomeFeed();
     refreshGoldenHourReveal();
     initAlbum();
+    initUs();
     initGoldenHourCard();
     subscribeToCircleActivity();
     subscribeToGoldenHourPrompts();
@@ -4751,9 +5032,13 @@
       }
       return;
     }
-    const myLikes = await loadMyLikes(posts.map(p => p.id));
+    const [myLikes] = await Promise.all([
+      loadMyLikes(posts.map(p => p.id)),
+      loadMemoryMap()
+    ]);
     feed.innerHTML = posts.map(p => renderHomePostCard(p, myLikes.has(p.id))).join('');
-    wireHomeActions();
+    wireHomeActions(feed);
+    updateUsTabCount();
   }
 
   // =========================================================
