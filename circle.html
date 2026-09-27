@@ -118,9 +118,11 @@
     background:rgba(255,255,255,.82);
     -webkit-backdrop-filter:saturate(180%) blur(16px);backdrop-filter:saturate(180%) blur(16px);
     border-bottom:1px solid var(--line);
-    transition:box-shadow .25s ease;
+    transition:box-shadow .25s ease, transform .32s cubic-bezier(.16,1,.3,1);
+    will-change:transform;
   }
   .topbar.scrolled{box-shadow:0 8px 22px -14px rgba(20,21,26,.28);}
+  .topbar.nav-hide{transform:translateY(-100%);}
   .topbar-back{
     justify-self:start;display:inline-flex;align-items:center;gap:3px;
     height:34px;padding:0 13px 0 8px;border-radius:99px;
@@ -248,11 +250,11 @@
     -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
     border:1px solid rgba(20,21,26,.06);
     box-shadow:0 14px 34px -10px rgba(20,21,26,.22), 0 2px 8px rgba(20,21,26,.05);
-    transition:transform .45s var(--ease), opacity .3s ease;
+    transition:transform .32s cubic-bezier(.16,1,.3,1), opacity .22s ease;
     will-change:transform;
   }
   .bottom-nav.hidden,
-  .bottom-nav.scroll-hide{transform:translateY(calc(100% + 32px));opacity:0;pointer-events:none;}
+  .bottom-nav.scroll-hide{transform:translateY(calc(100% + 20px));opacity:0;pointer-events:none;}
   .tab{
     position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
     color:var(--grey);font-family:var(--font-display);font-weight:600;font-size:10.5px;letter-spacing:.005em;
@@ -6567,12 +6569,11 @@
   // topbar gets a soft shadow once you scroll
   var tb = document.querySelector('.topbar');
   if (tb){
-    var f = function(){ tb.classList.toggle('scrolled', window.scrollY > 4); };
-    window.addEventListener('scroll', f, {passive:true}); f();
+    var shadowF = function(){ tb.classList.toggle('scrolled', window.scrollY > 4); };
+    window.addEventListener('scroll', shadowF, {passive:true}); shadowF();
   }
 
-  // dock: light haptic tap, tuck away while typing so the keyboard has room,
-  // and melt out of the way while scrolling so reading isn't fought over
+  // dock: light haptic tap, tuck away while typing so the keyboard has room
   var dock = document.querySelector('.bottom-nav');
   if (dock){
     dock.querySelectorAll('.tab').forEach(function(t){
@@ -6586,43 +6587,74 @@
     document.addEventListener('focusout', function(){
       setTimeout(function(){ if (!isField(document.activeElement)) dock.classList.remove('hidden'); }, 60);
     });
+  }
 
-    // scroll-aware reveal: hide on the way down, bring it back on the way up,
-    // and always settle it back in once scrolling stops
+  // ------------------------------------------------------------------
+  // Topbar + dock move together as one navbar: tuck away on the way
+  // down, glide back the instant you scroll up, always settle back in
+  // near the top or once your thumb stops. This tracks scroll distance
+  // from a fixed anchor rather than frame-to-frame deltas — a frame-
+  // to-frame diff resets every tick, so a slow, steady scroll (the most
+  // common kind) never adds up to the threshold and the nav never
+  // moves, which is the "rigid, won't go away" feeling. Overscroll /
+  // rubber-banding at the ends of the page is clamped out so bounce
+  // can't fake a direction change.
+  // ------------------------------------------------------------------
+  if (tb || dock){
     var mobileMQ = window.matchMedia('(max-width:899.98px)');
-    var lastY = Math.max(window.scrollY, 0);
+    var THRESHOLD = 6;   // distance before the nav reacts — small enough to feel instant
+    var TOP_ZONE = 24;   // always shown near the very top of the page
+    var IDLE_MS = 550;   // glide back in shortly after scrolling stops
+
+    var navHidden = false;
+    var anchorY = 0;
     var idleTimer = null;
     var ticking = false;
-    var THRESHOLD = 8;      // ignore tiny jitters
-    var TOP_ZONE = 32;      // always show near the very top
-    var IDLE_MS = 650;      // settle back in once the thumb stops
 
-    var settle = function(){ dock.classList.remove('scroll-hide'); };
+    var clampedY = function(){
+      var maxY = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0);
+      return Math.min(Math.max(window.scrollY, 0), maxY);
+    };
+
+    var show = function(){
+      navHidden = false;
+      anchorY = clampedY();
+      if (tb) tb.classList.remove('nav-hide');
+      if (dock) dock.classList.remove('scroll-hide');
+    };
+    var hide = function(){
+      navHidden = true;
+      anchorY = clampedY();
+      if (tb) tb.classList.add('nav-hide');
+      if (dock) dock.classList.add('scroll-hide');
+    };
+
+    anchorY = clampedY();
 
     var evaluate = function(){
       ticking = false;
-      if (!mobileMQ.matches){ settle(); return; }
-      var y = Math.max(window.scrollY, 0);
-      var delta = y - lastY;
+      if (!mobileMQ.matches){ if (navHidden) show(); return; }
+
+      var y = clampedY();
+      var delta = y - anchorY;
 
       if (y <= TOP_ZONE){
-        settle();
-      } else if (delta > THRESHOLD){
-        dock.classList.add('scroll-hide');     // scrolling down -> get out of the way
-      } else if (delta < -THRESHOLD){
-        settle();                              // scrolling up -> reader wants the nav back
+        if (navHidden) show();
+      } else if (!navHidden && delta > THRESHOLD){
+        hide();          // scrolling down -> get out of the way
+      } else if (navHidden && delta < -THRESHOLD){
+        show();          // scrolling up -> reader wants the nav back, immediately
       }
 
-      lastY = y;
       clearTimeout(idleTimer);
-      idleTimer = setTimeout(settle, IDLE_MS);
+      idleTimer = setTimeout(function(){ if (navHidden) show(); }, IDLE_MS);
     };
 
     window.addEventListener('scroll', function(){
       if (!ticking){ ticking = true; requestAnimationFrame(evaluate); }
     }, {passive:true});
 
-    mobileMQ.addEventListener ? mobileMQ.addEventListener('change', settle) : mobileMQ.addListener(settle);
+    mobileMQ.addEventListener ? mobileMQ.addEventListener('change', show) : mobileMQ.addListener(show);
   }
 })();
 </script>
