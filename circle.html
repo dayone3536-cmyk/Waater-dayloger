@@ -1398,18 +1398,20 @@
 }
 
   /* ============================================================
-     INVITE PREVIEW — unauthenticated peek before sign-up
+     INVITE PREVIEW — unauthenticated peek before sign-up.
+     Shows the real feed (everything except the Us/memories vault),
+     full width, so it reads exactly like being inside the circle.
   ============================================================ */
-  .invite-preview{max-width:420px;margin:0 auto;padding:28px 18px 40px;}
+  .invite-preview-page{max-width:640px;margin:0 auto;}
   .invite-preview-badge{
     font-family:var(--font-display);font-weight:600;font-size:12.5px;
-    background:var(--accent-soft);color:var(--accent);display:inline-block;
-    padding:6px 12px;border-radius:99px;margin-bottom:16px;
+    background:var(--accent-soft);color:var(--accent);display:inline-flex;align-items:center;gap:6px;
+    padding:6px 12px;border-radius:99px;margin:20px 22px 4px;
   }
-  .invite-preview .home-post-card{border:1px solid var(--line);border-radius:16px;padding:16px;}
+  .invite-preview-badge b{font-weight:700;}
   .invite-preview-cta{
-    width:100%;margin-top:20px;padding:14px 16px;font-family:var(--font-display);
-    font-weight:600;font-size:15px;border-radius:14px;
+    display:block;width:calc(100% - 44px);margin:6px auto 40px;padding:15px 16px;
+    font-family:var(--font-display);font-weight:600;font-size:15px;border-radius:14px;
   }
 
   /* ============================================================
@@ -2235,37 +2237,56 @@
     window.location.href = `/auth?next=${encodeURIComponent(nextPath)}`;
   }
 
+  // Shows the real feed to an unauthenticated invite visitor — every post,
+  // not a stub. The `posts` (albums/memories) vault stays out; that's the
+  // one thing still worth signing up for. `preview.posts` should be an
+  // array of every circle post; the older single-`post` shape still works
+  // as a graceful fallback if the RPC hasn't been upgraded yet (see the
+  // note below this function for the backend change that array needs).
   function renderInvitePreview(preview, inviteCode){
-    const post = preview?.post;
+    const posts = Array.isArray(preview?.posts) ? preview.posts
+      : (preview?.post ? [preview.post] : []);
     const circleName = escapeHtml(preview?.circle_name || 'a private circle');
     const memberCount = preview?.member_count ?? null;
     const next = `/circle?code=${encodeURIComponent(inviteCode)}`;
 
-    if (!post){
+    if (!posts.length){
       // Nothing to preview yet (brand-new circle) — stalling here has
       // no upside, so go straight to sign-up.
       gateToSignup(next, 'no_preview');
       return;
     }
 
-    try { posthog.capture('invite_preview_shown', { has_media: !!post.media_url }); } catch(_) {}
+    try { posthog.capture('invite_preview_shown', { post_count: posts.length }); } catch(_) {}
+
+    const previewPostCard = (post) => `
+      <div class="home-post-card">
+        <div class="home-post-head">
+          <div class="avatar">${initials(post.author_username || 'someone')}</div>
+          <div class="who"><b>${escapeHtml(post.author_username || 'someone')}</b>${post.created_at ? `<span>${timeAgo(post.created_at)}</span>` : ''}</div>
+        </div>
+        <div class="home-post-body">
+          ${post.body ? `<div class="home-post-text">${escapeHtml(post.body)}</div>` : ''}
+          ${post.media_url ? `<div class="home-post-media">${
+              post.media_type === 'video'
+                ? `<video src="${escapeHtml(post.media_url)}" controls></video>`
+                : `<img src="${escapeHtml(post.media_url)}" loading="lazy" alt="">`
+            }</div>` : ''}
+        </div>
+        <div class="home-post-actions">
+          <button class="home-action-btn home-like-btn" data-preview-gate="like">♡ Like${post.likes_count ? ` <span class="home-like-count">${post.likes_count}</span>` : ''}</button>
+          <button class="home-action-btn home-us-btn" data-preview-gate="save">+ Add to Us</button>
+          <button class="home-action-btn home-comment-toggle" data-preview-gate="reply">💬 Reply${post.comment_count ? ` <span class="home-comment-count">${post.comment_count}</span>` : ''}</button>
+        </div>
+      </div>`;
 
     document.getElementById('pageBody').innerHTML = `
-      <div class="invite-preview">
+      <div class="invite-preview-page">
         <div class="invite-preview-badge">
-          A peek inside ${circleName}${memberCount ? ` · ${memberCount} ${memberCount === 1 ? 'member' : 'members'}` : ''}
+          A peek inside <b>${circleName}</b>${memberCount ? ` · ${memberCount} ${memberCount === 1 ? 'member' : 'members'}` : ''}
         </div>
-        <div class="home-post-card">
-          <div class="home-post-author">@${escapeHtml(post.author_username || 'someone')}</div>
-          <div class="home-post-body">${escapeHtml(post.body || '')}</div>
-          ${post.media_url ? `<div class="pc-media-preview"><img src="${escapeHtml(post.media_url)}" loading="lazy"></div>` : ''}
-          <div class="home-post-actions">
-            <button class="home-action-btn home-like-btn" data-preview-gate="like">♡ Like</button>
-            <button class="home-action-btn home-us-btn" data-preview-gate="save">+ Add to Us</button>
-            <button class="home-action-btn home-comment-toggle" data-preview-gate="reply">💬 Reply</button>
-          </div>
-        </div>
-        <button class="btn-primary invite-preview-cta" data-preview-gate="cta">See the rest of ${circleName} →</button>
+        <div class="home-feed">${posts.map(previewPostCard).join('')}</div>
+        <button class="btn-primary invite-preview-cta" data-preview-gate="cta">Join ${circleName} →</button>
       </div>`;
 
     document.querySelectorAll('[data-preview-gate]').forEach(el => {
@@ -2277,6 +2298,14 @@
 
     armPreviewGate(next);
   }
+  // BACKEND NOTE: preview_circle_invite currently returns one `post`. For
+  // this to actually show the full feed, that Supabase RPC needs to return
+  // `posts: [...]` — every row from `posts` for this circle (same columns
+  // loadPosts() selects: id, user_id/author info, caption→body, media_url,
+  // media_type, created_at, likes_count, comment_count), excluding nothing
+  // from circle_memories (the Us vault stays out on purpose). The frontend
+  // above already renders whatever array it's given — this is a backend-only
+  // change. Ask me for the SQL if you want it drafted.
 
   let toastTimer = null;
   function showToast(text, type){
