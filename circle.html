@@ -6176,6 +6176,8 @@
       fab.classList.remove('show');
       document.getElementById('homeComposerText').focus();
       resetComposerTimer();
+      // Bring the navbar back down along with the composer.
+      if (window.__waaterShowNav) window.__waaterShowNav();
     });
 
     document.addEventListener('click', (e) => {
@@ -6619,71 +6621,44 @@
   }
 
   // ------------------------------------------------------------------
-  // Topbar + dock move together as one navbar: tuck away on the way
-  // down, glide back the instant you scroll up, always settle back in
-  // near the top or once your thumb stops. This tracks scroll distance
-  // from a fixed anchor rather than frame-to-frame deltas — a frame-
-  // to-frame diff resets every tick, so a slow, steady scroll (the most
-  // common kind) never adds up to the threshold and the nav never
-  // moves, which is the "rigid, won't go away" feeling. Overscroll /
-  // rubber-banding at the ends of the page is clamped out so bounce
-  // can't fake a direction change.
+  // Topbar + dock move together as one navbar, YouTube-style: the
+  // instant you scroll, it tucks away — and it stays away. It does NOT
+  // creep back on its own (no reveal-on-scroll-up, no settling back in
+  // once you stop), because the whole point is to get out of the
+  // reader's way and stay out of it. The only way back is the "+"
+  // (the post composer button): tapping it brings the composer up AND
+  // brings the navbar back down, via window.__waaterShowNav below,
+  // wired into its click handler. Scrolling after that hides it again.
   // ------------------------------------------------------------------
   if (tb || dock){
     var mobileMQ = window.matchMedia('(max-width:899.98px)');
-    var THRESHOLD = 6;   // distance before the nav reacts — small enough to feel instant
-    var TOP_ZONE = 24;   // always shown near the very top of the page
-    var IDLE_MS = 550;   // glide back in shortly after scrolling stops
-
+    var TOP_ZONE = 4;    // basically the very top of the page
     var navHidden = false;
-    var anchorY = 0;
-    var idleTimer = null;
-    var ticking = false;
-
-    var clampedY = function(){
-      var maxY = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0);
-      return Math.min(Math.max(window.scrollY, 0), maxY);
-    };
 
     var show = function(){
       navHidden = false;
-      anchorY = clampedY();
       if (tb) tb.classList.remove('nav-hide');
       if (dock) dock.classList.remove('scroll-hide');
     };
     var hide = function(){
+      if (!mobileMQ.matches) return;
       navHidden = true;
-      anchorY = clampedY();
       if (tb) tb.classList.add('nav-hide');
       if (dock) dock.classList.add('scroll-hide');
     };
 
-    anchorY = clampedY();
-
-    var evaluate = function(){
-      ticking = false;
-      if (!mobileMQ.matches){ if (navHidden) show(); return; }
-
-      var y = clampedY();
-      var delta = y - anchorY;
-
-      if (y <= TOP_ZONE){
-        if (navHidden) show();
-      } else if (!navHidden && delta > THRESHOLD){
-        hide();          // scrolling down -> get out of the way
-      } else if (navHidden && delta < -THRESHOLD){
-        show();          // scrolling up -> reader wants the nav back, immediately
-      }
-
-      clearTimeout(idleTimer);
-      idleTimer = setTimeout(function(){ if (navHidden) show(); }, IDLE_MS);
-    };
-
     window.addEventListener('scroll', function(){
-      if (!ticking){ ticking = true; requestAnimationFrame(evaluate); }
+      if (!mobileMQ.matches){ if (navHidden) show(); return; }
+      if (navHidden) return;                    // already hidden — stays hidden
+      if (window.scrollY <= TOP_ZONE) return;    // don't hide before they've actually moved
+      hide();
     }, {passive:true});
 
     mobileMQ.addEventListener ? mobileMQ.addEventListener('change', show) : mobileMQ.addListener(show);
+
+    // Exposed so the "+" / new-post button can bring the navbar back
+    // down at the same time it brings the composer up.
+    window.__waaterShowNav = show;
   }
 })();
 </script>
