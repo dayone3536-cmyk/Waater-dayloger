@@ -2201,44 +2201,50 @@
   let currentUsername = null;
   let currentUserGhChannel = 'unset'; // 'unset' | 'push' | 'email' — Golden Hour reveal notify preference
 
-  function requireAuth(nextPath){
+  function requireAuth(nextPath, reason){
     if (currentUser) return true;
-    window.location.href = `/auth?next=${encodeURIComponent(nextPath || window.location.pathname + window.location.search)}`;
+    gateToSignup(nextPath || (window.location.pathname + window.location.search), reason || 'auth_required');
     return false;
   }
 
   // =========================================================
-  // INVITE PREVIEW — an unauthenticated visitor sees the one post
-  // they were invited to see, then gets routed to sign-up either
-  // when they try to act on it or after a short timeout.
+  // SIGN-UP GATING — shared by the private-invite preview and
+  // anonymous browsing of public circles. Both let a visitor see
+  // real value with zero friction, then route to sign-up either
+  // when they try to act (like/save/post/join/vote) or after a
+  // short dwell timeout. `nextPath` is where /auth sends them back.
   // =========================================================
   let previewGateTimer = null;
   let previewGated = false;
 
-  function armPreviewGate(inviteCode){
+  function armPreviewGate(nextPath, timeoutMs){
     previewGated = false;
     clearTimeout(previewGateTimer);
-    previewGateTimer = setTimeout(() => gateToSignup(inviteCode, 'timeout'), 25000);
+    previewGateTimer = setTimeout(() => gateToSignup(nextPath, 'timeout'), timeoutMs || 25000);
   }
 
-  function gateToSignup(inviteCode, reason){
+  function disarmPreviewGate(){
+    clearTimeout(previewGateTimer);
+  }
+
+  function gateToSignup(nextPath, reason){
     if (previewGated) return;
     previewGated = true;
     clearTimeout(previewGateTimer);
-    try { posthog.capture('invite_preview_gated', { reason }); } catch(_) {}
-    const next = `/circle?code=${encodeURIComponent(inviteCode)}`;
-    window.location.href = `/auth?next=${encodeURIComponent(next)}`;
+    try { posthog.capture('signup_gate_triggered', { reason, next: nextPath }); } catch(_) {}
+    window.location.href = `/auth?next=${encodeURIComponent(nextPath)}`;
   }
 
   function renderInvitePreview(preview, inviteCode){
     const post = preview?.post;
     const circleName = escapeHtml(preview?.circle_name || 'a private circle');
     const memberCount = preview?.member_count ?? null;
+    const next = `/circle?code=${encodeURIComponent(inviteCode)}`;
 
     if (!post){
       // Nothing to preview yet (brand-new circle) — stalling here has
       // no upside, so go straight to sign-up.
-      gateToSignup(inviteCode, 'no_preview');
+      gateToSignup(next, 'no_preview');
       return;
     }
 
@@ -2265,11 +2271,11 @@
     document.querySelectorAll('[data-preview-gate]').forEach(el => {
       el.addEventListener('click', (e) => {
         e.preventDefault();
-        gateToSignup(inviteCode, el.getAttribute('data-preview-gate'));
+        gateToSignup(next, el.getAttribute('data-preview-gate'));
       });
     });
 
-    armPreviewGate(inviteCode);
+    armPreviewGate(next);
   }
 
   let toastTimer = null;
@@ -5521,7 +5527,7 @@
   }
 
   async function pcVote(article, value){
-    if (!requireAuth()) return;
+    if (!requireAuth(null, 'vote')) return;
     if (article.dataset.busy === '1') return;
     const id = article.dataset.postId;
     const prev = Number(article.dataset.my || 0);
@@ -5592,7 +5598,7 @@
   }
 
   async function pcSendComment(article){
-    if (!requireAuth()) return;
+    if (!requireAuth(null, 'reply')) return;
     const input = article.querySelector('.pc-cinput');
     const btn = article.querySelector('.pc-csend');
     if (!input || !btn || btn.disabled) return;
@@ -5673,7 +5679,7 @@
 
   // ---- joining / sharing ----------------------------------------------------
   async function pcJoin(){
-    if (!requireAuth()) return;
+    if (!requireAuth(null, 'join')) return;
     if (myRole !== null) return;
     const btn = document.getElementById('pcJoinBtn');
     if (btn){ btn.disabled = true; btn.innerHTML = `<span class="pc-spin"></span>`; }
@@ -5961,6 +5967,13 @@
     `;
 
     document.body.classList.toggle('pc-has-cta', !isMember);
+
+    // Anonymous visitors already get a full, frictionless read of a public
+    // circle — vote/reply/join all gate through requireAuth() the moment
+    // they act. This just adds the same short-dwell nudge the invite
+    // preview uses, for anyone who reads without ever clicking anything.
+    if (!currentUser) armPreviewGate(window.location.pathname + window.location.search);
+    else disarmPreviewGate();
 
     // ---- wiring (elements are fresh each render) ----
     document.getElementById('pcShare').addEventListener('click', pcShare);
