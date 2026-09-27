@@ -1001,6 +1001,72 @@
     .pc-desc{-webkit-line-clamp:2;font-size:15px;}
   }
 
+  /* ---------- facepile (social proof under the desc, mobile hero) ---------- */
+  .pc-facepile{display:none;align-items:center;justify-content:center;gap:9px;margin-top:16px;}
+  .pc-facepile .stack{display:flex;}
+  .pc-facepile .stack .pc-av{
+    margin-left:-10px;box-shadow:0 0 0 2.5px hsl(var(--h) 48% 12%);
+    animation:pcPop .45s var(--ease-spring) both;
+  }
+  .pc-facepile .stack .pc-av:first-child{margin-left:0;}
+  .pc-facepile .copy{font-family:var(--font-display);font-size:12.5px;color:rgba(255,255,255,.75);text-align:left;}
+  .pc-facepile .copy b{color:#fff;font-weight:700;}
+
+  /* ============================================================
+     MOBILE HERO REDESIGN
+     Below 600px the orbit leaves the desktop's absolute overlay
+     and becomes the centered, celebratory focal point of a
+     vertically-stacked hero — built to feel like an invitation
+     into a room full of people, not a cramped sidebar graphic.
+  ============================================================ */
+  @media (max-width:599.98px){
+    .pc-cover{
+      min-height:0;padding:30px 20px 28px;gap:0;
+      align-items:center;text-align:center;
+    }
+    .pc-tag{order:-1;align-self:center;}
+    .pc-orbit{
+      order:0;position:relative;inset:auto;top:auto;right:auto;left:auto;
+      transform:none;width:min(58vw,206px);height:min(58vw,206px);
+      margin:18px 0 2px;pointer-events:auto;
+    }
+    .pc-core{box-shadow:0 0 60px 22px hsla(var(--h),90%,60%,.32);}
+    .pc-cover-main{order:1;max-width:100%;margin-top:6px;}
+    .pc-name{font-size:clamp(27px,8.2vw,34px);text-align:center;}
+    .pc-desc{
+      margin:10px auto 0;max-width:32ch;text-align:center;
+      -webkit-line-clamp:3;font-size:15px;
+    }
+    .pc-cover-row{justify-content:center;margin-top:20px;}
+    .pc-join{min-height:50px;padding:0 30px;font-size:15.5px;box-shadow:0 12px 26px -8px rgba(0,0,0,.4);}
+    .pc-icon-btn{width:44px;height:44px;}
+    .pc-stats{order:2;width:100%;justify-content:center;margin-top:2px;}
+  }
+
+  /* ---------- mobile sticky join bar — floats above the dock ---------- */
+  .pc-sticky-cta{
+    position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));
+    max-width:440px;margin:0 auto;z-index:29;
+    display:flex;align-items:center;gap:12px;
+    padding:9px 9px 9px 17px;border-radius:20px;
+    background:var(--ink);color:#fff;
+    box-shadow:0 16px 36px -10px rgba(20,21,26,.4),0 2px 10px rgba(20,21,26,.14);
+    animation:pcCtaRise .4s var(--ease-spring) both;
+  }
+  .pc-sticky-cta .txt{flex:1;min-width:0;}
+  .pc-sticky-cta .txt b{display:block;font-family:var(--font-display);font-weight:700;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pc-sticky-cta .txt span{display:block;font-family:var(--font-serif);font-size:12px;color:rgba(255,255,255,.65);margin-top:1px;}
+  .pc-sticky-cta button{
+    flex-shrink:0;height:38px;padding:0 20px;border-radius:99px;
+    background:var(--cs);color:#fff;font-family:var(--font-display);font-weight:700;font-size:13.5px;
+    transition:transform .12s var(--ease);
+  }
+  .pc-sticky-cta button:active{transform:scale(.94);}
+  @keyframes pcCtaRise{ from{transform:translateY(18px);opacity:0;} to{transform:none;opacity:1;} }
+  @media (min-width:900px){ .pc-sticky-cta{display:none;} }
+  body.pc-has-cta{padding-bottom:calc(172px + env(safe-area-inset-bottom));}
+  @media (min-width:900px){ body.pc-has-cta{padding-bottom:0;} }
+
   /* ---------- body ---------- */
   .pc-body{container:pcb / inline-size;display:flex;gap:40px;align-items:flex-start;padding:0 22px 64px;}
   .pc-col{flex:1;min-width:0;max-width:640px;}
@@ -1077,6 +1143,15 @@
   .pc-join-prompt button{
     height:36px;padding:0 18px;border-radius:99px;background:var(--cs);color:#fff;flex-shrink:0;
     font-family:var(--font-display);font-weight:700;font-size:13.5px;
+  }
+  @media (max-width:599.98px){
+    .pc-join-prompt{
+      flex-direction:column;align-items:stretch;text-align:center;gap:12px;
+      margin-top:16px;padding:20px 18px;border:1px solid var(--line);border-radius:18px;
+      background:var(--cs-soft);
+    }
+    .pc-join-prompt span{color:var(--ink);font-size:15px;}
+    .pc-join-prompt button{height:44px;font-size:14.5px;}
   }
 
   /* ---------- sort bar ---------- */
@@ -4744,6 +4819,7 @@
 
   async function renderHomeMode(){
     const body = document.getElementById('pageBody');
+    document.body.classList.remove('pc-has-cta');
     const meRow = members.find(m => m.id === currentUser.id);
     const invitesToday = await loadInvitesToday();
 
@@ -5219,6 +5295,18 @@
     return `<span class="pc-av anon ${cls || ''}" style="--s:${size}px">${PC_ICON.mask}</span>`;
   }
   function pcMe(){ return currentUser ? members.find(m => m.id === currentUser.id) : null; }
+
+  // ---- mobile hero: small face-pile of the first few members, for belonging ----
+  function pcFacepileHtml(isMember){
+    if (!members.length) return '';
+    const shown = members.slice(0, 5);
+    const stack = shown.map(m => pcAvatar(m, 26)).join('');
+    const rest = members.length - shown.length;
+    const copy = isMember
+      ? (rest > 0 ? `<b>You</b> + ${members.length - 1} ${members.length - 1 === 1 ? 'other' : 'others'} are in here` : `Just <b>you</b> so far — invite someone`)
+      : (rest > 0 ? `<b>${members.length}</b> people already here` : `<b>${members.length}</b> ${members.length === 1 ? 'person is' : 'people are'} already here`);
+    return `<div class="pc-facepile"><span class="stack">${stack}</span><span class="copy">${copy}</span></div>`;
+  }
 
   // ---- cover: the orbit ---------------------------------------------------
   function pcOrbitHtml(isMember){
@@ -5704,6 +5792,7 @@
           <div class="pc-cover-main">
             <h1 class="pc-name">${escapeHtml(circle.name)}</h1>
             <p class="pc-desc">${desc}</p>
+            ${pcFacepileHtml(isMember)}
             <div class="pc-cover-row">
               <button type="button" class="pc-join ${isMember ? 'joined' : ''}" id="pcJoinBtn" ${isMember ? 'disabled' : ''}>
                 ${isMember ? `${PC_ICON.check}Joined` : 'Join circle'}
@@ -5781,12 +5870,23 @@
             </section>
           </aside>
         </div>
+
+        ${!isMember ? `
+          <div class="pc-sticky-cta" id="pcStickyCta">
+            <span class="txt"><b>${escapeHtml(circle.name)}</b><span>${members.length} ${members.length === 1 ? 'person is' : 'people are'} in — join them</span></span>
+            <button type="button" id="pcStickyCtaBtn">Join</button>
+          </div>
+        ` : ''}
       </div>
     `;
+
+    document.body.classList.toggle('pc-has-cta', !isMember);
 
     // ---- wiring (elements are fresh each render) ----
     document.getElementById('pcShare').addEventListener('click', pcShare);
     document.getElementById('pcJoinBtn').addEventListener('click', pcJoin);
+    const stickyCtaBtn = document.getElementById('pcStickyCtaBtn');
+    if (stickyCtaBtn) stickyCtaBtn.addEventListener('click', pcJoin);
 
     const seg = document.getElementById('pcSeg');
     seg.addEventListener('click', (e) => {
