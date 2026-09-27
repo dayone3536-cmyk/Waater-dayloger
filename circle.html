@@ -742,6 +742,24 @@
   .memory-meta-who b{color:var(--ink);font-weight:600;}
   .memory-meta-caption{font-family:var(--font-serif);font-size:13.5px;color:var(--ink);line-height:1.45;white-space:pre-wrap;word-break:break-word;}
 
+  .us-hero{
+    margin:20px 22px 0;padding:16px 18px;border-radius:16px;
+    background:linear-gradient(135deg, var(--accent-soft), #fff);
+    border:1px solid var(--line);
+    display:flex;align-items:center;gap:14px;
+  }
+  .us-hero-avatars{display:flex;flex-shrink:0;}
+  .us-hero-avatar{
+    width:34px;height:34px;border-radius:50%;flex-shrink:0;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--ink);color:#fff;font-family:var(--font-display);font-size:12px;font-weight:600;
+    border:2px solid #fff;margin-left:-10px;
+  }
+  .us-hero-avatar:first-child{margin-left:0;}
+  .us-hero-avatar img{width:100%;height:100%;object-fit:cover;}
+  .us-hero-copy h3{font-family:var(--font-display);font-size:15px;font-weight:600;letter-spacing:-.01em;margin-bottom:2px;}
+  .us-hero-copy p{font-size:12.5px;color:var(--ink-soft);line-height:1.4;}
+
   .us-caption-input{
     width:100%;border:1px solid var(--line-strong);border-radius:12px;
     padding:11px 13px;font-family:var(--font-serif);font-size:14.5px;
@@ -2802,6 +2820,36 @@
     await refreshUsFeed();
   }
 
+  // Makes Us feel like a shared thing you built together, not just a
+  // filtered list — who's added something, and how many moments the
+  // circle has kept so far.
+  function renderUsHero(items){
+    const seen = new Set();
+    const contributors = [];
+    items.forEach(({ post }) => {
+      const p = post._memory;
+      if (p && p.added_by && !seen.has(p.added_by)){
+        seen.add(p.added_by);
+        contributors.push(p.added_by_profile);
+      }
+    });
+    const avatarsHtml = contributors.slice(0, 6).filter(Boolean).map(p => `
+      <div class="us-hero-avatar" title="${escapeHtml(p.username || 'someone')}">
+        ${p.avatar_url ? `<img src="${escapeHtml(p.avatar_url)}" alt="">` : initials(p.username || 'someone')}
+      </div>
+    `).join('');
+    const latest = items[0]?.post?._memory?.added_at;
+    return `
+      <div class="us-hero">
+        <div class="us-hero-avatars">${avatarsHtml}</div>
+        <div class="us-hero-copy">
+          <h3>Your circle's memory vault</h3>
+          <p>${items.length} moment${items.length === 1 ? '' : 's'} the ${members.length} of you have kept, together${latest ? ` · last one ${timeAgo(latest)}` : ''}.</p>
+        </div>
+      </div>
+    `;
+  }
+
   async function refreshUsFeed(){
     const wrap = document.getElementById('usWrap');
     const items = await loadUsMemories();
@@ -2810,7 +2858,10 @@
       renderUsEmptyState();
       return;
     }
-    wrap.innerHTML = `<div class="home-feed" id="usFeed">${items.map(({ post, isLiked }) => renderHomePostCard(post, isLiked, post._memory)).join('')}</div>`;
+    wrap.innerHTML = `
+      ${renderUsHero(items)}
+      <div class="home-feed" id="usFeed">${items.map(({ post, isLiked }) => renderHomePostCard(post, isLiked, post._memory)).join('')}</div>
+    `;
     wireHomeActions(document.getElementById('usFeed'));
   }
 
@@ -2899,15 +2950,15 @@
           </button>
           ${usBtnHtml}
         </div>
-        <div class="home-comments" id="home-comments-${post.id}">
-          <div class="home-comment-list" id="home-comment-list-${post.id}"></div>
+        <div class="home-comments" data-post-id="${post.id}">
+          <div class="home-comment-list"></div>
               <div class="home-comment-input-row">
-                <input type="text" class="home-comment-input" id="home-comment-input-${post.id}" placeholder="Whisper back..." maxlength="500">
-                <span class="home-comment-rec-timer" id="home-comment-rec-timer-${post.id}" style="display:none;">0:00</span>
-                <button class="home-comment-mic" id="home-comment-mic-${post.id}" data-post-id="${post.id}" title="Record a voice comment">
+                <input type="text" class="home-comment-input" placeholder="Whisper back..." maxlength="500">
+                <span class="home-comment-rec-timer" style="display:none;">0:00</span>
+                <button class="home-comment-mic" data-post-id="${post.id}" title="Record a voice comment">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
                 </button>
-                <button class="home-comment-send" id="home-comment-send-${post.id}" data-post-id="${post.id}" disabled>
+                <button class="home-comment-send" data-post-id="${post.id}" disabled>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>
                 </button>
               </div>
@@ -2916,8 +2967,11 @@
     `;
   }
 
-  // Shared upload+insert+refresh used by both the mic button and hold-to-talk
-  async function sendVoiceComment(postId, blob, durationSeconds){
+  // Shared upload+insert+refresh used by both the mic button and hold-to-talk.
+  // `card` is the specific .home-post-card the recording started from — a
+  // post can be sitting in both the Feed and Us at once, so we need to know
+  // which copy to fully refresh vs. just keep the badge count honest on.
+  async function sendVoiceComment(postId, blob, durationSeconds, card){
     const mimeType = blob.type || 'audio/webm';
     const ext = mimeType.includes('mp4') ? 'm4a' : 'webm';
     const path = `${currentUser.id}/${postId}/${Date.now()}.${ext}`;
@@ -2935,11 +2989,8 @@
     if (insertError) throw insertError;
     posthog.capture('comment_added', { post_id: postId, type: 'voice', duration_seconds: durationSeconds });
 
-    const listEl = document.getElementById(`home-comment-list-${postId}`);
     const comments = await loadComments(postId);
-    listEl.innerHTML = comments.map(renderCommentItem).join('');
-    const countEl = document.querySelector(`.home-comment-toggle[data-post-id="${postId}"] .home-comment-count`);
-    if (countEl) countEl.textContent = comments.length;
+    syncCommentsEverywhere(postId, comments, card);
   }
 
   const HOLD_HINT_KEY = 'waater_hold_hint_seen';
@@ -3129,6 +3180,62 @@
     });
   }
 
+  // The same post can be on screen twice at once — once in the Feed, once
+  // in Us — so anything that touches "the" comment panel for a post needs
+  // to know which physical card it's dealing with, not just the post id.
+  function postCardsById(postId){
+    return document.querySelectorAll(`.home-post-card[data-post-id="${postId}"]`);
+  }
+
+  // Keeps the comment count + list correct on every copy of a post at once.
+  // The card the user is actually looking at gets its list repainted live;
+  // any other copy just gets its count updated and its cached list marked
+  // stale, so opening it later pulls the real thing instead of showing
+  // what was there before this comment existed.
+  function syncCommentsEverywhere(postId, comments, sourceCard){
+    postCardsById(postId).forEach(card => {
+      const countEl = card.querySelector('.home-comment-toggle .home-comment-count');
+      if (countEl) countEl.textContent = comments.length;
+      const panel = card.querySelector('.home-comments');
+      if (!panel) return;
+      if (card === sourceCard){
+        const listEl = card.querySelector('.home-comment-list');
+        if (listEl) listEl.innerHTML = comments.length
+          ? comments.map(renderCommentItem).join('')
+          : `<div class="home-comment-empty">No comments yet — be the first.</div>`;
+        panel.dataset.loaded = '1';
+      } else {
+        delete panel.dataset.loaded;
+      }
+    });
+  }
+
+  // Mirrors a like toggle onto every other copy of the same post so the
+  // Feed and Us never disagree about whether you've liked something.
+  function syncLikeEverywhere(postId, liked, count, sourceBtn){
+    document.querySelectorAll(`.home-like-btn[data-post-id="${postId}"]`).forEach(btn => {
+      if (btn === sourceBtn) return;
+      btn.classList.toggle('liked', liked);
+      const countEl = btn.querySelector('.home-like-count');
+      if (countEl) countEl.textContent = count;
+    });
+  }
+
+  // Mirrors the "in Us" heart state onto every other copy of the same post
+  // — e.g. removing something from Us should un-highlight it in the Feed
+  // too, without waiting for a refresh.
+  function syncUsButtonEverywhere(postId, inUs, memoryId, sourceBtn){
+    const memRef = memoryByPostId[postId];
+    const isMine = inUs && currentUser && memRef && memRef.added_by === currentUser.id;
+    document.querySelectorAll(`.home-us-btn[data-post-id="${postId}"]`).forEach(btn => {
+      if (btn === sourceBtn) return;
+      btn.classList.toggle('in-us', inUs);
+      btn.classList.toggle('mine', isMine);
+      btn.dataset.memoryId = inUs ? memoryId : '';
+      btn.title = !inUs ? 'Add to Us' : (isMine ? 'Remove from Us' : 'Already in Us');
+    });
+  }
+
   async function loadComments(postId){
     const [{ data: textRows }, { data: voiceRows }] = await Promise.all([
       supabaseClient.from('post_comments').select('id, user_id, content, created_at').eq('post_id', postId),
@@ -3181,9 +3288,9 @@
     `;
   }
 
-  async function openComments(postId){
-    const panel = document.getElementById(`home-comments-${postId}`);
-    const listEl = document.getElementById(`home-comment-list-${postId}`);
+  async function openComments(postId, card){
+    const panel = card.querySelector('.home-comments');
+    const listEl = card.querySelector('.home-comment-list');
     const wasOpen = panel.classList.contains('open');
     if (wasOpen){ panel.classList.remove('open'); return; }
     panel.classList.add('open');
@@ -3204,9 +3311,10 @@
   // actually watching?"), so the reassurance is concrete and local to
   // the one reply that matters, not a generic app-wide banner.
   async function showInviteReplyNudge(postId){
-    const panel = document.getElementById(`home-comments-${postId}`);
-    if (!panel) return;
-    await openComments(postId);
+    const card = document.querySelector(`#viewFeed .home-post-card[data-post-id="${postId}"]`);
+    if (!card) return;
+    await openComments(postId, card);
+    const panel = card.querySelector('.home-comments');
     if (panel.querySelector('.invite-reply-nudge')) return;
     const row = panel.querySelector('.home-comment-input-row');
     if (!row || !row.parentElement) return;
@@ -3239,14 +3347,11 @@
         .eq('user_id', currentUser.id);
       if (error) throw error;
       eraseMedia(fileRef);
-      if (item) item.remove();
-      if (postId) {
-        const countEl = document.querySelector(`.home-comment-toggle[data-post-id="${postId}"] .home-comment-count`);
-        if (countEl) countEl.textContent = Math.max(0, Number(countEl.textContent) - 1);
-        const listEl = document.getElementById(`home-comment-list-${postId}`);
-        if (listEl && !listEl.children.length) {
-          listEl.innerHTML = `<div class="home-comment-empty">No comments yet — be the first.</div>`;
-        }
+      if (postId && postCard) {
+        const comments = await loadComments(postId);
+        syncCommentsEverywhere(postId, comments, postCard);
+      } else if (item) {
+        item.remove();
       }
       showToast('Comment deleted');
     } catch (err) {
@@ -3281,6 +3386,7 @@
             btn.classList.remove('liked');
             countEl.textContent = Math.max(0, Number(countEl.textContent) - 1);
             posthog.capture('post_unliked', { post_id: postId });
+            syncLikeEverywhere(postId, false, countEl.textContent, btn);
           } else {
             const { error } = await supabaseClient.from('post_likes').insert({ post_id: postId, user_id: currentUser.id });
             if (error) throw error;
@@ -3289,6 +3395,7 @@
             btn.classList.add('pop', 'just-liked');
             setTimeout(() => btn.classList.remove('pop', 'just-liked'), 550);
             countEl.textContent = Number(countEl.textContent) + 1;
+            syncLikeEverywhere(postId, true, countEl.textContent, btn);
           }
         } catch (err) {
           showToast(err.message || 'Could not update like', 'error');
@@ -3299,7 +3406,7 @@
     });
 
     root.querySelectorAll('.home-comment-toggle').forEach(btn => {
-      btn.addEventListener('click', () => openComments(btn.dataset.postId));
+      btn.addEventListener('click', () => openComments(btn.dataset.postId, btn.closest('.home-post-card')));
     });
 
     root.querySelectorAll('.home-post-delete').forEach(btn => {
@@ -3356,6 +3463,7 @@
               btn.title = 'Add to Us';
               const usTabCard = document.querySelector(`#usFeed .home-post-card[data-post-id="${postId}"]`);
               if (usTabCard) usTabCard.remove();
+              syncUsButtonEverywhere(postId, false, '', btn);
               maybeShowEmptyUsState();
               updateUsTabCount();
             }
@@ -3368,6 +3476,7 @@
               btn.dataset.memoryId = memoryByPostId[postId].id;
               btn.title = 'Remove from Us';
               setTimeout(() => btn.classList.remove('just-added'), 450);
+              syncUsButtonEverywhere(postId, true, memoryByPostId[postId].id, btn);
               updateUsTabCount();
             }
           }
@@ -3378,8 +3487,9 @@
     });
 
     root.querySelectorAll('.home-comment-input').forEach(input => {
-      const postId = input.id.replace('home-comment-input-', '');
-      const sendBtn = document.getElementById(`home-comment-send-${postId}`);
+      const card = input.closest('.home-post-card');
+      const postId = card.dataset.postId;
+      const sendBtn = card.querySelector('.home-comment-send');
       input.addEventListener('input', () => { sendBtn.disabled = !input.value.trim(); });
       const submit = async () => {
         if (!requireAuth()) return;
@@ -3391,16 +3501,8 @@
           if (error) throw error;
           posthog.capture('comment_added', { post_id: postId, type: 'text', length: text.length });
           input.value = '';
-          const listEl = document.getElementById(`home-comment-list-${postId}`);
           const comments = await loadComments(postId);
-          listEl.innerHTML = comments.map(renderCommentItem).join('');
-
-          const countEl = document.querySelector(`.home-comment-toggle[data-post-id="${postId}"] .home-comment-count`);
-
-
-          if (countEl) countEl.textContent = comments.length;
-
-          
+          syncCommentsEverywhere(postId, comments, card);
         } catch (err) {
           showToast(err.message || 'Could not post comment', 'error');
         } finally {
@@ -3412,12 +3514,13 @@
     });
 
     root.querySelectorAll('.home-comment-mic').forEach(btn => {
+      const card = btn.closest('.home-post-card');
       const postId = btn.dataset.postId;
       let mediaRecorder = null;
       let chunks = [];
       let startTime = null;
       let timerInterval = null;
-      const timerEl = document.getElementById(`home-comment-rec-timer-${postId}`);
+      const timerEl = card.querySelector('.home-comment-rec-timer');
 
       btn.addEventListener('click', async () => {
         if (!requireAuth()) return;
@@ -3444,7 +3547,7 @@
 
             btn.disabled = true;
             try {
-              await sendVoiceComment(postId, blob, durationSeconds);
+              await sendVoiceComment(postId, blob, durationSeconds, card);
               showToast('Voice comment posted');
             } catch (err) {
               showToast(err.message || 'Could not post voice comment', 'error');
@@ -6212,7 +6315,7 @@
       const targetPostId = params.get('post');
       if (targetPostId) {
         setTimeout(() => {
-          const card = document.querySelector(`[data-post-id="${targetPostId}"]`);
+          const card = document.querySelector(`#viewFeed .home-post-card[data-post-id="${targetPostId}"]`);
           if (card) {
             card.scrollIntoView({ behavior: 'smooth', block: 'center' });
             card.classList.add('post-highlight');
