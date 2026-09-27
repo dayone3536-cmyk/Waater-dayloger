@@ -2019,8 +2019,6 @@
   body.sg-active{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
   body.sg-active input, body.sg-active textarea{-webkit-user-select:text;user-select:text;}
   body.sg-active img, body.sg-active video{-webkit-user-drag:none;}
-  body > *{transition:filter .12s ease;}
-  body.sg-hidden > *:not(.sg-backdrop):not(script){filter:blur(22px) saturate(.6);}
   @media print{ body.sg-active{display:none!important;} }
 
   .sg-backdrop{
@@ -6184,11 +6182,10 @@
   // Be honest with yourself about what this is: a web page can NOT
   // truly block screenshots. Phone screenshots and photos of a screen
   // fire no browser event at all. This layer does what a browser can:
-  //   1. blurs the page whenever the tab/window loses focus
-  //      (snipping tools, app switcher previews, screen-share pickers)
-  //   2. catches desktop screenshot shortcuts and shows the popup
-  //   3. blocks print / save-page / right-click + drag on media
+  //   1. catches desktop screenshot shortcuts and shows the popup
+  //   2. blocks print / save-page / right-click + drag on media
   // For real blocking you'd need a native app (Android FLAG_SECURE).
+  // The blur-on-focus-loss layer was removed — it was confusing users.
   // =========================================================
   const SG_CAUGHT_LINES = [
     { emoji:'📸', title:'You got caught!',            body:'You can\u2019t screenshot here. Everything stays inside the circle.',            button:'ok, I\u2019m sorry' },
@@ -6222,7 +6219,6 @@
     const close = () => {
       el.classList.remove('show');
       setTimeout(() => { el.remove(); sgPopup = null; }, 200);
-      if (!document.hidden) document.body.classList.remove('sg-hidden');
     };
     btn.addEventListener('click', close);
     btn.focus();
@@ -6234,21 +6230,13 @@
     const body = document.body;
     body.classList.add('sg-active');
 
-    // 1. hide everything whenever the page is not actively in front
-    const hide = () => body.classList.add('sg-hidden');
-    const show = () => { if (!document.hidden && !sgPopup) body.classList.remove('sg-hidden'); };
-    window.addEventListener('blur', hide);
-    window.addEventListener('focus', show);
-    document.addEventListener('visibilitychange', () => (document.hidden ? hide() : show()));
-
-    // 2. desktop screenshot shortcuts (Windows: PrintScreen, Win+Shift+S;
+    // 1. desktop screenshot shortcuts (Windows: PrintScreen, Win+Shift+S;
     //    macOS: Cmd+Shift+3/4/5). Best effort: the OS may swallow the keys.
     const isShotShortcut = (e) =>
       e.key === 'PrintScreen' ||
       (e.metaKey && e.shiftKey && ['Digit3', 'Digit4', 'Digit5', 'KeyS'].includes(e.code));
 
     const onShot = () => {
-      hide();
       // Windows puts PrintScreen images on the clipboard; overwrite it.
       // (This replaces whatever the user had copied, only on this shortcut.)
       try { navigator.clipboard.writeText(' ').catch(() => {}); } catch (_) {}
@@ -6257,7 +6245,7 @@
     window.addEventListener('keydown', (e) => { if (isShotShortcut(e)) onShot(); });
     window.addEventListener('keyup',   (e) => { if (isShotShortcut(e)) onShot(); });
 
-    // 3. print / save page, right-click and drag on media
+    // 2. print / save page, right-click and drag on media
     window.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && ['p', 's'].includes((e.key || '').toLowerCase())){
         e.preventDefault();
