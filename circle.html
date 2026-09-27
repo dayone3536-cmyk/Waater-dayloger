@@ -1396,6 +1396,21 @@
 }
 
   /* ============================================================
+     INVITE PREVIEW — unauthenticated peek before sign-up
+  ============================================================ */
+  .invite-preview{max-width:420px;margin:0 auto;padding:28px 18px 40px;}
+  .invite-preview-badge{
+    font-family:var(--font-display);font-weight:600;font-size:12.5px;
+    background:var(--accent-soft);color:var(--accent);display:inline-block;
+    padding:6px 12px;border-radius:99px;margin-bottom:16px;
+  }
+  .invite-preview .home-post-card{border:1px solid var(--line);border-radius:16px;padding:16px;}
+  .invite-preview-cta{
+    width:100%;margin-top:20px;padding:14px 16px;font-family:var(--font-display);
+    font-weight:600;font-size:15px;border-radius:14px;
+  }
+
+  /* ============================================================
      INVITE MODAL — personal note attached to an invite link
   ============================================================ */
   .invite-modal-backdrop{
@@ -2190,6 +2205,71 @@
     if (currentUser) return true;
     window.location.href = `/auth?next=${encodeURIComponent(nextPath || window.location.pathname + window.location.search)}`;
     return false;
+  }
+
+  // =========================================================
+  // INVITE PREVIEW — an unauthenticated visitor sees the one post
+  // they were invited to see, then gets routed to sign-up either
+  // when they try to act on it or after a short timeout.
+  // =========================================================
+  let previewGateTimer = null;
+  let previewGated = false;
+
+  function armPreviewGate(inviteCode){
+    previewGated = false;
+    clearTimeout(previewGateTimer);
+    previewGateTimer = setTimeout(() => gateToSignup(inviteCode, 'timeout'), 25000);
+  }
+
+  function gateToSignup(inviteCode, reason){
+    if (previewGated) return;
+    previewGated = true;
+    clearTimeout(previewGateTimer);
+    try { posthog.capture('invite_preview_gated', { reason }); } catch(_) {}
+    const next = `/circle?code=${encodeURIComponent(inviteCode)}`;
+    window.location.href = `/auth?next=${encodeURIComponent(next)}`;
+  }
+
+  function renderInvitePreview(preview, inviteCode){
+    const post = preview?.post;
+    const circleName = escapeHtml(preview?.circle_name || 'a private circle');
+    const memberCount = preview?.member_count ?? null;
+
+    if (!post){
+      // Nothing to preview yet (brand-new circle) — stalling here has
+      // no upside, so go straight to sign-up.
+      gateToSignup(inviteCode, 'no_preview');
+      return;
+    }
+
+    try { posthog.capture('invite_preview_shown', { has_media: !!post.media_url }); } catch(_) {}
+
+    document.getElementById('pageBody').innerHTML = `
+      <div class="invite-preview">
+        <div class="invite-preview-badge">
+          A peek inside ${circleName}${memberCount ? ` · ${memberCount} ${memberCount === 1 ? 'member' : 'members'}` : ''}
+        </div>
+        <div class="home-post-card">
+          <div class="home-post-author">@${escapeHtml(post.author_username || 'someone')}</div>
+          <div class="home-post-body">${escapeHtml(post.body || '')}</div>
+          ${post.media_url ? `<div class="pc-media-preview"><img src="${escapeHtml(post.media_url)}" loading="lazy"></div>` : ''}
+          <div class="home-post-actions">
+            <button class="home-action-btn home-like-btn" data-preview-gate="like">♡ Like</button>
+            <button class="home-action-btn home-us-btn" data-preview-gate="save">+ Add to Us</button>
+            <button class="home-action-btn home-comment-toggle" data-preview-gate="reply">💬 Reply</button>
+          </div>
+        </div>
+        <button class="btn-primary invite-preview-cta" data-preview-gate="cta">See the rest of ${circleName} →</button>
+      </div>`;
+
+    document.querySelectorAll('[data-preview-gate]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        gateToSignup(inviteCode, el.getAttribute('data-preview-gate'));
+      });
+    });
+
+    armPreviewGate(inviteCode);
   }
 
   let toastTimer = null;
@@ -6288,16 +6368,23 @@
 
       const inviteCode = params.get('code');
       if (inviteCode && !circleId){
-        // Check if user is signed in
+        // Not signed in — show the value first instead of a sign-up wall.
+        // requireAuth()/redemption below is unchanged for anyone who's
+        // already authenticated.
         if (!currentUser){
-          // Not signed in - show sign-in prompt with invite preserved
-          document.getElementById('pageBody').innerHTML = `
-            <div class="page-error">
-              <h2>Sign in to join circle</h2>
-              <p>You need to sign in to accept this circle invitation.</p>
-              <button class="btn btn-primary" onclick="document.querySelector('.sidebar-signin').click()">Sign In</button>
-              <p style="margin-top: 12px; font-size: 14px; color: var(--grey);">Your invite code is preserved. After signing in, you'll be able to join the circle.</p>
-            </div>`;
+          document.getElementById('pageBody').innerHTML = renderWaterLoader('Loading…');
+          mountWaterLoader();
+          const { data: preview, error: previewError } = await supabaseClient
+            .rpc('preview_circle_invite', { p_code: inviteCode });
+          if (previewError || !preview){
+            document.getElementById('pageBody').innerHTML = `
+              <div class="page-error">
+                <h2>Invite invalid or expired</h2>
+                <p>${previewError?.message || 'This invite link no longer works.'} <a href="/circles">Back to your circles</a></p>
+              </div>`;
+            return;
+          }
+          renderInvitePreview(preview, inviteCode);
           return;
         }
 
