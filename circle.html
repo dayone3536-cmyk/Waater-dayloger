@@ -4581,8 +4581,8 @@
             Gallery
           </button>
         </div>
-        <input type="file" accept="image/*" capture="environment" id="albumFileCamera" style="display:none;">
-        <input type="file" accept="image/*" id="albumFileGallery" style="display:none;">
+        <input type="file" accept="image/*" capture="environment" id="albumFileCamera" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none;" tabindex="-1" aria-hidden="true">
+        <input type="file" accept="image/*" id="albumFileGallery" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none;" tabindex="-1" aria-hidden="true">
         <div class="album-filter-row" id="albumFilterRow" style="display:none;"></div>
         <textarea id="albumCaptionInput" maxlength="140" placeholder="${promptToAnswer ? 'Answer their question... (optional)' : 'Say something about this one... (optional)'}"></textarea>
         <div class="album-modal-row">
@@ -4599,6 +4599,8 @@
     const postBtn = modal.querySelector('#albumModalPost');
     const captionInput = modal.querySelector('#albumCaptionInput');
     let sourceImg = null;
+    let swatchThumb = '';
+    let loadToken = 0;
     let activeFilterId = 'original';
     let canvas = null;
 
@@ -4622,7 +4624,7 @@
       filterRow.style.display = 'flex';
       filterRow.innerHTML = ALBUM_FILTERS.map(f => `
         <button class="album-filter-swatch${f.id === activeFilterId ? ' active' : ''}" data-filter="${f.id}" type="button">
-          <span class="sw" style="filter:${f.css === 'none' ? '' : f.css};background-image:url('${sourceImg.src}');background-size:cover;background-position:center;"></span>
+          <span class="sw" style="filter:${f.css === 'none' ? '' : f.css};background-image:url('${swatchThumb}');background-size:cover;background-position:center;"></span>
           <span>${f.label}</span>
         </button>
       `).join('');
@@ -4636,39 +4638,85 @@
       });
     }
 
+    function showReadError(){
+      canvas = null;
+      sourceImg = null;
+      filterRow.style.display = 'none';
+      postBtn.disabled = true;
+      canvasWrap.innerHTML = `<div class="album-canvas-placeholder">Couldn't read that photo — try again.</div>`;
+    }
+
+    // Phone cameras hand back 12-48MP photos. Reading those as a base64 data
+    // URL (and repeating that string in every filter swatch) blew up memory
+    // and made the tab crash or silently drop the photo on some phones.
+    // Now: load via an object URL, shrink once to <=1800px (the final image is
+    // 900x900 anyway), and give the swatches a tiny 96px thumbnail.
     function handleFile(file){
       if (!file) return;
+      const token = ++loadToken;
       canvas = null;
+      sourceImg = null;
+      filterRow.style.display = 'none';
       canvasWrap.innerHTML = `
         <div class="album-canvas-loading">
           <span class="ring"></span>
           <span class="txt">Bringing your photo in…</span>
         </div>`;
       postBtn.disabled = true;
-      const reader = new FileReader();
-      reader.onerror = () => {
-        canvasWrap.innerHTML = `<div class="album-canvas-placeholder">Couldn't read that photo — try again.</div>`;
+
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        if (token === loadToken) showReadError();
       };
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onerror = () => {
-          canvasWrap.innerHTML = `<div class="album-canvas-placeholder">Couldn't read that photo — try again.</div>`;
-        };
-        img.onload = () => {
-          sourceImg = img;
+      img.onload = () => {
+        try {
+          if (token !== loadToken) return;
+          const iw = img.naturalWidth || img.width;
+          const ih = img.naturalHeight || img.height;
+          if (!iw || !ih) throw new Error('empty image');
+          const k = Math.min(1, 1800 / Math.max(iw, ih));
+          const w = Math.max(1, Math.round(iw * k));
+          const h = Math.max(1, Math.round(ih * k));
+          const src = document.createElement('canvas');
+          src.width = w; src.height = h;
+          src.getContext('2d').drawImage(img, 0, 0, w, h);
+
+          const th = document.createElement('canvas');
+          th.width = th.height = 96;
+          const s = Math.max(96 / w, 96 / h);
+          th.getContext('2d').drawImage(src, (96 - w * s) / 2, (96 - h * s) / 2, w * s, h * s);
+          swatchThumb = th.toDataURL('image/jpeg', 0.7);
+
+          sourceImg = src;
+          activeFilterId = 'original';
           drawWithFilter('none');
           renderFilterSwatches();
           postBtn.disabled = false;
-        };
-        img.src = e.target.result;
+        } catch (err) {
+          console.error('album photo load failed', err);
+          if (token === loadToken) showReadError();
+        } finally {
+          URL.revokeObjectURL(url);
+        }
       };
-      reader.readAsDataURL(file);
+      img.src = url;
     }
 
     modal.querySelector('#albumTakePhoto').addEventListener('click', () => modal.querySelector('#albumFileCamera').click());
     modal.querySelector('#albumPickPhoto').addEventListener('click', () => modal.querySelector('#albumFileGallery').click());
-    modal.querySelector('#albumFileCamera').addEventListener('change', (e) => handleFile(e.target.files[0]));
-    modal.querySelector('#albumFileGallery').addEventListener('change', (e) => handleFile(e.target.files[0]));
+    // Some Android cameras return the same filename every time, and a browser
+    // only fires 'change' when the selection differs — so clear the input once
+    // the file has been handed off (handleFile grabs its object URL synchronously).
+    ['#albumFileCamera', '#albumFileGallery'].forEach(sel => {
+      const input = modal.querySelector(sel);
+      input.addEventListener('change', () => {
+        const file = input.files && input.files[0];
+        handleFile(file);
+        input.value = '';
+      });
+    });
 
     const close = () => { modal.classList.remove('show'); setTimeout(() => modal.remove(), 220); };
     modal.querySelector('#albumModalCancel').addEventListener('click', close);
