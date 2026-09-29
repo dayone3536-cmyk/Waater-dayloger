@@ -2242,6 +2242,69 @@
   .vr-stage[data-state="nocam"] .vr-rec-wrap,
   .vr-stage[data-state="nocam"] .vr-hint{display:none;}
   .vr-stage[data-state="starting"] .vr-rec{opacity:.45;pointer-events:none;}
+
+  /* ---------- mini self-view recorder (phones) ----------
+     A small picture-in-picture window in the top corner; the circle stays
+     visible and scrollable underneath so it feels like reacting, not filming. */
+  .vr-lock{display:none;}
+  .vr-stage[data-mode="comment"] .vr-caption{display:none;}
+  @media (max-width:899px){
+    .vr-overlay{background:transparent;pointer-events:none;align-items:flex-start;justify-content:flex-end;}
+    .vr-stage{
+      pointer-events:auto;position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:10px;
+      width:150px;height:188px;border-radius:20px;overflow:visible;background:transparent;
+    }
+    .vr-stage video,.vr-shade-top,.vr-shade-bot,.vr-nocam{border-radius:20px;}
+    .vr-stage::before{content:'';position:absolute;inset:0;border-radius:20px;pointer-events:none;z-index:6;
+      box-shadow:0 10px 30px rgba(0,0,0,.35), inset 0 0 0 2px rgba(255,255,255,.85);}
+    .vr-shade-top{height:52px;} .vr-shade-bot{height:76px;}
+    .vr-top{padding:8px 8px 0;}
+    .vr-x,.vr-side{width:30px;height:30px;}
+    .vr-x svg,.vr-side svg{width:15px;height:15px;}
+    .vr-spacer{width:30px;height:30px;}
+    .vr-pill{display:none;}
+    .vr-stage[data-state="recording"] .vr-pill{display:flex;padding:4px 9px;font-size:10.5px;}
+    .vr-bottom{position:static;padding:0;}
+    .vr-hint{position:absolute;left:0;right:0;bottom:70px;margin:0;padding:0 6px;font-size:10.5px;min-height:0;}
+    .vr-controls{position:absolute;left:8px;right:8px;bottom:8px;z-index:5;}
+    .vr-rec{width:56px;height:56px;}
+    .vr-rec .core{width:40px;height:40px;}
+    .vr-nocam{padding:12px;gap:8px;}
+    .vr-nocam p{font-size:11px;line-height:1.35;}
+    .vr-nocam button{padding:8px 12px;font-size:12px;}
+    /* review: the clip loops in the mini window, controls slide up from the bottom */
+    .vr-review-bar{
+      position:fixed;left:0;right:0;bottom:0;z-index:1201;pointer-events:auto;
+      padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));border-radius:22px 22px 0 0;
+      background:rgba(20,21,26,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+    }
+    .vr-lock{display:block;font-family:var(--font-mono);font-size:10.5px;color:rgba(255,255,255,.66);margin-bottom:10px;text-align:center;}
+  }
+
+  /* ---------- video replies ---------- */
+  .home-comment-cam{
+    width:34px;height:34px;border-radius:50%;flex-shrink:0;
+    background:var(--accent-soft);display:flex;align-items:center;justify-content:center;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .home-comment-cam:hover{background:#ffe4d8;}
+  .home-comment-cam:active{transform:scale(.92);}
+  .home-comment-cam svg{width:16px;height:16px;stroke:#c24020;}
+  .home-vc{
+    position:relative;width:168px;max-width:100%;aspect-ratio:4/5;border-radius:16px;overflow:hidden;
+    background:#0e0f13;margin-top:5px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  }
+  .home-vc video{width:100%;height:100%;object-fit:cover;object-position:center 30%;display:block;max-height:none;}
+  .home-vc .vc-play{
+    position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;
+    background:rgba(20,21,26,.55);display:flex;align-items:center;justify-content:center;pointer-events:none;
+  }
+  .home-vc .vc-play svg{width:20px;height:20px;fill:#fff;stroke:none;margin-left:2px;}
+  .home-vc.playing .vc-play{display:none;}
+  .home-vc .vc-dur{
+    position:absolute;right:8px;bottom:8px;padding:2px 8px;border-radius:99px;background:rgba(20,21,26,.6);
+    color:#fff;font-family:var(--font-mono);font-size:10px;pointer-events:none;
+  }
 </style>
 </head>
 <body>
@@ -2870,12 +2933,13 @@
   // falls back to WebM. ~2.5 Mbps keeps a 60s clip near 20 MB.
   // =========================================================
   const VIDEO_MAX_SECONDS = 60;
+  const VIDEO_COMMENT_MAX_SECONDS = 30;   // video replies stay short and light
   const VIDEO_MIN_SECONDS = 0.8;
   const VIDEO_MAX_BYTES = 50 * 1024 * 1024;
 
-  async function getVideoStream(facing){
+  async function getVideoStream(facing, small){
     return navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: facing || 'user' }, width: { ideal: 1080 }, height: { ideal: 1440 }, frameRate: { ideal: 30 } },
+      video: { facingMode: { ideal: facing || 'user' }, width: { ideal: small ? 720 : 1080 }, height: { ideal: small ? 960 : 1440 }, frameRate: { ideal: 30 } },
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }
     });
   }
@@ -2889,9 +2953,9 @@
     return preferred.find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
   }
 
-  function createVideoRecorder(stream){
+  function createVideoRecorder(stream, small){
     const mimeType = pickVideoMimeType();
-    const opts = { videoBitsPerSecond: 5000000, audioBitsPerSecond: 128000 };
+    const opts = { videoBitsPerSecond: small ? 2500000 : 5000000, audioBitsPerSecond: 128000 };
     if (mimeType) opts.mimeType = mimeType;
     return new MediaRecorder(stream, opts);
   }
@@ -2960,12 +3024,25 @@
     return list;
   }
 
+  // Video replies live in the video-posts bucket, in the same voice_comments
+  // table as voice replies, and are told apart by a `vc-` file name.
+  function isVideoCommentPath(p){ return /(^|\/)vc-[^\/]*$/.test(String(p || '')); }
+
   async function hydrateCommentMedia(list){
     const at = [];
-    list.forEach((c, i) => { if (c.kind === 'voice' && c.audio_url) at.push(i); });
-    if (!at.length) return list;
-    const urls = await signMedia('voice-comments', at.map(i => list[i].audio_url));
+    const vAt = [];
+    list.forEach((c, i) => {
+      if (!c.audio_url) return;
+      if (c.kind === 'voice') at.push(i);
+      else if (c.kind === 'video') vAt.push(i);
+    });
+    if (!at.length && !vAt.length) return list;
+    const [urls, vUrls] = await Promise.all([
+      at.length ? signMedia('voice-comments', at.map(i => list[i].audio_url)) : [],
+      vAt.length ? signMedia('video-posts', vAt.map(i => list[i].audio_url)) : []
+    ]);
     at.forEach((li, k) => { list[li] = { ...list[li], audio_url: urls[k] }; });
+    vAt.forEach((li, k) => { list[li] = { ...list[li], audio_url: vUrls[k] }; });
     return list;
   }
 
@@ -2987,7 +3064,9 @@
         return null;
       }
       const { data } = await supabaseClient.from('voice_comments').select('audio_url').eq('id', id).maybeSingle();
-      return data ? { bucket: 'voice-comments', path: mediaPathFrom('voice-comments', data.audio_url) } : null;
+      if (!data) return null;
+      const bucket = isVideoCommentPath(data.audio_url) ? 'video-posts' : 'voice-comments';
+      return { bucket, path: mediaPathFrom(bucket, data.audio_url) };
     } catch (_) { return null; }
   }
   async function eraseMedia(ref){
@@ -3369,6 +3448,9 @@
                 <button class="home-comment-mic" data-post-id="${post.id}" title="Record a voice comment">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
                 </button>
+                <button class="home-comment-cam" data-post-id="${post.id}" title="Reply with a video" aria-label="Reply with a video">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+                </button>
                 <button class="home-comment-send" data-post-id="${post.id}" disabled>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>
                 </button>
@@ -3400,6 +3482,31 @@
     if (insertError) throw insertError;
     posthog.capture('comment_added', { post_id: postId, type: 'voice', duration_seconds: durationSeconds });
 
+    const comments = await loadComments(postId);
+    syncCommentsEverywhere(postId, comments, card);
+  }
+
+  // Video reply: same private bucket + membership rules as video posts, same
+  // table as voice replies. Path shape matches video posts (uid/circle/file).
+  async function sendVideoComment(postId, blob, mime, durationSeconds, card){
+    const baseMime = ((mime || blob.type || 'video/mp4').split(';')[0].trim()) || 'video/mp4';
+    const ext = baseMime.includes('mp4') ? 'mp4' : baseMime.includes('quicktime') ? 'mov' : 'webm';
+    const path = `${currentUser.id}/${circleId}/vc-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabaseClient.storage
+      .from('video-posts')
+      .upload(path, blob, { contentType: baseMime, cacheControl: '3600' });
+    if (upErr) throw upErr;
+    const { error: insErr } = await supabaseClient.from('voice_comments').insert({
+      post_id: postId,
+      user_id: currentUser.id,
+      audio_url: path,
+      duration_seconds: durationSeconds || null
+    });
+    if (insErr){
+      supabaseClient.storage.from('video-posts').remove([path]); // no orphan file
+      throw insErr;
+    }
+    posthog.capture('comment_added', { post_id: postId, type: 'video', duration_seconds: durationSeconds });
     const comments = await loadComments(postId);
     syncCommentsEverywhere(postId, comments, card);
   }
@@ -3654,7 +3761,7 @@
     ]);
     const combined = [
       ...(textRows || []).map(c => ({ ...c, kind: 'text' })),
-      ...(voiceRows || []).map(c => ({ ...c, kind: 'voice' }))
+      ...(voiceRows || []).map(c => ({ ...c, kind: isVideoCommentPath(c.audio_url) ? 'video' : 'voice' }))
     ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
     if (combined.length === 0) return [];
@@ -3673,6 +3780,22 @@
     const deleteBtn = isOwnComment
       ? `<button class="home-comment-delete" data-comment-id="${c.id}" data-comment-kind="${c.kind}">Delete</button>`
       : '';
+    if (c.kind === 'video') {
+      return `
+        <div class="home-comment-item" data-comment-id="${c.id}">
+          <div class="avatar">${avatarHtml}</div>
+          <div style="flex:1;min-width:0;">
+            <b style="font-family:var(--font-display);font-size:12.5px;font-weight:600;">${escapeHtml(name)}</b>
+            <div class="home-vc" role="button" aria-label="Play video reply">
+                <video src="${escapeHtml(c.audio_url)}#t=0.1" playsinline preload="metadata" disablepictureinpicture disableremoteplayback controlsList="nodownload noremoteplayback" oncontextmenu="return false;"></video>
+                <span class="vc-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+                ${c.duration_seconds ? `<span class="vc-dur">${vrFmt(c.duration_seconds)}</span>` : ''}
+              </div>
+            <div class="home-comment-time">${timeAgo(c.created_at)}${deleteBtn}</div>
+          </div>
+        </div>
+      `;
+    }
     if (c.kind === 'voice') {
       const dur = c.duration_seconds ? `${Math.round(c.duration_seconds)}s` : '';
       return `
@@ -3749,8 +3872,9 @@
     if (!window.confirm('Delete this comment?')) return;
     delBtn.disabled = true;
     try {
-      const table = kind === 'voice' ? 'voice_comments' : 'post_comments';
-      const fileRef = kind === 'voice' ? await mediaRefBeforeDelete('voice_comments', commentId) : null;
+      const isMediaComment = kind === 'voice' || kind === 'video';
+      const table = isMediaComment ? 'voice_comments' : 'post_comments';
+      const fileRef = isMediaComment ? await mediaRefBeforeDelete('voice_comments', commentId) : null;
       const { error } = await supabaseClient
         .from(table)
         .delete()
@@ -3808,7 +3932,7 @@
   function vrPlay(v){
     const wrap = v.closest('.home-video');
     if (wrap && wrap.classList.contains('upaused')) return;
-    document.querySelectorAll('.home-video video').forEach(o => { if (o !== v && !o.paused) o.pause(); });
+    document.querySelectorAll('.home-video video, .home-vc video').forEach(o => { if (o !== v && !o.paused) o.pause(); });
     v.muted = !videoSoundOn;
     const p = v.play();
     if (p && p.catch) p.catch(() => {
@@ -3852,6 +3976,28 @@
       if (vrIO){ vrIO.observe(v); vrObserved.add(v); }
     });
   }
+
+  // ---- video replies: tap to play with sound, tap again to pause ----
+  document.addEventListener('click', (e) => {
+    const tile = e.target.closest('.home-vc');
+    if (!tile) return;
+    e.stopPropagation();
+    const v = tile.querySelector('video');
+    if (!v) return;
+    if (v.paused){
+      document.querySelectorAll('.home-video video, .home-vc video').forEach(o => { if (o !== v && !o.paused) o.pause(); });
+      v.muted = false;
+      v.play().catch(() => {});
+    } else {
+      v.pause();
+    }
+  });
+  ['play', 'pause', 'ended'].forEach(ev => document.addEventListener(ev, (e) => {
+    const v = e.target;
+    if (!v || v.tagName !== 'VIDEO') return;
+    const tile = v.closest('.home-vc');
+    if (tile) tile.classList.toggle('playing', ev === 'play');
+  }, true));
 
   // ---- background upload queue ----
   const vrJobs = new Map();
@@ -3964,8 +4110,15 @@
     vrOpen = true;
     try { posthog.capture('video_recorder_opened', { circle_id: circleId, from: opts.from || 'unknown' }); } catch (_) {}
 
+    // On phones the recorder is a small self-view window in the top corner and
+    // the circle stays visible + scrollable behind it. A video reply is the
+    // same recorder, but shorter, lighter, and sent straight to the thread.
+    const mode = opts.from === 'comment' ? 'comment' : 'post';
+    const isPip = !!(window.matchMedia && window.matchMedia('(max-width: 899px)').matches);
+    const maxSec = mode === 'comment' ? VIDEO_COMMENT_MAX_SECONDS : VIDEO_MAX_SECONDS;
+
     const composerText = document.getElementById('homeComposerText');
-    const prefill = composerText ? composerText.value.trim() : '';
+    const prefill = (mode === 'post' && composerText) ? composerText.value.trim() : '';
     let seenHint = false;
     try { seenHint = !!localStorage.getItem(VR_HINT_KEY); } catch (_) {}
     const lockText = 'Only ' + ((circle && circle.name) ? circle.name : 'your circle') + ' sees this';
@@ -3976,7 +4129,7 @@
     root.setAttribute('aria-modal', 'true');
     root.setAttribute('aria-label', 'Record a video');
     root.innerHTML = `
-      <div class="vr-stage" data-state="starting">
+      <div class="vr-stage" data-state="starting" data-mode="${mode}">
         <video class="vr-cam mirror" autoplay muted playsinline></video>
         <video class="vr-review" loop playsinline></video>
         <div class="vr-shade-top"></div><div class="vr-shade-bot"></div>
@@ -4000,10 +4153,11 @@
             <div class="r"><button class="vr-side" type="button" id="vrFlip" aria-label="Flip camera">${VR_ICON.flip}</button></div>
           </div>
           <div class="vr-review-bar">
+            <div class="vr-lock">${escapeHtml(lockText)}</div>
             <input class="vr-caption" id="vrCaption" type="text" maxlength="300" placeholder="Say something about it\u2026 (optional)" enterkeyhint="send" autocomplete="off">
             <div class="vr-review-row">
               <button class="vr-retake" type="button" id="vrRetake">Retake</button>
-              <button class="vr-send" type="button" id="vrSend">Send ${VR_ICON.send}</button>
+              <button class="vr-send" type="button" id="vrSend">${mode === 'comment' ? 'Reply' : 'Send'} ${VR_ICON.send}</button>
             </div>
           </div>
         </div>
@@ -4012,7 +4166,11 @@
     document.body.appendChild(root);
     root.addEventListener('click', (e) => e.stopPropagation()); // don't trip the composer's outside-click handler
     const prevOverflow = document.documentElement.style.overflow;
-    document.documentElement.style.overflow = 'hidden';
+    if (!isPip) document.documentElement.style.overflow = 'hidden';   // phones keep scrolling behind the mini window
+    if (isPip && mode === 'post'){
+      const comp = document.getElementById('homeComposer');
+      if (comp && comp.classList.contains('overlay')) closeComposerOverlay();  // get the composer out of the way so the circle shows
+    }
 
     const $ = (id) => root.querySelector('#' + id);
     const stage = root.querySelector('.vr-stage');
@@ -4031,7 +4189,7 @@
     let state = 'starting';
     let stream = null, facing = 'user', recorder = null, chunks = [];
     let startedAt = 0, raf = 0, holdMode = false, holdTimer = null, closed = false;
-    let wakeLock = null, reviewUrl = null, take = null;
+    let wakeLock = null, reviewUrl = null, take = null, sending = false;
 
     const setState = (s) => { state = s; stage.dataset.state = s; };
     const showHint = (t) => { hint.textContent = t || ''; };
@@ -4063,7 +4221,7 @@
         return false;
       }
       try {
-        const s = await getVideoStream(wanted);
+        const s = await getVideoStream(wanted, mode === 'comment');
         if (closed){ s.getTracks().forEach(t => t.stop()); return false; }
         stream = s;
         facing = wanted;
@@ -4089,16 +4247,16 @@
     // ---- recording ----
     function tick(){
       const el = (Date.now() - startedAt) / 1000;
-      ring.style.strokeDashoffset = String(RING_LEN * (1 - Math.min(1, el / VIDEO_MAX_SECONDS)));
-      pillText.textContent = vrFmt(el, true) + ' / ' + vrFmt(VIDEO_MAX_SECONDS);
-      if (el >= VIDEO_MAX_SECONDS){ stopRecording(); return; }
+      ring.style.strokeDashoffset = String(RING_LEN * (1 - Math.min(1, el / maxSec)));
+      pillText.textContent = vrFmt(el, true) + ' / ' + vrFmt(maxSec);
+      if (el >= maxSec){ stopRecording(); return; }
       raf = requestAnimationFrame(tick);
     }
 
     function startRecording(){
       if (state !== 'ready' || !stream) return;
       chunks = [];
-      try { recorder = createVideoRecorder(stream); }
+      try { recorder = createVideoRecorder(stream, mode === 'comment'); }
       catch (e){ showToast('Recording isn\u2019t supported on this device', 'error'); return; }
       const mime = recorder.mimeType || pickVideoMimeType() || 'video/webm';
       recorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
@@ -4141,7 +4299,7 @@
       const p = review.play();
       if (p && p.catch) p.catch(() => { review.muted = true; review.play().catch(() => {}); });
       try { localStorage.setItem(VR_HINT_KEY, '1'); } catch (_) {}
-      try { posthog.capture('video_recorded', { circle_id: circleId, duration_seconds: t.duration, source: t.source }); } catch (_) {}
+      try { posthog.capture('video_recorded', { circle_id: circleId, duration_seconds: t.duration, source: t.source, mode }); } catch (_) {}
     }
 
     function teardown(){
@@ -4160,7 +4318,7 @@
     }
 
     function requestClose(){
-      if (state === 'recording') return;
+      if (state === 'recording' || sending) return;
       if (state === 'review' && !window.confirm('Discard this video?')) return;
       try { posthog.capture('video_recorder_closed', { circle_id: circleId, had_take: state === 'review' }); } catch (_) {}
       teardown();
@@ -4236,6 +4394,7 @@
     });
 
     $('vrRetake').addEventListener('click', () => {
+      if (sending) return;
       review.pause(); review.removeAttribute('src'); review.load();
       if (reviewUrl){ URL.revokeObjectURL(reviewUrl); reviewUrl = null; }
       take = null;
@@ -4245,8 +4404,30 @@
       else startCamera(facing);
     });
 
-    const send = () => {
+    const send = async () => {
       if (!take) return;
+      if (mode === 'comment'){
+        // Video reply: the take stays on screen until it's really posted,
+        // so a bad connection never costs anyone their recording.
+        if (sending) return;
+        sending = true;
+        const sendBtn = $('vrSend');
+        const sendHtml = sendBtn.innerHTML;
+        sendBtn.disabled = true;
+        sendBtn.textContent = 'Sending\u2026';
+        try {
+          await sendVideoComment(opts.postId, take.blob, take.mime, take.duration, opts.card);
+          showToast('Video reply sent');
+          sending = false;
+          teardown();
+        } catch (err){
+          sending = false;
+          sendBtn.disabled = false;
+          sendBtn.innerHTML = sendHtml;
+          showToast((err && err.message) || 'Could not send \u2014 try again', 'error');
+        }
+        return;
+      }
       const job = Object.assign({}, take, { caption: caption.value.trim() });
       const usedComposerText = !!prefill && job.caption === prefill;
       teardown();
@@ -4414,6 +4595,14 @@
       };
       sendBtn.addEventListener('click', submit);
       input.addEventListener('keydown', (e) => { if (e.key === 'Enter'){ e.preventDefault(); submit(); } });
+    });
+
+    root.querySelectorAll('.home-comment-cam').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!requireAuth()) return;
+        openVideoRecorder({ from: 'comment', postId: btn.dataset.postId, card: btn.closest('.home-post-card') });
+      });
     });
 
     root.querySelectorAll('.home-comment-mic').forEach(btn => {
@@ -6350,7 +6539,9 @@
     const p = c.profile;
     const name = p?.username || 'someone';
     const mine = !!(currentUser && c.user_id === currentUser.id);
-    const body = c.kind === 'voice'
+    const body = c.kind === 'video'
+      ? `<div class="home-vc" role="button" aria-label="Play video reply"><video src="${pcEsc(pcSafeUrl(c.audio_url))}#t=0.1" playsinline preload="metadata" disablepictureinpicture disableremoteplayback controlsList="nodownload noremoteplayback" oncontextmenu="return false;"></video><span class="vc-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>${c.duration_seconds ? `<span class="vc-dur">${vrFmt(c.duration_seconds)}</span>` : ''}</div>`
+      : c.kind === 'voice'
       ? `<audio controls controlsList="nodownload noremoteplayback" oncontextmenu="return false;" preload="none" src="${pcEsc(pcSafeUrl(c.audio_url))}"></audio>`
       : `<p>${pcEsc(c.content)}</p>`;
     return `
@@ -6457,8 +6648,9 @@
     pcArm(btn, 'Delete?', async () => {
       btn.disabled = true;
       try {
-        const table = row.dataset.kind === 'voice' ? 'voice_comments' : 'post_comments';
-        const fileRef = row.dataset.kind === 'voice' ? await mediaRefBeforeDelete('voice_comments', row.dataset.cid) : null;
+        const isMediaComment = row.dataset.kind === 'voice' || row.dataset.kind === 'video';
+        const table = isMediaComment ? 'voice_comments' : 'post_comments';
+        const fileRef = isMediaComment ? await mediaRefBeforeDelete('voice_comments', row.dataset.cid) : null;
         const { error } = await supabaseClient.from(table).delete().eq('id', row.dataset.cid).eq('user_id', currentUser.id);
         if (error) throw error;
         eraseMedia(fileRef);
