@@ -450,6 +450,17 @@
     min-height:44px;max-height:180px;line-height:1.5;
   }
   .home-composer textarea::placeholder{color:var(--grey);}
+  .home-composer-input{position:relative;}
+  .home-composer-input textarea{padding-right:52px;}
+  .home-cam-inside{
+    position:absolute;top:2px;right:0;width:40px;height:40px;border-radius:50%;
+    background:var(--accent);display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 16px rgba(255,90,54,.35);
+    transition:transform .15s var(--ease-spring), box-shadow .15s ease;
+  }
+  .home-cam-inside svg{width:19px;height:19px;stroke:#fff;}
+  .home-cam-inside:hover{transform:scale(1.06);}
+  .home-cam-inside:active{transform:scale(.9);}
   .home-composer-media{margin-top:8px;}
   .home-composer-media input{
     width:100%;border:1px dashed var(--line-strong);border-radius:12px;
@@ -2072,6 +2083,164 @@
   .composer-anon-banner.show{display:flex;}
   .composer-anon-banner svg{width:15px;height:15px;flex-shrink:0;}
   .composer-anon-banner b{color:#fff;font-family:var(--font-display);font-weight:600;font-style:normal;}
+
+  /* =========================================================
+     VIDEO POSTS — one-tap recorder + autoplaying feed videos
+     ========================================================= */
+
+  .home-video{
+    position:relative;width:100%;aspect-ratio:4/5;max-height:520px;background:#0e0f13;
+    cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;
+  }
+  .home-post-media .home-video video{width:100%;height:100%;max-height:none;object-fit:cover;object-position:center 30%;display:block;}
+  .hv-badge,.hv-sound,.hv-play{position:absolute;pointer-events:none;}
+  .hv-badge{
+    top:10px;right:10px;display:flex;align-items:center;gap:5px;padding:4px 9px;border-radius:99px;
+    background:rgba(20,21,26,.55);color:#fff;font-family:var(--font-mono);font-size:10.5px;
+    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  }
+  .hv-badge svg{width:12px;height:12px;stroke:#fff;fill:none;}
+  .hv-sound{
+    left:10px;bottom:14px;display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:99px;
+    background:rgba(20,21,26,.62);color:#fff;font-family:var(--font-display);font-weight:600;font-size:12px;
+    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:opacity .2s ease;
+  }
+  .hv-sound svg{width:14px;height:14px;stroke:#fff;fill:none;}
+  .home-video.unmuted .hv-sound{opacity:0;}
+  .hv-play{
+    left:50%;top:50%;width:62px;height:62px;margin:-31px 0 0 -31px;border-radius:50%;
+    background:rgba(20,21,26,.55);display:none;align-items:center;justify-content:center;
+  }
+  .hv-play svg{width:26px;height:26px;fill:#fff;stroke:none;margin-left:3px;}
+  .home-video.upaused .hv-play{display:flex;}
+  .hv-progress{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.25);pointer-events:none;}
+  .hv-progress i{display:block;height:100%;width:0;background:var(--accent);}
+
+  .vr-pending{
+    background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;margin-bottom:14px;
+    animation:riseIn .35s var(--ease) both;
+  }
+  .vr-pending-media{position:relative;aspect-ratio:4/5;max-height:420px;background:#0e0f13;}
+  .vr-pending-media video{width:100%;height:100%;object-fit:cover;object-position:center 30%;display:block;}
+  .vr-pending-bar{display:flex;align-items:center;gap:10px;padding:12px 16px;font-family:var(--font-display);font-size:13.5px;font-weight:600;}
+  .vr-pending-bar .sub{font-family:var(--font-mono);font-size:10.5px;color:var(--grey);font-weight:400;}
+  .vr-pending-media::after{
+    content:'';position:absolute;left:0;bottom:0;height:3px;width:40%;background:var(--accent);
+    animation:vrSlide 1.1s ease-in-out infinite;
+  }
+  .vr-pending.failed .vr-pending-media::after{display:none;}
+  @keyframes vrSlide{0%{transform:translateX(-100%);}100%{transform:translateX(260%);}}
+  .vr-spin{width:16px;height:16px;border-radius:50%;border:2px solid var(--line-strong);border-top-color:var(--accent);animation:spin .7s linear infinite;flex-shrink:0;}
+  .vr-pending-actions{margin-left:auto;display:flex;gap:8px;}
+  .vr-pending-actions button{padding:7px 13px;border-radius:99px;font-family:var(--font-display);font-weight:600;font-size:12.5px;background:#f3f3f4;color:var(--ink);}
+  .vr-pending-actions button.go{background:var(--accent);color:#fff;}
+
+  /* ---------- full-screen recorder ---------- */
+  .vr-overlay{
+    position:fixed;inset:0;z-index:1200;background:#000;display:flex;align-items:center;justify-content:center;
+    animation:fadeIn .18s ease;-webkit-tap-highlight-color:transparent;
+  }
+  .vr-stage{
+    position:relative;width:100%;height:100vh;height:100dvh;background:#000;overflow:hidden;color:#fff;
+    font-family:var(--font-display);
+  }
+  @media (min-width:900px){
+    .vr-overlay{background:rgba(20,21,26,.72);}
+    .vr-stage{width:440px;height:min(88vh,780px);border-radius:26px;box-shadow:0 30px 80px rgba(0,0,0,.5);}
+  }
+  .vr-stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;}
+  .vr-cam.mirror{transform:scaleX(-1);}
+  .vr-review{display:none;}
+  .vr-stage[data-state="review"] .vr-review{display:block;}
+  .vr-stage[data-state="review"] .vr-cam{display:none;}
+  .vr-stage[data-state="nocam"] .vr-cam{display:none;}
+  .vr-shade-top,.vr-shade-bot{position:absolute;left:0;right:0;pointer-events:none;z-index:2;}
+  .vr-shade-top{top:0;height:130px;background:linear-gradient(rgba(0,0,0,.5),transparent);}
+  .vr-shade-bot{bottom:0;height:240px;background:linear-gradient(transparent,rgba(0,0,0,.62));}
+
+  .vr-top{
+    position:absolute;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;justify-content:space-between;
+    padding:calc(14px + env(safe-area-inset-top,0px)) 14px 0;
+  }
+  .vr-x,.vr-side{
+    width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);transition:transform .15s var(--ease-spring), background .15s ease;
+  }
+  .vr-x:active,.vr-side:active{transform:scale(.9);background:rgba(255,255,255,.28);}
+  .vr-x svg,.vr-side svg{width:20px;height:20px;stroke:#fff;fill:none;}
+  .vr-pill{
+    display:flex;align-items:center;gap:7px;padding:7px 13px;border-radius:99px;background:rgba(20,21,26,.5);
+    font-family:var(--font-mono);font-size:11.5px;letter-spacing:.01em;
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  }
+  .vr-pill .rec-dot{width:8px;height:8px;border-radius:50%;background:var(--danger);display:none;animation:micPulse 1.1s ease-in-out infinite;}
+  .vr-stage[data-state="recording"] .vr-pill .rec-dot{display:block;}
+  .vr-spacer{width:42px;height:42px;}
+
+  .vr-bottom{
+    position:absolute;left:0;right:0;bottom:0;z-index:5;
+    padding:0 20px calc(22px + env(safe-area-inset-bottom,0px));
+  }
+  .vr-hint{text-align:center;font-size:13px;font-weight:500;color:rgba(255,255,255,.86);margin-bottom:14px;min-height:18px;text-shadow:0 1px 8px rgba(0,0,0,.4);}
+  .vr-controls{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;}
+  .vr-controls .l{justify-self:start;}
+  .vr-controls .r{justify-self:end;}
+  .vr-rec{
+    position:relative;width:84px;height:84px;display:flex;align-items:center;justify-content:center;
+    touch-action:none;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;
+  }
+  .vr-rec svg.ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);}
+  .vr-rec svg.ring circle{fill:none;stroke-width:4;}
+  .vr-rec .track{stroke:rgba(255,255,255,.9);}
+  .vr-rec .prog{stroke:var(--danger);stroke-linecap:round;opacity:0;}
+  .vr-stage[data-state="recording"] .vr-rec .track{stroke:rgba(255,255,255,.35);}
+  .vr-stage[data-state="recording"] .vr-rec .prog{opacity:1;}
+  .vr-rec .core{
+    width:62px;height:62px;border-radius:50%;background:var(--danger);
+    transition:transform .2s var(--ease-spring), border-radius .2s var(--ease);
+  }
+  .vr-rec:active .core{transform:scale(.92);}
+  .vr-stage[data-state="recording"] .vr-rec .core{border-radius:14px;transform:scale(.56);}
+  .vr-stage[data-state="recording"] .vr-side,
+  .vr-stage[data-state="recording"] .vr-x{opacity:0;pointer-events:none;}
+  .vr-stage[data-state="recording"] .vr-controls .l,
+  .vr-stage[data-state="recording"] .vr-controls .r{visibility:hidden;}
+  .vr-side.hidden{visibility:hidden;}
+
+  .vr-review-bar{display:none;}
+  .vr-stage[data-state="review"] .vr-review-bar{display:block;}
+  .vr-stage[data-state="review"] .vr-rec-wrap,
+  .vr-stage[data-state="review"] .vr-hint{display:none;}
+  .vr-caption{
+    width:100%;border:none;outline:none;border-radius:16px;padding:13px 16px;margin-bottom:12px;
+    background:rgba(255,255,255,.16);color:#fff;font-family:var(--font-serif);font-size:15px;
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  }
+  .vr-caption::placeholder{color:rgba(255,255,255,.66);}
+  .vr-review-row{display:flex;gap:10px;}
+  .vr-retake{
+    height:54px;padding:0 20px;border-radius:99px;background:rgba(255,255,255,.18);color:#fff;
+    font-family:var(--font-display);font-weight:600;font-size:15px;
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  }
+  .vr-send{
+    flex:1;height:54px;border-radius:99px;background:var(--accent);color:#fff;
+    font-family:var(--font-display);font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;gap:9px;
+    box-shadow:0 10px 26px rgba(255,90,54,.4);transition:transform .12s var(--ease-spring);
+  }
+  .vr-send:active{transform:scale(.97);}
+  .vr-send svg{width:19px;height:19px;stroke:#fff;fill:none;}
+
+  .vr-nocam{
+    position:absolute;inset:0;z-index:4;display:none;flex-direction:column;align-items:center;justify-content:center;
+    gap:14px;padding:32px;text-align:center;background:#14151a;
+  }
+  .vr-stage[data-state="nocam"] .vr-nocam{display:flex;}
+  .vr-nocam p{font-size:14.5px;line-height:1.5;color:rgba(255,255,255,.8);max-width:280px;}
+  .vr-nocam button{padding:13px 22px;border-radius:99px;background:var(--accent);color:#fff;font-weight:700;font-size:14.5px;}
+  .vr-stage[data-state="nocam"] .vr-rec-wrap,
+  .vr-stage[data-state="nocam"] .vr-hint{display:none;}
+  .vr-stage[data-state="starting"] .vr-rec{opacity:.45;pointer-events:none;}
 </style>
 </head>
 <body>
@@ -2269,7 +2438,9 @@
           ${post.body ? `<div class="home-post-text">${escapeHtml(post.body)}</div>` : ''}
           ${post.media_url ? `<div class="home-post-media">${
               post.media_type === 'video'
-                ? `<video src="${escapeHtml(post.media_url)}" controls></video>`
+                ? (/^https?:\/\//i.test(post.media_url)
+                    ? `<video src="${escapeHtml(post.media_url)}" controls></video>`
+                    : `<div style="aspect-ratio:4/5;max-height:360px;background:#14151a;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-family:var(--font-display);font-weight:600;font-size:14px;"><span style="font-size:30px;">🎥</span>A video \u2014 join to watch</div>`)
                 : `<img src="${escapeHtml(post.media_url)}" loading="lazy" alt="">`
             }</div>` : ''}
         </div>
@@ -2656,7 +2827,7 @@
   const SIGNED_TTL = 1800;                          // links live 30 minutes
   const SIGNED_CACHE_MS = (SIGNED_TTL - 300) * 1000; // re-sign 5 min before expiry
   const signedCache = new Map();                    // "bucket/path" -> { url, exp }
-  const MEDIA_BUCKETS = ['voice-posts', 'voice-comments', 'album-photos'];
+  const MEDIA_BUCKETS = ['voice-posts', 'voice-comments', 'album-photos', 'video-posts'];
   const PUBLIC_MARK = '/storage/v1/object/public/';
   const SIGN_MARK = '/storage/v1/object/sign/';
 
@@ -2690,6 +2861,37 @@
     return new MediaRecorder(stream, mimeType
       ? { mimeType, audioBitsPerSecond: 128000 }
       : { audioBitsPerSecond: 128000 });
+  }
+
+  // =========================================================
+  // Video recording — shared camera + encoder setup.
+  // Prefers MP4 (plays on every friend's phone, incl. iPhones),
+  // falls back to WebM. ~2.5 Mbps keeps a 60s clip near 20 MB.
+  // =========================================================
+  const VIDEO_MAX_SECONDS = 60;
+  const VIDEO_MIN_SECONDS = 0.8;
+  const VIDEO_MAX_BYTES = 50 * 1024 * 1024;
+
+  async function getVideoStream(facing){
+    return navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: facing || 'user' }, width: { ideal: 720 }, height: { ideal: 960 }, frameRate: { ideal: 30 } },
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }
+    });
+  }
+
+  function pickVideoMimeType(){
+    const preferred = [
+      'video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4',
+      'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'
+    ];
+    return preferred.find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
+  }
+
+  function createVideoRecorder(stream){
+    const mimeType = pickVideoMimeType();
+    const opts = { videoBitsPerSecond: 2500000, audioBitsPerSecond: 128000 };
+    if (mimeType) opts.mimeType = mimeType;
+    return new MediaRecorder(stream, opts);
   }
 
   // What we store in the DB is the object PATH. Rows created before the
@@ -2740,10 +2942,19 @@
 
   async function hydratePostMedia(list){
     const at = [];
-    list.forEach((p, i) => { if (p.media_url && p.media_type === 'voice') at.push(i); });
-    if (!at.length) return list;
-    const urls = await signMedia('voice-posts', at.map(i => list[i].media_url));
+    const vAt = [];
+    list.forEach((p, i) => {
+      if (!p.media_url) return;
+      if (p.media_type === 'voice') at.push(i);
+      else if (p.media_type === 'video' && !/^https?:\/\//i.test(p.media_url)) vAt.push(i); // recorded in-app = a storage path
+    });
+    if (!at.length && !vAt.length) return list;
+    const [urls, vUrls] = await Promise.all([
+      at.length ? signMedia('voice-posts', at.map(i => list[i].media_url)) : [],
+      vAt.length ? signMedia('video-posts', vAt.map(i => list[i].media_url)) : []
+    ]);
     at.forEach((li, k) => { list[li] = { ...list[li], media_url: urls[k] }; });
+    vAt.forEach((li, k) => { list[li] = { ...list[li], media_url: vUrls[k] }; });
     return list;
   }
 
@@ -2768,8 +2979,10 @@
     try {
       if (table === 'posts') {
         const { data } = await supabaseClient.from('posts').select('media_url, media_type').eq('id', id).maybeSingle();
-        if (!data || data.media_type !== 'voice') return null;
-        return { bucket: 'voice-posts', path: mediaPathFrom('voice-posts', data.media_url) };
+        if (!data) return null;
+        if (data.media_type === 'voice') return { bucket: 'voice-posts', path: mediaPathFrom('voice-posts', data.media_url) };
+        if (data.media_type === 'video') return { bucket: 'video-posts', path: mediaPathFrom('video-posts', data.media_url) };
+        return null;
       }
       const { data } = await supabaseClient.from('voice_comments').select('audio_url').eq('id', id).maybeSingle();
       return data ? { bucket: 'voice-comments', path: mediaPathFrom('voice-comments', data.audio_url) } : null;
@@ -3095,7 +3308,13 @@
           post.media_type === 'voice'
             ? `<div class="home-voice-bubble"><b>🎙️ Voice post${post.duration_seconds ? ` · ${Math.round(post.duration_seconds)}s` : ''}</b><audio src="${escapeHtml(post.media_url)}" controls controlsList="nodownload noremoteplayback" oncontextmenu="return false;"></audio></div>`
           : post.media_type === 'video'
-            ? `<video src="${escapeHtml(post.media_url)}" controls></video>`
+            ? `<div class="home-video">
+                <video src="${escapeHtml(post.media_url)}#t=0.1" muted loop playsinline preload="metadata" disablepictureinpicture disableremoteplayback controlsList="nodownload noremoteplayback" oncontextmenu="return false;"></video>
+                <div class="hv-badge"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>${post.duration_seconds ? vrFmt(post.duration_seconds) : 'Video'}</div>
+                <div class="hv-sound"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>Tap for sound</div>
+                <div class="hv-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+                <div class="hv-progress"><i></i></div>
+              </div>`
             : `<img src="${escapeHtml(post.media_url)}" alt="">`
         }</div>`
       : '';
@@ -3550,8 +3769,500 @@
     }
   });
 
+  // =========================================================
+  // VIDEO POSTS — record (or pick) → review → Send. The upload
+  // then happens in the background; the recording is never lost
+  // (a failed send keeps the clip on screen with a Retry).
+  // =========================================================
+  function vrFmt(sec, floor){
+    const t = Math.max(0, floor ? Math.floor(sec) : Math.round(sec));
+    return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0');
+  }
+
+  const VR_HINT_KEY = 'waater_vr_hint_seen';
+  const VR_ICON = {
+    x: '<svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    flip: '<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0115-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 01-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>',
+    gallery: '<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
+    send: '<svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>'
+  };
+
+  // ---- feed playback: autoplay muted in view, tap for sound ----
+  let videoSoundOn = false;              // once they unmute one, the next ones start with sound
+  const vrObserved = new Set();
+  const vrIO = ('IntersectionObserver' in window) ? new IntersectionObserver((entries) => {
+    entries.forEach(en => {
+      const v = en.target;
+      if (en.isIntersecting && en.intersectionRatio >= 0.6) vrPlay(v);
+      else v.pause();
+    });
+  }, { threshold: [0, 0.6, 1] }) : null;
+
+  function vrSyncSoundUi(v){
+    const wrap = v.closest('.home-video');
+    if (wrap) wrap.classList.toggle('unmuted', !v.muted);
+  }
+
+  function vrPlay(v){
+    const wrap = v.closest('.home-video');
+    if (wrap && wrap.classList.contains('upaused')) return;
+    document.querySelectorAll('.home-video video').forEach(o => { if (o !== v && !o.paused) o.pause(); });
+    v.muted = !videoSoundOn;
+    const p = v.play();
+    if (p && p.catch) p.catch(() => {
+      // browser refused sound without a fresh tap — fall back to muted
+      v.muted = true; videoSoundOn = false; vrSyncSoundUi(v);
+      v.play().catch(() => {});
+    });
+    vrSyncSoundUi(v);
+  }
+
+  function initVideoCards(root = document){
+    vrObserved.forEach(v => { if (!v.isConnected){ if (vrIO) vrIO.unobserve(v); vrObserved.delete(v); } });
+    root.querySelectorAll('.home-video').forEach(wrap => {
+      if (wrap.dataset.vbound) return;
+      wrap.dataset.vbound = '1';
+      const v = wrap.querySelector('video');
+      const bar = wrap.querySelector('.hv-progress i');
+      if (!v) return;
+      v.addEventListener('timeupdate', () => {
+        if (bar && v.duration && isFinite(v.duration)) bar.style.width = (v.currentTime / v.duration * 100) + '%';
+      });
+      wrap.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (v.muted){
+          // first tap = sound on, from the very beginning (the start is where the tea is)
+          videoSoundOn = true;
+          wrap.classList.remove('upaused');
+          v.muted = false;
+          v.currentTime = 0;
+          v.play().catch(() => { v.muted = true; videoSoundOn = false; vrSyncSoundUi(v); });
+          vrSyncSoundUi(v);
+          if (navigator.vibrate) navigator.vibrate(6);
+        } else if (v.paused){
+          wrap.classList.remove('upaused');
+          v.play().catch(() => {});
+        } else {
+          wrap.classList.add('upaused');
+          v.pause();
+        }
+      });
+      if (vrIO){ vrIO.observe(v); vrObserved.add(v); }
+    });
+  }
+
+  // ---- background upload queue ----
+  const vrJobs = new Map();
+  let vrJobSeq = 0;
+  let vrUploading = 0;
+  let vrOpen = false;
+  window.addEventListener('beforeunload', (e) => {
+    if (vrUploading > 0){ e.preventDefault(); e.returnValue = ''; }
+  });
+
+  function vrRenderPending(job){
+    const feed = document.getElementById('homeFeed');
+    if (!feed) return;
+    let card = document.getElementById('vrp-' + job.id);
+    if (!card){
+      card = document.createElement('div');
+      card.id = 'vrp-' + job.id;
+      card.className = 'vr-pending';
+      feed.prepend(card);
+    }
+    const failed = !!job.failedMsg;
+    card.classList.toggle('failed', failed);
+    const mb = (job.blob.size / 1048576).toFixed(1);
+    card.innerHTML = `
+      <div class="vr-pending-media"><video src="${job.objectUrl}" muted loop autoplay playsinline></video></div>
+      <div class="vr-pending-bar">
+        ${failed ? '' : '<span class="vr-spin"></span>'}
+        <div>${failed ? 'Couldn\u2019t send' : 'Sending to your circle\u2026'}<div class="sub">${failed ? escapeHtml(job.failedMsg) : mb + ' MB'}</div></div>
+        ${failed ? '<div class="vr-pending-actions"><button type="button" data-vr="discard">Discard</button><button type="button" class="go" data-vr="retry">Retry</button></div>' : ''}
+      </div>`;
+    const retry = card.querySelector('[data-vr="retry"]');
+    const discard = card.querySelector('[data-vr="discard"]');
+    if (retry) retry.addEventListener('click', () => { job.failedMsg = ''; vrRenderPending(job); vrRunUpload(job); });
+    if (discard) discard.addEventListener('click', () => {
+      if (!window.confirm('Discard this video? It hasn\u2019t been sent yet.')) return;
+      vrJobs.delete(job.id);
+      URL.revokeObjectURL(job.objectUrl);
+      card.remove();
+    });
+  }
+
+  function vrRestorePending(){
+    vrJobs.forEach(job => { if (!document.getElementById('vrp-' + job.id)) vrRenderPending(job); });
+  }
+
+  async function vrRunUpload(job){
+    vrUploading++;
+    let uploadedPath = null;
+    try {
+      const baseMime = ((job.mime || 'video/mp4').split(';')[0].trim()) || 'video/mp4';
+      const ext = baseMime.includes('mp4') ? 'mp4' : baseMime.includes('quicktime') ? 'mov' : 'webm';
+      const path = `${currentUser.id}/${circleId}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabaseClient.storage
+        .from('video-posts')
+        .upload(path, job.blob, { contentType: baseMime, cacheControl: '3600' });
+      if (upErr) throw upErr;
+      uploadedPath = path;
+
+      const { error: insErr } = await supabaseClient.from('posts').insert({
+        circle_id: circleId,
+        user_id: currentUser.id,
+        caption: job.caption || null,
+        media_url: path,
+        media_type: 'video',
+        duration_seconds: job.duration || null
+      });
+      if (insErr) throw insErr;
+      posthog.capture('post_created', {
+        circle_id: circleId, media_type: 'video', duration_seconds: job.duration,
+        source: job.source, size_mb: Math.round(job.blob.size / 104857.6) / 10,
+        has_caption: !!job.caption
+      });
+
+      vrJobs.delete(job.id);
+      showToast('Video sent');
+      await refreshHomeFeed();
+      const stale = document.getElementById('vrp-' + job.id);
+      if (stale) stale.remove();
+      URL.revokeObjectURL(job.objectUrl);
+      vrRestorePending();          // other clips still on their way keep their card
+    } catch (err){
+      if (uploadedPath){ supabaseClient.storage.from('video-posts').remove([uploadedPath]); } // don't leave an orphan file
+      job.failedMsg = (err && err.message) ? err.message : 'Check your connection and try again.';
+      vrRenderPending(job);
+    } finally {
+      vrUploading--;
+    }
+  }
+
+  function vrEnqueueUpload(job){
+    job.id = 'vr' + (++vrJobSeq);
+    job.objectUrl = URL.createObjectURL(job.blob);
+    job.failedMsg = '';
+    vrJobs.set(job.id, job);
+
+    const feedTab = document.querySelector('.view-tab[data-view="feed"]');
+    if (feedTab && !feedTab.classList.contains('active')) feedTab.click();
+    const composer = document.getElementById('homeComposer');
+    if (composer && composer.classList.contains('overlay')) closeComposerOverlay();
+
+    vrRenderPending(job);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    vrRunUpload(job);
+  }
+
+  // ---- the recorder ----
+  async function openVideoRecorder(opts = {}){
+    if (!requireAuth()) return;
+    if (vrOpen) return;
+    vrOpen = true;
+    try { posthog.capture('video_recorder_opened', { circle_id: circleId, from: opts.from || 'unknown' }); } catch (_) {}
+
+    const composerText = document.getElementById('homeComposerText');
+    const prefill = composerText ? composerText.value.trim() : '';
+    let seenHint = false;
+    try { seenHint = !!localStorage.getItem(VR_HINT_KEY); } catch (_) {}
+    const lockText = 'Only ' + ((circle && circle.name) ? circle.name : 'your circle') + ' sees this';
+
+    const root = document.createElement('div');
+    root.className = 'vr-overlay';
+    root.setAttribute('role', 'dialog');
+    root.setAttribute('aria-modal', 'true');
+    root.setAttribute('aria-label', 'Record a video');
+    root.innerHTML = `
+      <div class="vr-stage" data-state="starting">
+        <video class="vr-cam mirror" autoplay muted playsinline></video>
+        <video class="vr-review" loop playsinline></video>
+        <div class="vr-shade-top"></div><div class="vr-shade-bot"></div>
+        <div class="vr-nocam">
+          <p id="vrNoCamMsg"></p>
+          <button type="button" id="vrPickFromNoCam">Choose a video instead</button>
+        </div>
+        <div class="vr-top">
+          <button class="vr-x" type="button" id="vrClose" aria-label="Close">${VR_ICON.x}</button>
+          <div class="vr-pill"><span class="rec-dot"></span><span id="vrPillText"></span></div>
+          <div class="vr-spacer"></div>
+        </div>
+        <div class="vr-bottom">
+          <div class="vr-hint" id="vrHint"></div>
+          <div class="vr-controls vr-rec-wrap">
+            <div class="l"><button class="vr-side" type="button" id="vrPick" aria-label="Choose a video from your library">${VR_ICON.gallery}</button></div>
+            <button class="vr-rec" type="button" id="vrRec" aria-label="Record">
+              <svg class="ring" viewBox="0 0 88 88"><circle class="track" cx="44" cy="44" r="40"/><circle class="prog" cx="44" cy="44" r="40" stroke-dasharray="251.33" stroke-dashoffset="251.33"/></svg>
+              <span class="core"></span>
+            </button>
+            <div class="r"><button class="vr-side" type="button" id="vrFlip" aria-label="Flip camera">${VR_ICON.flip}</button></div>
+          </div>
+          <div class="vr-review-bar">
+            <input class="vr-caption" id="vrCaption" type="text" maxlength="300" placeholder="Say something about it\u2026 (optional)" enterkeyhint="send" autocomplete="off">
+            <div class="vr-review-row">
+              <button class="vr-retake" type="button" id="vrRetake">Retake</button>
+              <button class="vr-send" type="button" id="vrSend">Send ${VR_ICON.send}</button>
+            </div>
+          </div>
+        </div>
+        <input type="file" id="vrFile" accept="video/*" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;" tabindex="-1" aria-hidden="true">
+      </div>`;
+    document.body.appendChild(root);
+    root.addEventListener('click', (e) => e.stopPropagation()); // don't trip the composer's outside-click handler
+    const prevOverflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
+
+    const $ = (id) => root.querySelector('#' + id);
+    const stage = root.querySelector('.vr-stage');
+    const cam = root.querySelector('.vr-cam');
+    const review = root.querySelector('.vr-review');
+    const rec = $('vrRec');
+    const ring = root.querySelector('.ring .prog');
+    const pillText = $('vrPillText');
+    const hint = $('vrHint');
+    const flipBtn = $('vrFlip');
+    const fileInput = $('vrFile');
+    const caption = $('vrCaption');
+    caption.value = prefill;
+    const RING_LEN = 251.33;
+
+    let state = 'starting';
+    let stream = null, facing = 'user', recorder = null, chunks = [];
+    let startedAt = 0, raf = 0, holdMode = false, holdTimer = null, closed = false;
+    let wakeLock = null, reviewUrl = null, take = null;
+
+    const setState = (s) => { state = s; stage.dataset.state = s; };
+    const showHint = (t) => { hint.textContent = t || ''; };
+    const resetRing = () => { ring.style.strokeDashoffset = String(RING_LEN); };
+    const stopStream = () => {
+      if (stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
+      cam.srcObject = null;
+    };
+
+    function goReady(){
+      setState('ready');
+      pillText.textContent = lockText;
+      showHint(seenHint ? '' : 'Tap to record \u00b7 or hold');
+      resetRing();
+    }
+
+    function noCamera(msg){
+      $('vrNoCamMsg').textContent = msg;
+      pillText.textContent = '';
+      setState('nocam');
+    }
+
+    async function startCamera(wanted){
+      setState('starting');
+      pillText.textContent = lockText;
+      stopStream();
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder){
+        noCamera('Recording isn\u2019t available in this browser \u2014 you can still pick a video from your phone.');
+        return false;
+      }
+      try {
+        const s = await getVideoStream(wanted);
+        if (closed){ s.getTracks().forEach(t => t.stop()); return false; }
+        stream = s;
+        facing = wanted;
+        cam.srcObject = s;
+        cam.classList.toggle('mirror', facing === 'user');
+        cam.play().catch(() => {});
+        goReady();
+        try {
+          const devs = await navigator.mediaDevices.enumerateDevices();
+          flipBtn.classList.toggle('hidden', devs.filter(d => d.kind === 'videoinput').length < 2);
+        } catch (_) {}
+        try { if (navigator.wakeLock && !wakeLock) wakeLock = await navigator.wakeLock.request('screen'); } catch (_) {}
+        return true;
+      } catch (err){
+        if (closed) return false;
+        noCamera(err && err.name === 'NotAllowedError'
+          ? 'Camera or mic access is blocked. Allow it in your browser settings \u2014 or pick a video instead.'
+          : 'We couldn\u2019t open a camera. You can pick a video instead.');
+        return false;
+      }
+    }
+
+    // ---- recording ----
+    function tick(){
+      const el = (Date.now() - startedAt) / 1000;
+      ring.style.strokeDashoffset = String(RING_LEN * (1 - Math.min(1, el / VIDEO_MAX_SECONDS)));
+      pillText.textContent = vrFmt(el, true) + ' / ' + vrFmt(VIDEO_MAX_SECONDS);
+      if (el >= VIDEO_MAX_SECONDS){ stopRecording(); return; }
+      raf = requestAnimationFrame(tick);
+    }
+
+    function startRecording(){
+      if (state !== 'ready' || !stream) return;
+      chunks = [];
+      try { recorder = createVideoRecorder(stream); }
+      catch (e){ showToast('Recording isn\u2019t supported on this device', 'error'); return; }
+      const mime = recorder.mimeType || pickVideoMimeType() || 'video/webm';
+      recorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+      recorder.onerror = () => showToast('Recording failed \u2014 try again', 'error');
+      recorder.onstop = () => {
+        cancelAnimationFrame(raf);
+        if (closed) return;
+        const duration = (Date.now() - startedAt) / 1000;
+        if (duration < VIDEO_MIN_SECONDS || !chunks.length){
+          goReady(); showHint('Hold a little longer');
+          return;
+        }
+        enterReview({ blob: new Blob(chunks, { type: mime }), mime, duration, source: 'camera' });
+      };
+      recorder.start(1000);
+      startedAt = Date.now();
+      setState('recording');
+      showHint('Tap to stop');
+      if (navigator.vibrate) navigator.vibrate(10);
+      tick();
+    }
+
+    function stopRecording(){
+      if (recorder && recorder.state !== 'inactive'){
+        try { recorder.stop(); } catch (_) {}
+        if (navigator.vibrate) navigator.vibrate(8);
+      }
+    }
+
+    // ---- review ----
+    function enterReview(t){
+      take = t;
+      if (reviewUrl) URL.revokeObjectURL(reviewUrl);
+      reviewUrl = URL.createObjectURL(t.blob);
+      review.src = reviewUrl;
+      review.muted = false;
+      setState('review');
+      pillText.textContent = lockText;
+      resetRing();
+      const p = review.play();
+      if (p && p.catch) p.catch(() => { review.muted = true; review.play().catch(() => {}); });
+      try { localStorage.setItem(VR_HINT_KEY, '1'); } catch (_) {}
+      try { posthog.capture('video_recorded', { circle_id: circleId, duration_seconds: t.duration, source: t.source }); } catch (_) {}
+    }
+
+    function teardown(){
+      if (closed) return;
+      closed = true; vrOpen = false;
+      cancelAnimationFrame(raf); clearTimeout(holdTimer);
+      try { if (recorder && recorder.state !== 'inactive') recorder.stop(); } catch (_) {}
+      stopStream();
+      try { if (wakeLock) wakeLock.release(); } catch (_) {}
+      wakeLock = null;
+      if (reviewUrl){ URL.revokeObjectURL(reviewUrl); reviewUrl = null; }
+      document.removeEventListener('visibilitychange', onVis);
+      document.removeEventListener('keydown', onKey);
+      document.documentElement.style.overflow = prevOverflow;
+      root.remove();
+    }
+
+    function requestClose(){
+      if (state === 'recording') return;
+      if (state === 'review' && !window.confirm('Discard this video?')) return;
+      try { posthog.capture('video_recorder_closed', { circle_id: circleId, had_take: state === 'review' }); } catch (_) {}
+      teardown();
+    }
+
+    const onVis = () => { if (document.hidden && state === 'recording') stopRecording(); }; // never lose a take to a phone call
+    const onKey = (e) => { if (e.key === 'Escape') requestClose(); };
+    document.addEventListener('visibilitychange', onVis);
+    document.addEventListener('keydown', onKey);
+
+    // ---- wiring ----
+    $('vrClose').addEventListener('click', requestClose);
+
+    // Press = start instantly (never miss the first words). Quick tap → keeps
+    // recording until the next tap. Press-and-hold → stops when you let go.
+    rec.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      e.preventDefault();
+      if (state === 'ready'){
+        try { rec.setPointerCapture(e.pointerId); } catch (_) {}
+        holdMode = false;
+        startRecording();
+        clearTimeout(holdTimer);
+        holdTimer = setTimeout(() => { holdMode = true; if (state === 'recording') showHint('Release to finish'); }, 380);
+      } else if (state === 'recording'){
+        stopRecording();
+      }
+    });
+    const onRelease = () => {
+      clearTimeout(holdTimer);
+      if (holdMode && state === 'recording') stopRecording();
+      holdMode = false;
+    };
+    rec.addEventListener('pointerup', onRelease);
+    rec.addEventListener('pointercancel', onRelease);
+    rec.addEventListener('contextmenu', (e) => e.preventDefault());
+    rec.addEventListener('click', (e) => {          // keyboard (Space/Enter) only — pointer clicks have detail > 0
+      if (e.detail !== 0) return;
+      if (state === 'ready') startRecording(); else if (state === 'recording') stopRecording();
+    });
+
+    flipBtn.addEventListener('click', async () => {
+      if (state !== 'ready') return;
+      const prev = facing;
+      const next = facing === 'user' ? 'environment' : 'user';
+      const ok = await startCamera(next);
+      if (!ok && !closed){
+        showToast('Couldn\u2019t switch cameras', 'error');
+        await startCamera(prev);
+      }
+    });
+
+    const pick = () => fileInput.click();
+    $('vrPick').addEventListener('click', pick);
+    $('vrPickFromNoCam').addEventListener('click', pick);
+    fileInput.addEventListener('change', () => {
+      const f = fileInput.files && fileInput.files[0];
+      fileInput.value = '';
+      if (!f) return;
+      if (!/^video\//.test(f.type) && !/\.(mp4|mov|m4v|webm)$/i.test(f.name)){ showToast('That doesn\u2019t look like a video', 'error'); return; }
+      if (f.size > VIDEO_MAX_BYTES){ showToast('That video is over 50 MB \u2014 try a shorter one', 'error'); return; }
+      const url = URL.createObjectURL(f);
+      const probe = document.createElement('video');
+      const done = (d) => {
+        URL.revokeObjectURL(url);
+        if (closed) return;
+        enterReview({ blob: f, mime: f.type || 'video/mp4', duration: d, source: 'library' });
+      };
+      probe.preload = 'metadata';
+      probe.onloadedmetadata = () => done(isFinite(probe.duration) ? probe.duration : 0);
+      probe.onerror = () => done(0);
+      probe.src = url;
+    });
+
+    $('vrRetake').addEventListener('click', () => {
+      review.pause(); review.removeAttribute('src'); review.load();
+      if (reviewUrl){ URL.revokeObjectURL(reviewUrl); reviewUrl = null; }
+      take = null;
+      try { posthog.capture('video_retake', { circle_id: circleId }); } catch (_) {}
+      const t = stream && stream.getVideoTracks()[0];
+      if (t && t.readyState === 'live') goReady();
+      else startCamera(facing);
+    });
+
+    const send = () => {
+      if (!take) return;
+      const job = Object.assign({}, take, { caption: caption.value.trim() });
+      const usedComposerText = !!prefill && job.caption === prefill;
+      teardown();
+      if (usedComposerText && composerText){
+        composerText.value = ''; composerText.style.height = 'auto';
+        composerText.dispatchEvent(new Event('input'));
+      }
+      vrEnqueueUpload(job);
+    };
+    $('vrSend').addEventListener('click', send);
+    caption.addEventListener('keydown', (e) => { if (e.key === 'Enter'){ e.preventDefault(); send(); } });
+
+    startCamera('user');
+  }
+
   function wireHomeActions(root = document){
     attachHoldToTalk(root);
+    initVideoCards(root);
     maybeShowVoiceOnboardingHint();
 
     root.querySelectorAll('.whisper-reveal').forEach(el => {
@@ -5054,7 +5765,12 @@
       <div class="view-panel active" id="viewFeed">
         <div class="gh-pin-slot" id="ghPinSlot"></div>
         <div class="home-composer" id="homeComposer">
-          <textarea id="homeComposerText" placeholder="Tell your circle about your day — just between you all..." rows="1"></textarea>
+          <div class="home-composer-input">
+            <textarea id="homeComposerText" placeholder="What's the tea today? Type it — or show it" rows="1"></textarea>
+            <button class="home-cam-inside" id="homeVideoBtn" type="button" title="Record a video" aria-label="Record a video">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+            </button>
+          </div>
           <div class="home-composer-media" id="homeMediaField" style="display:none;">
             <input type="text" id="homeMediaUrl" placeholder="Paste an image or video URL...">
           </div>
@@ -5121,6 +5837,8 @@
     textarea.addEventListener('input', resetComposerTimer);
     mediaUrl.addEventListener('input', resetComposerTimer);
     textarea.addEventListener('focus', resetComposerTimer);
+
+    document.getElementById('homeVideoBtn').addEventListener('click', () => openVideoRecorder({ from: 'composer' }));
 
     const voiceBtn = document.getElementById('homeVoiceBtn');
     const voiceTimer = document.getElementById('homeVoiceTimer');
