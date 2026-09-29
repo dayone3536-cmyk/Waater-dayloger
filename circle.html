@@ -450,15 +450,16 @@
     min-height:44px;max-height:180px;line-height:1.5;
   }
   .home-composer textarea::placeholder{color:var(--grey);}
-  .home-composer-input{position:relative;}
-  .home-composer-input textarea{padding-right:52px;}
+  .home-composer-input{display:flex;align-items:flex-start;gap:12px;}
+  .home-composer-input textarea{flex:1 1 auto;min-width:0;padding:10px 0 0;}
   .home-cam-inside{
-    position:absolute;top:2px;right:0;width:40px;height:40px;border-radius:50%;
+    flex:0 0 46px;width:46px;height:46px;border-radius:16px;
     background:var(--accent);display:flex;align-items:center;justify-content:center;
-    box-shadow:0 6px 16px rgba(255,90,54,.35);
+    box-shadow:0 8px 18px -6px rgba(255,90,54,.55);
+    -webkit-tap-highlight-color:transparent;
     transition:transform .15s var(--ease-spring), box-shadow .15s ease;
   }
-  .home-cam-inside svg{width:19px;height:19px;stroke:#fff;}
+  .home-cam-inside svg{width:24px;height:24px;fill:#fff;stroke:none;}
   .home-cam-inside:hover{transform:scale(1.06);}
   .home-cam-inside:active{transform:scale(.9);}
   .home-composer-media{margin-top:8px;}
@@ -2874,13 +2875,14 @@
 
   async function getVideoStream(facing){
     return navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: facing || 'user' }, width: { ideal: 720 }, height: { ideal: 960 }, frameRate: { ideal: 30 } },
+      video: { facingMode: { ideal: facing || 'user' }, width: { ideal: 1080 }, height: { ideal: 1440 }, frameRate: { ideal: 30 } },
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }
     });
   }
 
   function pickVideoMimeType(){
     const preferred = [
+      'video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1.4D401F,mp4a.40.2',
       'video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4',
       'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'
     ];
@@ -2889,7 +2891,7 @@
 
   function createVideoRecorder(stream){
     const mimeType = pickVideoMimeType();
-    const opts = { videoBitsPerSecond: 2500000, audioBitsPerSecond: 128000 };
+    const opts = { videoBitsPerSecond: 5000000, audioBitsPerSecond: 128000 };
     if (mimeType) opts.mimeType = mimeType;
     return new MediaRecorder(stream, opts);
   }
@@ -5766,9 +5768,9 @@
         <div class="gh-pin-slot" id="ghPinSlot"></div>
         <div class="home-composer" id="homeComposer">
           <div class="home-composer-input">
-            <textarea id="homeComposerText" placeholder="What's the tea today? Type it — or show it" rows="1"></textarea>
+            <textarea id="homeComposerText" placeholder="What happened today? Write it or record a video" rows="1"></textarea>
             <button class="home-cam-inside" id="homeVideoBtn" type="button" title="Record a video" aria-label="Record a video">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="6" width="13" height="12" rx="3.2"/><path d="M17.5 10.3l4-2.4a.6.6 0 0 1 .9.5v7.2a.6.6 0 0 1-.9.5l-4-2.4z"/></svg>
             </button>
           </div>
           <div class="home-composer-media" id="homeMediaField" style="display:none;">
