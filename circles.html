@@ -36,7 +36,7 @@
     color:var(--ink);
     font-family:var(--font-serif);
     -webkit-font-smoothing:antialiased;
-    padding-bottom:calc(98px + env(safe-area-inset-bottom));
+    padding-bottom:calc(32px + env(safe-area-inset-bottom));
   }
   a{color:inherit;text-decoration:none;}
   button{font-family:inherit;border:none;background:none;cursor:pointer;}
@@ -59,18 +59,6 @@
   }
   .wordmark .dot{color:var(--accent);display:inline-block;transition:transform .45s var(--ease-spring);}
   a.wordmark:hover .dot{transform:translateY(-3px) scale(1.3);}
-
-  /* ---------- Mobile top bar ---------- */
-  .topbar{
-    display:flex;align-items:center;justify-content:space-between;
-    height:58px;padding:0 18px;
-    position:sticky;top:0;z-index:20;
-    background:rgba(255,255,255,.82);
-    -webkit-backdrop-filter:saturate(180%) blur(16px);backdrop-filter:saturate(180%) blur(16px);
-    border-bottom:1px solid var(--line);
-    transition:box-shadow .25s ease;
-  }
-  .topbar.scrolled{box-shadow:0 8px 22px -14px rgba(20,21,26,.28);}
 
   /* ---------- Desktop sidebar ---------- */
   .sidebar{
@@ -174,7 +162,7 @@
 
   @media (min-width:900px){
     body{padding-bottom:0;}
-    .topbar{display:none;}
+    .top-avatar{display:none;}
     .sidebar{display:flex;}
   }
 
@@ -923,6 +911,129 @@
   .profile-change:disabled{opacity:.55;cursor:default;}
   .profile-signout{display:block;margin:16px auto 0;background:none;border:0;cursor:pointer;color:var(--grey);font-family:var(--font-display);font-weight:600;font-size:12.5px;}
   .profile-signout:hover{color:var(--danger);}
+
+  /* ---------- mobile top bar: profile circle top-left ---------- */
+  .top-avatar{
+    position:fixed;top:calc(12px + env(safe-area-inset-top));left:14px;z-index:20;
+    width:40px;height:40px;border-radius:50%;padding:0;overflow:hidden;
+    background:linear-gradient(135deg,#ffd8c9,var(--accent));color:#fff;
+    font-family:var(--font-display);font-weight:700;font-size:16px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 0 2px #fff, 0 0 0 3.5px var(--accent-soft);
+    transition:transform .2s var(--ease-spring);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .top-avatar:active{transform:scale(.9);}
+  .top-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+  /* mobile: no top bar, so leave room for the floating profile pic */
+  @media (max-width:899.98px){ .main{padding-top:calc(40px + env(safe-area-inset-top));} }
+
+  /* ---------- first-time welcome ---------- */
+  .welcome{position:relative;max-width:460px;margin:0 auto;padding:18px 22px 40px;text-align:center;overflow:hidden;}
+  .welcome > *{animation:welcomeIn .8s var(--ease) both;}
+  .welcome > *:nth-child(3){animation-delay:.05s;}
+  .welcome > *:nth-child(4){animation-delay:.12s;}
+  .welcome > *:nth-child(5){animation-delay:.18s;}
+  .welcome > *:nth-child(6){animation-delay:.24s;}
+  .welcome > *:nth-child(7){animation-delay:.3s;}
+  .welcome > *:nth-child(8){animation-delay:.36s;}
+  .welcome > *:nth-child(9){animation-delay:.42s;}
+  @keyframes welcomeIn{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+
+  .welcome-glow{
+    position:absolute;left:50%;top:-30px;width:520px;height:420px;margin-left:-260px;z-index:-1;
+    background:radial-gradient(closest-side, rgba(255,90,54,.16), rgba(255,177,153,.08) 55%, transparent 75%);
+    pointer-events:none;animation:none;
+  }
+  .welcome-orbit{position:relative;width:270px;height:270px;margin:6px auto 8px;}
+  .orbit-ring{
+    position:absolute;inset:26px;border-radius:50%;border:1.5px dashed var(--line-strong);
+    animation:orbitSpin 70s linear infinite;
+  }
+  .orbit-ring.inner{inset:70px;border-style:solid;border-color:rgba(255,90,54,.18);animation:none;}
+  @keyframes orbitSpin{to{transform:rotate(360deg);}}
+  .orbit-me{position:absolute;left:50%;top:50%;width:84px;height:84px;margin:-42px 0 0 -42px;}
+  .orbit-halo{
+    position:absolute;inset:-14px;border-radius:50%;background:rgba(255,90,54,.14);
+    animation:orbitHalo 3.2s var(--ease) infinite;
+  }
+  @keyframes orbitHalo{0%,100%{transform:scale(.92);opacity:.9;}50%{transform:scale(1.12);opacity:.35;}}
+  .orbit-face{
+    position:relative;width:100%;height:100%;border-radius:50%;overflow:hidden;
+    background:linear-gradient(135deg,#ffd8c9,var(--accent));color:#fff;
+    font-family:var(--font-display);font-weight:700;font-size:32px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 0 4px #fff, 0 14px 30px -10px rgba(255,90,54,.55);
+  }
+  .orbit-face img{width:100%;height:100%;object-fit:cover;display:block;}
+  .seat{
+    position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;
+    transform:rotate(var(--a)) translateX(104px) rotate(calc(-1 * var(--a)));
+  }
+  .seat i{
+    display:flex;align-items:center;justify-content:center;width:100%;height:100%;border-radius:50%;
+    font-style:normal;animation:seatFloat 5s ease-in-out infinite;animation-delay:var(--d);
+  }
+  .seat i.face{
+    background:linear-gradient(135deg,var(--c1),var(--c2));
+    border:3px solid #fff;box-shadow:0 10px 20px -8px var(--c2);
+  }
+  .seat i.plus{
+    border:1.5px dashed var(--accent-2);background:#fff;color:var(--accent);
+    font-family:var(--font-display);font-weight:600;font-size:22px;line-height:1;
+  }
+  @keyframes seatFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
+
+  .welcome-kicker{
+    font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);margin-top:10px;
+  }
+  .welcome-title{
+    font-family:var(--font-display);font-weight:700;font-size:35px;line-height:1.04;letter-spacing:-.035em;
+    margin-top:12px;color:var(--ink);
+  }
+  .welcome-title em{font-style:normal;color:var(--accent);}
+  .welcome-sub{
+    font-family:var(--font-serif);font-size:16.5px;line-height:1.55;color:var(--ink-soft);
+    max-width:340px;margin:14px auto 0;
+  }
+  .welcome-cta{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    width:100%;max-width:330px;height:56px;margin:26px auto 0;border-radius:99px;
+    background:var(--ink);color:#fff;
+    font-family:var(--font-display);font-weight:600;font-size:16px;letter-spacing:-.005em;
+    box-shadow:0 20px 34px -14px rgba(20,21,26,.55), inset 0 1px 0 rgba(255,255,255,.14);
+    transition:transform .25s var(--ease-spring), box-shadow .25s ease, background .15s ease;
+  }
+  .welcome-cta svg{width:19px;height:19px;transition:transform .3s var(--ease-spring);}
+  .welcome-cta:hover{background:#000;transform:translateY(-2px);box-shadow:0 26px 40px -16px rgba(20,21,26,.6), inset 0 1px 0 rgba(255,255,255,.14);}
+  .welcome-cta:hover svg{transform:translateX(4px);}
+  .welcome-cta:active{transform:scale(.97);}
+  .welcome-fine{font-family:var(--font-mono);font-size:11px;color:var(--grey);margin-top:12px;}
+
+  .welcome-steps{
+    list-style:none;text-align:left;margin:30px auto 0;max-width:360px;
+    background:#fafafa;border:1px solid var(--line);border-radius:20px;padding:6px 16px;
+  }
+  .welcome-steps li{display:flex;gap:14px;align-items:flex-start;padding:14px 0;}
+  .welcome-steps li + li{border-top:1px solid var(--line);}
+  .welcome-steps .n{
+    flex-shrink:0;width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);
+    font-family:var(--font-display);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;
+  }
+  .welcome-steps b{display:block;font-family:var(--font-display);font-weight:600;font-size:14.5px;color:var(--ink);}
+  .welcome-steps span:not(.n){display:block;font-family:var(--font-serif);font-size:14px;line-height:1.45;color:var(--ink-soft);margin-top:2px;}
+
+  .welcome-join{max-width:360px;margin:26px auto 0;text-align:left;}
+  .welcome-join-label{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--grey);margin-bottom:8px;}
+  .welcome-join .circles-join-row{border-top:0;padding:0;margin:0;}
+
+  /* the Invite button glows once, right after your first circle exists */
+  .circle-invite-btn.nudge{animation:invitePulse 1.5s ease-in-out infinite;}
+  @keyframes invitePulse{
+    0%,100%{box-shadow:0 0 0 0 rgba(255,90,54,.45);}
+    50%{box-shadow:0 0 0 8px rgba(255,90,54,0);}
+  }
 </style>
 </head>
 <body>
@@ -931,40 +1042,18 @@
   <aside class="sidebar">
     <a href="/" class="wordmark brand" aria-label="Waater home">waater<span class="dot">.</span></a>
 
-    <div class="nav-wrap">
-      <span class="nav-pill" aria-hidden="true"></span>
-      <ul class="nav-list">
-        <li><a href="/" class="nav-item active" data-nav="circles" aria-current="page">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>
-          <span>Circles</span></a></li>
-      </ul>
-    </div>
-
 
     <div id="sidebarAuthArea" class="sidebar-auth"></div>
   </aside>
 
   <main class="main">
-    <div class="topbar">
-      <a href="/" class="wordmark" aria-label="Waater home">waater<span class="dot">.</span></a>
-    </div>
+    <button type="button" class="top-avatar" id="topProfileBtn" aria-label="My profile"><span id="topAvatarInner"></span></button>
 
     <div id="pageBody">
       <div class="page-loading" id="pageLoading">Loading circles…</div>
     </div>
   </main>
 </div>
-
-<nav class="bottom-nav" aria-label="Primary">
-  <a href="/" class="tab active" data-nav="circles" aria-current="page">
-    <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg></span>
-    <span class="tab-label">Circles</span>
-  </a>
-  <button type="button" class="tab" id="dockProfileBtn" aria-label="My profile">
-    <span class="tab-ico" id="dockProfileIco"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span>
-    <span class="tab-label">Me</span>
-  </button>
-</nav>
 
 <div class="waater-toast" id="waaterToast">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
@@ -1606,6 +1695,7 @@
         return;
       }
       isCreating = true;
+      const wasFirstCircle = lastMyCircles.length === 0;
       const btn = overlay.querySelector('#circleModalConfirm');
       btn.disabled = true;
       btn.innerHTML = `<span class="mini-spinner"></span> Creating…`;
@@ -1634,12 +1724,11 @@
         if (error) throw error;
 
         // owner membership is created automatically by the on_circle_created trigger
-        showToast(`${name} is live`);
-
-
+        showToast(wasFirstCircle ? `${name} is live — now bring someone in` : `${name} is live`);
 
         close();
-        renderPage();
+        await renderPage();
+        if (wasFirstCircle) nudgeInvite(newCircle.id);
       } catch (err) {
         isCreating = false;
         btn.disabled = false;
@@ -1712,6 +1801,73 @@
     });
   }
 
+
+  // ============================================================
+  // FIRST-TIME WELCOME — shown when you're in zero circles
+  // ============================================================
+  function renderWelcome(){
+    const meFace = document.querySelector('.sidebar-profile .mini-avatar')?.innerHTML || escapeHtml(initials(currentUsername));
+    const seat = (a, d, kind, c1, c2) => kind === 'plus'
+      ? `<div class="seat" style="--a:${a}deg;--d:${d}s"><i class="plus">+</i></div>`
+      : `<div class="seat" style="--a:${a}deg;--d:${d}s"><i class="face" style="--c1:${c1};--c2:${c2}"></i></div>`;
+    return `
+      <div class="welcome">
+        <div class="welcome-glow" aria-hidden="true"></div>
+
+        <div class="welcome-orbit" aria-hidden="true">
+          <div class="orbit-ring"></div>
+          <div class="orbit-ring inner"></div>
+          <div class="orbit-me"><span class="orbit-halo"></span><div class="orbit-face">${meFace}</div></div>
+          ${seat(-90, 0, 'face', '#ffd8c9', '#ff5a36')}
+          ${seat(-18, 1.1, 'plus')}
+          ${seat(54, .5, 'face', '#cfe4ff', '#7fb8ff')}
+          ${seat(126, 1.6, 'plus')}
+          ${seat(198, .9, 'face', '#d9f5cf', '#5fd3c4')}
+        </div>
+
+        <div class="welcome-kicker">Welcome to Waater</div>
+        <h1 class="welcome-title">Your people.<br><em>Nobody else.</em></h1>
+        <p class="welcome-sub">A private circle is a tiny room for the few friends you'd actually tell everything. No followers. No strangers. Only the people you let in.</p>
+
+        <button class="welcome-cta" id="circleNewBtnEmpty" type="button">
+          Create your first circle
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <div class="welcome-fine">Takes ten seconds. Then bring your friends in.</div>
+
+        <ol class="welcome-steps">
+          <li><span class="n">1</span><div><b>Name it</b><span>Something only your people would get.</span></div></li>
+          <li><span class="n">2</span><div><b>Invite your people</b><span>Share a one-time code. It expires in 10 minutes.</span></div></li>
+          <li><span class="n">3</span><div><b>Say it all</b><span>Post and react. Everything stays inside.</span></div></li>
+        </ol>
+
+        <div class="welcome-join">
+          <div class="welcome-join-label">Already got an invite?</div>
+          <div class="circles-join-row">
+            <input type="text" id="circleJoinInput" placeholder="Paste your invite code or link" maxlength="300">
+            <button id="circleJoinBtn">Join</button>
+          </div>
+          <div class="circles-join-status" id="circleJoinStatus"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  // after your very first circle: open its card and make "Invite" glow
+  function nudgeInvite(circleId){
+    const expand = document.getElementById(`circle-expand-${circleId}`);
+    if (!expand) return;
+    const row = expand.parentElement.querySelector('.circle-row');
+    expand.classList.add('open');
+    if (row) row.classList.add('expanded');
+    const btn = expand.querySelector('.circle-invite-btn');
+    if (btn){
+      btn.classList.add('nudge');
+      btn.addEventListener('click', () => btn.classList.remove('nudge'), { once: true });
+    }
+    expand.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
   // ---- main render ----
   async function renderPage() {
     const body = document.getElementById('pageBody');
@@ -1734,6 +1890,13 @@
     const myCircles = await loadMyCircles(currentUser.id);
 
     lastMyCircles = myCircles;
+
+    // brand-new here? show the welcome, not an empty list with zeros
+    if (myCircles.length === 0){
+      body.innerHTML = renderWelcome();
+      wireYourCirclesUI();
+      return;
+    }
 
     const totalPeople = new Set(myCircles.flatMap(c => (c.memberProfiles || []).map(p => p.id))).size;
 
@@ -1773,8 +1936,8 @@
     document.querySelectorAll('.sidebar-profile .mini-avatar').forEach(el => {
       el.innerHTML = url ? `<img src="${escapeHtml(url)}" alt="">` : escapeHtml(initials(currentUsername));
     });
-    const ico = document.getElementById('dockProfileIco');
-    if (ico) ico.innerHTML = url ? `<img class="dock-avatar" src="${escapeHtml(url)}" alt="">` : DOCK_ME_SVG;
+    const top = document.getElementById('topAvatarInner');
+    if (top) top.innerHTML = url ? `<img src="${escapeHtml(url)}" alt="">` : escapeHtml(initials(currentUsername));
   }
 
   // crop to a centered square, shrink to 512px, save as jpeg
@@ -1892,12 +2055,12 @@
 
   // sidebar button is re-created by renderSidebar(), so listen on the document
   document.addEventListener('click', (e) => {
-    if (e.target.closest('#openProfileBtn') || e.target.closest('#dockProfileBtn')) openProfile();
+    if (e.target.closest('#openProfileBtn') || e.target.closest('#topProfileBtn')) openProfile();
   });
 
   function paintAvatarsFromSidebar(){
     const img = document.querySelector('.sidebar-profile .mini-avatar img');
-    if (img) paintAvatars(img.getAttribute('src'));
+    paintAvatars(img ? img.getAttribute('src') : '');
   }
 
   async function init() {
@@ -1951,13 +2114,6 @@
     });
     list.addEventListener('mouseleave', function(){ pill.classList.remove('on'); });
     list.addEventListener('focusout', function(){ pill.classList.remove('on'); });
-  }
-
-  // topbar gets a soft shadow once you scroll
-  var tb = document.querySelector('.topbar');
-  if (tb){
-    var f = function(){ tb.classList.toggle('scrolled', window.scrollY > 4); };
-    window.addEventListener('scroll', f, {passive:true}); f();
   }
 
   // dock: light haptic tap, and tuck away while typing so the keyboard has room
