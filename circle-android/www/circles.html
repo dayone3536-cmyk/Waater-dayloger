@@ -880,6 +880,49 @@
     padding:80px 22px;text-align:center;
     font-family:var(--font-mono);font-size:12px;color:var(--grey);
   }
+
+  /* ---------- my profile popup (opens inside this page) ---------- */
+  button.sidebar-profile{border:0;background:none;font:inherit;text-align:left;cursor:pointer;color:inherit;}
+  button.tab{background:none;border:0;font:inherit;cursor:pointer;color:inherit;}
+  .tab-ico .dock-avatar{width:26px;height:26px;border-radius:50%;object-fit:cover;display:block;}
+  .profile-backdrop{
+    position:fixed;inset:0;z-index:300;background:rgba(20,21,26,.45);
+    display:flex;align-items:center;justify-content:center;padding:18px;
+    opacity:0;transition:opacity .2s ease;
+  }
+  .profile-backdrop.show{opacity:1;}
+  .profile-card{
+    width:100%;max-width:360px;background:#fff;border-radius:24px;padding:26px 22px 20px;
+    text-align:center;position:relative;
+    box-shadow:0 30px 70px -20px rgba(20,21,26,.45);
+    transform:translateY(14px) scale(.97);transition:transform .3s var(--ease-spring);
+  }
+  .profile-backdrop.show .profile-card{transform:none;}
+  .profile-close{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;border:0;background:#f4f4f6;font-size:18px;line-height:1;cursor:pointer;color:var(--ink);}
+  .profile-close:hover{background:#eaeaee;}
+  .profile-card h3{font-family:var(--font-display);font-weight:700;font-size:18px;margin-bottom:18px;}
+  .profile-avatar-btn{
+    position:relative;width:112px;height:112px;border-radius:50%;border:0;padding:0;cursor:pointer;
+    background:linear-gradient(135deg,#ffd8c9,var(--accent));color:#fff;
+    font-family:var(--font-display);font-weight:700;font-size:44px;overflow:hidden;
+    display:inline-flex;align-items:center;justify-content:center;
+    box-shadow:0 0 0 3px #fff, 0 0 0 5px var(--accent-soft);
+  }
+  .profile-avatar-btn img{width:100%;height:100%;object-fit:cover;display:block;}
+  .profile-avatar-btn .cam{
+    position:absolute;left:0;right:0;bottom:0;padding:6px 0;background:rgba(20,21,26,.55);
+    font-family:var(--font-display);font-size:11px;font-weight:600;letter-spacing:.02em;
+  }
+  .profile-avatar-btn.busy{opacity:.6;pointer-events:none;}
+  .profile-name{font-family:var(--font-display);font-weight:600;font-size:16px;margin-top:14px;}
+  .profile-change{
+    margin-top:14px;background:var(--ink);color:#fff;border:0;border-radius:99px;cursor:pointer;
+    font-family:var(--font-display);font-weight:600;font-size:13px;padding:10px 18px;
+  }
+  .profile-change:hover{background:#000;}
+  .profile-change:disabled{opacity:.55;cursor:default;}
+  .profile-signout{display:block;margin:16px auto 0;background:none;border:0;cursor:pointer;color:var(--grey);font-family:var(--font-display);font-weight:600;font-size:12.5px;}
+  .profile-signout:hover{color:var(--danger);}
 </style>
 </head>
 <body>
@@ -891,25 +934,12 @@
     <div class="nav-wrap">
       <span class="nav-pill" aria-hidden="true"></span>
       <ul class="nav-list">
-        <li><a href="/" class="nav-item" data-nav="home">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
-          <span>Home</span></a></li>
-        <li><a href="/circles" class="nav-item active" data-nav="circles" aria-current="page">
+        <li><a href="/" class="nav-item active" data-nav="circles" aria-current="page">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>
           <span>Circles</span></a></li>
-        <li><a href="/messages" class="nav-item" data-nav="messages">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-          <span>Messages</span></a></li>
-        <li><a href="/profile" class="nav-item" data-nav="profile">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-          <span>Profile</span></a></li>
       </ul>
     </div>
 
-    <a href="/create" class="nav-create" data-nav="create">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-      Create
-    </a>
 
     <div id="sidebarAuthArea" class="sidebar-auth"></div>
   </aside>
@@ -926,26 +956,14 @@
 </div>
 
 <nav class="bottom-nav" aria-label="Primary">
-  <a href="/" class="tab" data-nav="home">
-    <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg></span>
-    <span class="tab-label">Home</span>
-  </a>
-  <a href="/circles" class="tab active" data-nav="circles" aria-current="page">
+  <a href="/" class="tab active" data-nav="circles" aria-current="page">
     <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg></span>
     <span class="tab-label">Circles</span>
   </a>
-  <a href="/create" class="tab tab-create" data-nav="create" aria-label="Create">
-    <span class="ring"><svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
-    <span class="tab-label">Create</span>
-  </a>
-  <a href="/messages" class="tab" data-nav="messages">
-    <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></span>
-    <span class="tab-label">Messages</span>
-  </a>
-  <a href="/profile" class="tab" data-nav="profile">
-    <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span>
-    <span class="tab-label">Profile</span>
-  </a>
+  <button type="button" class="tab" id="dockProfileBtn" aria-label="My profile">
+    <span class="tab-ico" id="dockProfileIco"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span>
+    <span class="tab-label">Me</span>
+  </button>
 </nav>
 
 <div class="waater-toast" id="waaterToast">
@@ -1015,10 +1033,10 @@
 
     area.innerHTML = `
       <div class="sidebar-user">
-        <a href="/profile" class="sidebar-profile">
+        <button type="button" class="sidebar-profile" id="openProfileBtn">
           <div class="mini-avatar">${avatarHtml}</div>
-          <div class="who"><span>${escapeHtml(currentUsername)}</span><span>view profile</span></div>
-        </a>
+          <div class="who"><span>${escapeHtml(currentUsername)}</span><span>your profile</span></div>
+        </button>
         <button class="sidebar-signout" id="signOutBtn" type="button" aria-label="Sign out" title="Sign out">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
         </button>
@@ -1045,14 +1063,13 @@
   // build the URL for a circle's own page — matches what circle.html expects
   function circleHref(circle){
 
-    return `/circle?${circle.is_private ? 'private' : 'public'}&ID=${encodeURIComponent(circle.id)}`;
+    return `/circle?private&ID=${encodeURIComponent(circle.id)}`;
 
   }
 
   // cache of the last loaded lists so the search box can filter instantly
   // without a refetch
   let lastMyCircles = [];
-  let lastDiscoverCircles = [];
 
   const PRIVATE_CIRCLE_LIMIT = 4;
 
@@ -1084,8 +1101,9 @@
   async function loadMyCircles(userId) {
     const { data: memberships } = await supabaseClient
       .from('circle_members')
-      .select('circle_id, role, joined_at, circles(id, name, is_private, created_at)')
+      .select('circle_id, role, joined_at, circles!inner(id, name, is_private, created_at)')
       .eq('user_id', userId)
+      .eq('circles.is_private', true)
       .order('joined_at', { ascending: false });
 
     const list = (memberships || []).filter(m => m.circles);
@@ -1117,30 +1135,6 @@
         memberProfiles: memberProfilesForCircle,
       };
     });
-  }
-
-  // ---- discover: public circles the user hasn't joined yet ----
-  async function loadDiscoverCircles(userId, myCircleIds) {
-    const { data } = await supabaseClient
-      .from('circles')
-      .select('id, name, is_private, created_at')
-      .eq('is_private', false)
-      .order('created_at', { ascending: false })
-      .limit(30);
-
-    const list = (data || []).filter(c => !myCircleIds.has(c.id));
-    if (list.length === 0) return [];
-
-    const circleIds = list.map(c => c.id);
-    const { data: allMembers } = await supabaseClient
-      .from('circle_members')
-      .select('circle_id')
-      .in('circle_id', circleIds);
-
-    const counts = {};
-    (allMembers || []).forEach(m => { counts[m.circle_id] = (counts[m.circle_id] || 0) + 1; });
-
-    return list.map(c => ({ ...c, memberCount: counts[c.id] || 0 }));
   }
 
   function circleMetaIcon(isPrivate) {
@@ -1289,36 +1283,6 @@
     `;
   }
 
-  function renderDiscoverRow(circle) {
-    return `
-      <div class="circle-card" style="--row-accent:${accentForId(circle.id)};">
-        <div class="discover-row">
-          <div class="circle-info">
-            <div class="circle-name">${escapeHtml(circle.name)}</div>
-            <div class="circle-meta">
-              ${circleMetaIcon(false)}
-              <span>public · ${circle.memberCount} ${circle.memberCount === 1 ? 'person' : 'people'}</span>
-            </div>
-          </div>
-          <button class="discover-join-btn" data-circle-id="${circle.id}">Join</button>
-        </div>
-      </div>
-    `;
-  }
-
-  function renderDiscoverSection(circles) {
-    if (circles.length === 0) {
-      return `
-        <div class="circles-empty">
-          <div class="empty-rings"><span></span><span></span><span></span></div>
-          <h3>Nothing to discover yet</h3>
-          <p>No public circles around right now — start your own from the "Your circles" tab.</p>
-        </div>
-      `;
-    }
-    return `<div class="circles-section" style="margin-top:16px;">${circles.map(renderDiscoverRow).join('')}</div>`;
-  }
-
   // ---- extract a bare invite code whether the user pasted a raw code
   // or a full invite link (e.g. https://app.com/circle/join?code=XXXX)
   function extractInviteCode(raw) {
@@ -1344,8 +1308,7 @@
 
       row.addEventListener('click', () => {
         const id = row.dataset.circleId;
-        const isPrivate = row.dataset.private === '1';
-        window.location.href = `/circle?${isPrivate ? 'private' : 'public'}&ID=${encodeURIComponent(id)}`;
+        window.location.href = `/circle?private&ID=${encodeURIComponent(id)}`;
       });
     });
 
@@ -1500,49 +1463,10 @@
     }
   }
 
-  // ---- wire "Join" buttons in the Discover tab (public circles, no code needed) ----
-
-  function wireDiscoverUI() {
-
-    document.querySelectorAll('.discover-join-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-
-        e.stopPropagation();
-        if (!requireAuth()) return;
-        if (btn.disabled) return; // guard against a double-tap inserting membership twice
-        btn.disabled = true;
-
-        btn.innerHTML = `<span class="mini-spinner"></span> Joining…`;
-
-        try {
-
-          const { error } = await supabaseClient
-            .from('circle_members')
-            .insert({ circle_id: btn.dataset.circleId, user_id: currentUser.id, role: 'member' });
-          if (error) throw error;
-          btn.classList.add('joined');
-          btn.textContent = 'Joined!';
-          showToast('You joined the circle');
-          setTimeout(() => renderPage(), 500);
-
-        } catch (err) {
-
-            console.error('Join circle failed:', err);
-            showToast(friendlyCircleError(err), 'error');
-            btn.disabled = false;
-            btn.textContent = 'Join';
-
-          }
-
-
-      });
-    });
-  }
-
   // ---- show a freshly created invite code with a live countdown ring ----
   function showInviteResult(resultEl, invite, circleId) {
     resultEl.style.display = 'block';
-    const link = `${window.location.origin}/circle/join?code=${encodeURIComponent(invite.code)}`;
+    const link = `${window.location.origin}/circle?code=${encodeURIComponent(invite.code)}`; // opens the no-sign-in preview first
     const RADIUS = 20;
     const CIRC = 2 * Math.PI * RADIUS;
 
@@ -1639,15 +1563,8 @@
           <input type="text" id="circleNameInput" placeholder="Sunday people" maxlength="40" autocomplete="off">
         </div>
 
-        <div class="circle-form-field">
-          <label>Privacy</label>
-          <div class="circle-privacy-toggle">
-            <button type="button" class="active" data-value="private">Private</button>
-            <button type="button" data-value="public">Public</button>
-          </div>
-          <div class="circle-privacy-note" id="circlePrivacyNote">
-            Only people already inside can bring someone in — three invites a day each, and every invite code stops working after 10 minutes.
-          </div>
+        <div class="circle-privacy-note">
+          Private by default — only people inside can bring someone in (three invites a day each), and every invite code stops working after 10 minutes.
         </div>
 
         <div id="circleModalErrorSlot"></div>
@@ -1668,25 +1585,6 @@
       nameInput.style.borderColor = '';
     });
     setTimeout(() => nameInput.focus(), 260);
-
-    let isPrivate = true;
-    const toggleBtns = overlay.querySelectorAll('.circle-privacy-toggle button');
-    const note = overlay.querySelector('#circlePrivacyNote');
-    const icon = overlay.querySelector('#circleModalIcon');
-    toggleBtns.forEach(btn => {
-
-      btn.addEventListener('click', () => {
-        toggleBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        isPrivate = btn.dataset.value === 'private';
-        note.textContent = isPrivate
-          ? 'Only people already inside can bring someone in — three invites a day each, and every invite code stops working after 10 minutes.'
-          : 'Anyone can see this circle and what gets posted in it — people can also join it straight from Discover.';
-        icon.classList.remove('bump');
-        void icon.offsetWidth;
-        icon.classList.add('bump');
-      });
-    });
 
     const close = () => {
       overlay.classList.remove('show');
@@ -1715,7 +1613,7 @@
 
       try {
 
-          if (isPrivate && countPrivateCircles(lastMyCircles) >= PRIVATE_CIRCLE_LIMIT) {
+          if (countPrivateCircles(lastMyCircles) >= PRIVATE_CIRCLE_LIMIT) {
             
             throw new Error('PRIVATE_CIRCLE_LIMIT');
 
@@ -1727,7 +1625,7 @@
 
           .from('circles')
 
-          .insert({ name, is_private: isPrivate, created_by: currentUser.id })
+          .insert({ name, is_private: true, created_by: currentUser.id })
 
           .select()
 
@@ -1814,34 +1712,6 @@
     });
   }
 
-  // ---- tabs, with a sliding pill indicator ----
-  function positionTabIndicator(activeBtn){
-    const indicator = document.querySelector('.tab-indicator');
-    if (!indicator || !activeBtn) return;
-    indicator.style.width = `${activeBtn.offsetWidth}px`;
-    indicator.style.transform = `translateX(${activeBtn.offsetLeft - 4}px)`;
-  }
-
-  function wireTabs() {
-    const buttons = document.querySelectorAll('.circles-tab-btn');
-    const active = document.querySelector('.circles-tab-btn.active');
-    positionTabIndicator(active);
-
-    buttons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        buttons.forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.circles-panel').forEach(p => p.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById(`panel-${btn.dataset.tab}`).classList.add('active');
-        positionTabIndicator(btn);
-      });
-    });
-
-    window.addEventListener('resize', () => {
-      positionTabIndicator(document.querySelector('.circles-tab-btn.active'));
-    });
-  }
-
   // ---- main render ----
   async function renderPage() {
     const body = document.getElementById('pageBody');
@@ -1854,7 +1724,7 @@
         <div class="page-head-top">
           <div>
             <h1>Circles</h1>
-            <p>Small, close spaces — create one, invite people in, or find a public one to join.</p>
+            <p>Small, close spaces — create one or get invited into one.</p>
           </div>
         </div>
       </div>
@@ -1862,11 +1732,8 @@
     `;
 
     const myCircles = await loadMyCircles(currentUser.id);
-    const myCircleIds = new Set(myCircles.map(c => c.id));
-    const discoverCircles = await loadDiscoverCircles(currentUser.id, myCircleIds);
 
     lastMyCircles = myCircles;
-    lastDiscoverCircles = discoverCircles;
 
     const totalPeople = new Set(myCircles.flatMap(c => (c.memberProfiles || []).map(p => p.id))).size;
 
@@ -1875,7 +1742,7 @@
         <div class="page-head-top">
           <div>
             <h1>Circles</h1>
-            <p>Small, close spaces — create one, invite people in, or find a public one to join.</p>
+            <p>Small, close spaces — create one or get invited into one.</p>
           </div>
         </div>
         <div class="stat-pills">
@@ -1884,31 +1751,162 @@
         </div>
       </div>
 
-      <div class="circles-tabs">
-        <div class="circles-tabs-track">
-          <div class="tab-indicator"></div>
-          <button class="circles-tab-btn active" data-tab="mine">Your circles</button>
-          <button class="circles-tab-btn" data-tab="discover">Discover</button>
-        </div>
-      </div>
-
-      <div class="circles-panel active" id="panel-mine">
+      <div id="panel-mine">
         ${renderCirclesSection(myCircles)}
-      </div>
-
-      <div class="circles-panel" id="panel-discover">
-        ${renderDiscoverSection(discoverCircles)}
       </div>
     `;
 
-    wireTabs();
     wireYourCirclesUI();
-    wireDiscoverUI();
 
+  }
+
+
+  // ============================================================
+  // MY PROFILE — a popup inside this page. No redirect.
+  // Photos go to the public "avatars" bucket, one folder per user.
+  // ============================================================
+  const AVATAR_BUCKET = 'avatars';
+  const DOCK_ME_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>`;
+  let profileOverlay = null;
+
+  function paintAvatars(url){
+    document.querySelectorAll('.sidebar-profile .mini-avatar').forEach(el => {
+      el.innerHTML = url ? `<img src="${escapeHtml(url)}" alt="">` : escapeHtml(initials(currentUsername));
+    });
+    const ico = document.getElementById('dockProfileIco');
+    if (ico) ico.innerHTML = url ? `<img class="dock-avatar" src="${escapeHtml(url)}" alt="">` : DOCK_ME_SVG;
+  }
+
+  // crop to a centered square, shrink to 512px, save as jpeg
+  function fileToAvatarBlob(file){
+    return new Promise((resolve, reject) => {
+      const objUrl = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const size = 512;
+        const s = Math.min(img.width, img.height);
+        const sx = (img.width - s) / 2, sy = (img.height - s) / 2;
+        const cv = document.createElement('canvas');
+        cv.width = cv.height = size;
+        cv.getContext('2d').drawImage(img, sx, sy, s, s, 0, 0, size, size);
+        URL.revokeObjectURL(objUrl);
+        cv.toBlob(b => b ? resolve(b) : reject(new Error('Could not process that image')), 'image/jpeg', 0.88);
+      };
+      img.onerror = () => { URL.revokeObjectURL(objUrl); reject(new Error('Could not read that image')); };
+      img.src = objUrl;
+    });
+  }
+
+  async function openProfile(){
+    if (!currentUser){ requireAuth('/'); return; }
+    if (profileOverlay) return;
+
+    const { data: me } = await supabaseClient.from('profiles')
+      .select('username, avatar_url').eq('id', currentUser.id).maybeSingle();
+    let avatarUrl = me?.avatar_url || '';
+    const name = me?.username || currentUsername || 'You';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'profile-backdrop';
+    overlay.innerHTML = `
+      <div class="profile-card" role="dialog" aria-label="Your profile">
+        <button class="profile-close" type="button" aria-label="Close">×</button>
+        <h3>This is your profile</h3>
+        <button class="profile-avatar-btn" type="button" id="profileAvatarBtn" aria-label="Change profile picture">
+          <span id="profileAvatarInner">${avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="">` : escapeHtml(initials(name))}</span>
+          <span class="cam">Change</span>
+        </button>
+        <div class="profile-name">@${escapeHtml(name)}</div>
+        <button class="profile-change" type="button" id="profileChangeBtn">Change profile picture</button>
+        <input type="file" id="profileFile" accept="image/*" hidden>
+        <button class="profile-signout" type="button" id="profileSignOut">Sign out</button>
+      </div>`;
+    document.body.appendChild(overlay);
+    profileOverlay = overlay;
+    requestAnimationFrame(() => overlay.classList.add('show'));
+
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    function close(){
+      document.removeEventListener('keydown', onKey);
+      overlay.classList.remove('show');
+      setTimeout(() => { overlay.remove(); profileOverlay = null; }, 200);
+    }
+    document.addEventListener('keydown', onKey);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    overlay.querySelector('.profile-close').addEventListener('click', close);
+
+    const fileInput = overlay.querySelector('#profileFile');
+    const avatarBtn = overlay.querySelector('#profileAvatarBtn');
+    const changeBtn = overlay.querySelector('#profileChangeBtn');
+    avatarBtn.addEventListener('click', () => fileInput.click());
+    changeBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files && fileInput.files[0];
+      fileInput.value = '';
+      if (!file) return;
+      if (!file.type.startsWith('image/')){ showToast('Pick an image file', 'error'); return; }
+
+      avatarBtn.classList.add('busy');
+      changeBtn.disabled = true;
+      changeBtn.textContent = 'Uploading…';
+      let uploadedPath = null;
+      try {
+        const blob = await fileToAvatarBlob(file);
+        uploadedPath = `${currentUser.id}/avatar-${Date.now()}.jpg`;
+        const { error: upErr } = await supabaseClient.storage.from(AVATAR_BUCKET)
+          .upload(uploadedPath, blob, { contentType: 'image/jpeg', cacheControl: '3600' });
+        if (upErr) throw upErr;
+
+        const newUrl = supabaseClient.storage.from(AVATAR_BUCKET).getPublicUrl(uploadedPath).data.publicUrl;
+        const { data: saved, error: dbErr } = await supabaseClient.from('profiles')
+          .update({ avatar_url: newUrl }).eq('id', currentUser.id).select('id');
+        if (dbErr) throw dbErr;
+        if (!saved || !saved.length) throw new Error('Could not save your picture');
+
+        // tidy up the previous photo (only ever our own folder)
+        const marker = `/${AVATAR_BUCKET}/`;
+        if (avatarUrl && avatarUrl.includes(marker)){
+          const oldPath = decodeURIComponent(avatarUrl.split(marker)[1].split('?')[0]);
+          if (oldPath.startsWith(currentUser.id + '/')) supabaseClient.storage.from(AVATAR_BUCKET).remove([oldPath]);
+        }
+        avatarUrl = newUrl;
+        overlay.querySelector('#profileAvatarInner').innerHTML = `<img src="${escapeHtml(newUrl)}" alt="">`;
+        paintAvatars(newUrl);
+        showToast('Profile picture updated');
+      } catch (err) {
+        if (uploadedPath) supabaseClient.storage.from(AVATAR_BUCKET).remove([uploadedPath]); // no orphan file
+        showToast(err?.message || 'Could not update your picture', 'error');
+      } finally {
+        avatarBtn.classList.remove('busy');
+        changeBtn.disabled = false;
+        changeBtn.textContent = 'Change profile picture';
+      }
+    });
+
+    overlay.querySelector('#profileSignOut').addEventListener('click', async () => {
+      await supabaseClient.auth.signOut();
+      window.location.href = '/';
+    });
+  }
+
+  // sidebar button is re-created by renderSidebar(), so listen on the document
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#openProfileBtn') || e.target.closest('#dockProfileBtn')) openProfile();
+  });
+
+  function paintAvatarsFromSidebar(){
+    const img = document.querySelector('.sidebar-profile .mini-avatar img');
+    if (img) paintAvatars(img.getAttribute('src'));
   }
 
   async function init() {
     await renderSidebar();
+    paintAvatarsFromSidebar();
+    if (currentUser && new URLSearchParams(location.search).has('profile')){
+      history.replaceState(null, '', location.pathname);
+      openProfile();
+    }
     await renderPage();
   }
 
@@ -1920,7 +1918,7 @@
 (function(){
   var path = location.pathname.replace(/\.html$/, '').replace(/\/+$/, '') || '/';
   var first = '/' + (path.split('/')[1] || '');
-  var keyMap = {'/':'home','/home':'home','/index':'home','/create':'create','/circles':'circles','/circle':'circles','/messages':'messages','/profile':'profile'};
+  var keyMap = {'/':'circles','/circles':'circles','/circle':'circles'};
   var key = keyMap[path] || keyMap[first];
   if (key){
     document.querySelectorAll('[data-nav]').forEach(function(el){
