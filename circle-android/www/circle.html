@@ -2316,12 +2316,25 @@
     <div class="nav-wrap">
       <span class="nav-pill" aria-hidden="true"></span>
       <ul class="nav-list">
-        <li><a href="/" class="nav-item active" data-nav="circles" aria-current="page">
+        <li><a href="/" class="nav-item" data-nav="home">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+          <span>Home</span></a></li>
+        <li><a href="/circles" class="nav-item active" data-nav="circles" aria-current="page">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>
           <span>Circles</span></a></li>
+        <li><a href="/messages" class="nav-item" data-nav="messages">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <span>Messages</span></a></li>
+        <li><a href="/profile" class="nav-item" data-nav="profile">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+          <span>Profile</span></a></li>
       </ul>
     </div>
 
+    <a href="/create" class="nav-create" data-nav="create">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Create
+    </a>
 
     <div id="sidebarAuthArea" class="sidebar-auth"></div>
   </aside>
@@ -2343,13 +2356,25 @@
 </div>
 
 <nav class="bottom-nav" aria-label="Primary">
-  <a href="/" class="tab active" data-nav="circles" aria-current="page">
+  <a href="/" class="tab" data-nav="home">
+    <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg></span>
+    <span class="tab-label">Home</span>
+  </a>
+  <a href="/circles" class="tab active" data-nav="circles" aria-current="page">
     <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg></span>
     <span class="tab-label">Circles</span>
   </a>
-  <a href="/?profile" class="tab" aria-label="My profile">
+  <a href="/create" class="tab tab-create" data-nav="create" aria-label="Create">
+    <span class="ring"><svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+    <span class="tab-label">Create</span>
+  </a>
+  <a href="/messages" class="tab" data-nav="messages">
+    <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></span>
+    <span class="tab-label">Messages</span>
+  </a>
+  <a href="/profile" class="tab" data-nav="profile">
     <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span>
-    <span class="tab-label">Me</span>
+    <span class="tab-label">Profile</span>
   </a>
 </nav>
 
@@ -2769,9 +2794,9 @@
     const avatarHtml = me?.avatar_url ? `<img src="${escapeHtml(me.avatar_url)}" alt="">` : initials(currentUsername);
     area.innerHTML = `
       <div class="sidebar-user">
-        <a href="/?profile" class="sidebar-profile">
+        <a href="/profile" class="sidebar-profile">
           <div class="mini-avatar">${avatarHtml}</div>
-          <div class="who"><span>${escapeHtml(currentUsername)}</span><span>your profile</span></div>
+          <div class="who"><span>${escapeHtml(currentUsername)}</span><span>view profile</span></div>
         </a>
         <button class="sidebar-signout" id="signOutBtn" type="button" aria-label="Sign out" title="Sign out">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
@@ -6195,7 +6220,7 @@
 
           await navigator.clipboard.writeText(`${window.location.origin}/circle?code=${encodeURIComponent(data.code)}`);
           
-          showToast('Invite link copied — works for 24 hours');
+          showToast('Invite link copied — works for 10 minutes');
         } catch (e) {
           showToast(`Invite code: ${data.code}`);
         }
@@ -7443,16 +7468,6 @@
       return;
     }
 
-    if (!circle.is_private){
-      document.getElementById('pageBody').innerHTML = `
-        <div class="page-error">
-          <h2>Circle not found</h2>
-          <p>This circle doesn't exist or was removed. <a href="/circles">Back to your circles</a></p>
-        </div>
-      `;
-      return;
-    }
-
     if (urlSaysPrivate !== circle.is_private){
       const correctUrl = `/circle?${circle.is_private ? 'private' : 'public'}&ID=${encodeURIComponent(circle.id)}`;
       window.history.replaceState(null, '', correctUrl);
@@ -7507,7 +7522,7 @@
 (function(){
   var path = location.pathname.replace(/\.html$/, '').replace(/\/+$/, '') || '/';
   var first = '/' + (path.split('/')[1] || '');
-  var keyMap = {'/':'circles','/circles':'circles','/circle':'circles'};
+  var keyMap = {'/':'home','/home':'home','/index':'home','/create':'create','/circles':'circles','/circle':'circles','/messages':'messages','/profile':'profile'};
   var key = keyMap[path] || keyMap[first];
   if (key){
     document.querySelectorAll('[data-nav]').forEach(function(el){
