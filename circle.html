@@ -2203,6 +2203,43 @@
     .vr-lock{display:block;font-family:var(--font-mono);font-size:10.5px;color:rgba(255,255,255,.66);margin-bottom:10px;text-align:center;}
   }
 
+  /* ---------- "Spark" prompt card + playful recorder bits ----------
+     A conversation starter that stays on screen the whole time you record,
+     so a blank mind is never a reason to stop. */
+  .vr-spark{
+    position:absolute;left:14px;right:14px;top:calc(70px + env(safe-area-inset-top,0px));z-index:5;
+    display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;
+  }
+  .vr-spark-q{
+    pointer-events:auto;max-width:340px;text-align:center;color:#fff;
+    font-family:var(--font-display);font-weight:600;font-size:19px;line-height:1.25;letter-spacing:-.01em;
+    padding:12px 16px;border-radius:18px;background:rgba(20,21,26,.52);text-shadow:0 1px 8px rgba(0,0,0,.35);
+    animation:vrSparkIn .35s var(--ease-spring) both;
+  }
+  .vr-spark-q.nudge{background:var(--accent);animation:vrNudge .55s var(--ease-spring) 2;}
+  .vr-spark-row{display:flex;gap:8px;pointer-events:auto;}
+  .vr-chip{
+    height:30px;padding:0 13px;border-radius:99px;background:rgba(20,21,26,.52);color:#fff;
+    font-family:var(--font-display);font-weight:600;font-size:12px;transition:transform .15s var(--ease-spring);
+  }
+  .vr-chip:active{transform:scale(.92);}
+  @keyframes vrSparkIn{from{opacity:0;transform:translateY(6px) scale(.97);}to{opacity:1;transform:none;}}
+  @keyframes vrNudge{0%,100%{transform:scale(1);}40%{transform:scale(1.06) rotate(-1.2deg);}70%{transform:scale(1.03) rotate(1deg);}}
+  .vr-stage[data-state="recording"] .vr-spark-row,
+  .vr-stage[data-state="review"] .vr-spark,
+  .vr-stage[data-state="nocam"] .vr-spark{display:none;}
+  .vr-stage[data-mode="comment"] #vrLen{display:none;}
+  .vr-quick{display:none;gap:8px;justify-content:center;margin-bottom:10px;}
+  .vr-stage[data-mode="post"] .vr-quick{display:flex;}
+  .vr-quick button{width:46px;height:38px;border-radius:99px;background:rgba(255,255,255,.16);font-size:18px;transition:transform .12s var(--ease-spring);}
+  .vr-quick button:active{transform:scale(.88);}
+  @media (max-width:899px){
+    /* phones: the stage is a 150px self-view window — the prompt hangs just below it */
+    .vr-spark{left:auto;right:0;top:calc(100% + 8px);width:214px;align-items:flex-end;}
+    .vr-spark-q{font-size:13px;padding:8px 11px;border-radius:14px;max-width:214px;}
+    .vr-chip{height:26px;padding:0 10px;font-size:11px;}
+  }
+
   /* ---------- video replies ---------- */
   .home-comment-cam{
     width:34px;height:34px;border-radius:50%;flex-shrink:0;
@@ -3994,6 +4031,35 @@
   }
 
   const VR_HINT_KEY = 'waater_vr_hint_seen';
+  const VR_LEN_KEY = 'waater_vr_len';           // 'long' = full 60s; anything else = quick
+  const VR_QUICK_SECONDS = 15;                  // the default: "you only need 15 seconds"
+  // Conversation starters. Casual on purpose — nobody has ever been blocked by "tell us about your day".
+  const VR_PROMPTS = {
+    post: [
+      "What's the funniest thing that happened today? \uD83D\uDE02",
+      "Spill the tea \u2615 \u2014 it stays in this circle",
+      "Something small that made you smile today",
+      "Say what you'd text the group chat right now",
+      "Hot take. Go. \uD83D\uDD25",
+      "Show us what you're looking at right now \uD83D\uDC40",
+      "Confess something small \uD83D\uDE48",
+      "Rate your day out of 10 and explain",
+      "The weirdest thing you saw today?",
+      "One tiny win from today",
+      "What are you about to do? Narrate it.",
+      "What's been on your mind lately?",
+      "Last thing that made you laugh out loud?",
+      "Tell us one thing that annoyed you today \uD83D\uDE24"
+    ],
+    comment: [
+      "Your honest reaction \uD83D\uDC40",
+      "React first. Think later.",
+      "Say it like you would in person",
+      "Roast them (lovingly) \uD83D\uDE02",
+      "What did this remind you of?",
+      "Add your take in one sentence"
+    ]
+  };
   const VR_ICON = {
     x: '<svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
     flip: '<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0115-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 01-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>',
@@ -4162,7 +4228,7 @@
       });
 
       vrJobs.delete(job.id);
-      showToast('Video sent');
+      showToast('Sent to the circle \uD83C\uDF89');
       await refreshHomeFeed();
       const stale = document.getElementById('vrp-' + job.id);
       if (stale) stale.remove();
@@ -4207,7 +4273,10 @@
     // same recorder, but shorter, lighter, and sent straight to the thread.
     const mode = opts.from === 'comment' ? 'comment' : 'post';
     const isPip = !!(window.matchMedia && window.matchMedia('(max-width: 899px)').matches);
-    const maxSec = mode === 'comment' ? VIDEO_COMMENT_MAX_SECONDS : VIDEO_MAX_SECONDS;
+    let quick = true;
+    try { quick = localStorage.getItem(VR_LEN_KEY) !== 'long'; } catch (_) {}
+    const maxFor = () => mode === 'comment' ? VIDEO_COMMENT_MAX_SECONDS : (quick ? VR_QUICK_SECONDS : VIDEO_MAX_SECONDS);
+    let maxSec = maxFor();
 
     const composerText = document.getElementById('homeComposerText');
     const prefill = (mode === 'post' && composerText) ? composerText.value.trim() : '';
@@ -4234,6 +4303,13 @@
           <div class="vr-pill"><span class="rec-dot"></span><span id="vrPillText"></span></div>
           <div class="vr-spacer"></div>
         </div>
+        <div class="vr-spark" id="vrSpark">
+          <div class="vr-spark-q" id="vrSparkQ"></div>
+          <div class="vr-spark-row">
+            <button class="vr-chip" type="button" id="vrShuffle">🎲 Another</button>
+            <button class="vr-chip" type="button" id="vrLen"></button>
+          </div>
+        </div>
         <div class="vr-bottom">
           <div class="vr-hint" id="vrHint"></div>
           <div class="vr-controls vr-rec-wrap">
@@ -4246,7 +4322,10 @@
           </div>
           <div class="vr-review-bar">
             <div class="vr-lock">${escapeHtml(lockText)}</div>
-            <input class="vr-caption" id="vrCaption" type="text" maxlength="300" placeholder="Say something about it\u2026 (optional)" enterkeyhint="send" autocomplete="off">
+            <div class="vr-quick" id="vrQuick">
+              <button type="button" data-e="😂">😂</button><button type="button" data-e="💀">💀</button><button type="button" data-e="👀">👀</button><button type="button" data-e="🔥">🔥</button><button type="button" data-e="😭">😭</button>
+            </div>
+            <input class="vr-caption" id="vrCaption" type="text" maxlength="300" placeholder="Add a caption \u2014 or just send it" enterkeyhint="send" autocomplete="off">
             <div class="vr-review-row">
               <button class="vr-retake" type="button" id="vrRetake">Retake</button>
               <button class="vr-send" type="button" id="vrSend">${mode === 'comment' ? 'Reply' : 'Send'} ${VR_ICON.send}</button>
@@ -4315,7 +4394,7 @@
     function goReady(){
       setState('ready');
       pillText.textContent = lockText;
-      showHint(seenHint ? '' : 'Tap to record \u00b7 or hold');
+      showHint(seenHint ? '' : 'Just talk \u2014 tap, or hold like a voice note');
       resetRing();
     }
 
@@ -4358,6 +4437,56 @@
       }
     }
 
+    // ---- "stuck" detector: if the mic goes quiet for ~3s mid-take, nudge with the prompt ----
+    let audioCtx = null, analyser = null, anBuf = null, lastVoiceAt = 0, nudged = false, lastNudgeAt = 0, cheerIdx = 0;
+    function startMeter(){
+      stopMeter();
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC || !stream || !stream.getAudioTracks().length) return;
+        audioCtx = new AC();
+        const src = audioCtx.createMediaStreamSource(stream);
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 512;
+        anBuf = new Uint8Array(analyser.fftSize);
+        src.connect(analyser);               // analysis only — never routed to the speakers
+      } catch (_) { analyser = null; }
+    }
+    function stopMeter(){
+      analyser = null;
+      try { if (audioCtx) audioCtx.close(); } catch (_) {}
+      audioCtx = null;
+    }
+    function voiceLevel(){
+      if (!analyser) return 1;               // can't measure → never nag
+      analyser.getByteTimeDomainData(anBuf);
+      let s = 0;
+      for (let i = 0; i < anBuf.length; i++){ const v = (anBuf[i] - 128) / 128; s += v * v; }
+      return Math.sqrt(s / anBuf.length);
+    }
+    function nudgeStuck(){
+      lastNudgeAt = Date.now();
+      sparkQ.classList.remove('nudge'); void sparkQ.offsetWidth; sparkQ.classList.add('nudge');
+      showHint('Blank? Just read the prompt out loud \uD83D\uDE04');
+      if (navigator.vibrate) navigator.vibrate(15);
+      try { posthog.capture('video_stuck_nudge', { circle_id: circleId, mode, prompt: currentPrompt }); } catch (_) {}
+    }
+
+    // ---- prompt card ----
+    const sparkQ = $('vrSparkQ');
+    const lenBtn = $('vrLen');
+    let currentPrompt = '';
+    function newPrompt(){
+      const list = VR_PROMPTS[mode] || VR_PROMPTS.post;
+      let next = currentPrompt;
+      for (let i = 0; i < 6 && next === currentPrompt; i++) next = list[Math.floor(Math.random() * list.length)];
+      currentPrompt = next;
+      sparkQ.textContent = next;
+      sparkQ.classList.remove('nudge');
+      sparkQ.style.animation = 'none'; void sparkQ.offsetWidth; sparkQ.style.animation = '';
+    }
+    const renderLen = () => { lenBtn.textContent = '\u23F1 ' + (quick ? VR_QUICK_SECONDS : VIDEO_MAX_SECONDS) + 's'; };
+
     // ---- recording ----
     let lastUi = 0;
     function tick(ts){
@@ -4366,7 +4495,15 @@
       if (!ts || ts - lastUi > 200){   // ~5 UI updates/sec instead of 60: keeps the main thread free for the camera
         lastUi = ts || 0;
         ring.style.strokeDashoffset = String(RING_LEN * (1 - Math.min(1, el / maxSec)));
-        pillText.textContent = vrFmt(el, true) + ' / ' + vrFmt(maxSec);
+        pillText.textContent = vrFmt(el, true);
+        const now = Date.now();
+        if (voiceLevel() > 0.02){ lastVoiceAt = now; nudged = false; }
+        else if (!nudged && el > 1.5 && now - lastVoiceAt > 3000){ nudged = true; nudgeStuck(); }
+        const cheers = [[4, 'Keep going \uD83D\uDD25'], [9, 'Love it \u2014 keep going'], [maxSec - 4, 'Wrap it up \uD83C\uDFAC']];
+        if (cheerIdx < cheers.length && el >= cheers[cheerIdx][0]){
+          if (now - lastNudgeAt > 3000) showHint(cheers[cheerIdx][1]);
+          cheerIdx++;
+        }
       }
       raf = requestAnimationFrame(tick);
     }
@@ -4382,16 +4519,20 @@
       recorder.onerror = () => showToast('Recording failed \u2014 try again', 'error');
       recorder.onstop = () => {
         cancelAnimationFrame(raf);
+        stopMeter();
         if (closed) return;
         const duration = (Date.now() - startedAt) / 1000;
         if (duration < VIDEO_MIN_SECONDS || !chunks.length){
-          goReady(); showHint('Hold a little longer');
+          goReady(); showHint('Too quick \u2014 go again \uD83D\uDE42');
           return;
         }
         enterReview({ blob: new Blob(chunks, { type: mime }), mime, duration, source: 'camera' });
       };
       recorder.start(1000);
       startedAt = Date.now();
+      lastVoiceAt = startedAt; nudged = false; lastNudgeAt = 0; cheerIdx = 0;
+      startMeter();
+      try { posthog.capture('video_record_started', { circle_id: circleId, mode, prompt: currentPrompt, quick: mode === 'post' ? quick : null, max_seconds: maxSec }); } catch (_) {}
       setState('recording');
       showHint('Tap to stop');
       if (navigator.vibrate) navigator.vibrate(10);
@@ -4430,6 +4571,7 @@
       cancelAnimationFrame(raf); clearTimeout(holdTimer);
       try { if (recorder && recorder.state !== 'inactive') recorder.stop(); } catch (_) {}
       stopStream();
+      stopMeter();
       try { if (wakeLock) wakeLock.release(); } catch (_) {}
       wakeLock = null;
       if (reviewUrl){ URL.revokeObjectURL(reviewUrl); reviewUrl = null; }
@@ -4561,6 +4703,26 @@
     };
     $('vrSend').addEventListener('click', send);
     caption.addEventListener('keydown', (e) => { if (e.key === 'Enter'){ e.preventDefault(); send(); } });
+
+    // ---- prompt + length + emoji wiring ----
+    newPrompt();
+    renderLen();
+    $('vrShuffle').addEventListener('click', () => {
+      if (state === 'recording') return;
+      newPrompt();
+      try { posthog.capture('video_prompt_shuffled', { circle_id: circleId, mode }); } catch (_) {}
+    });
+    lenBtn.addEventListener('click', () => {
+      if (state !== 'ready') return;
+      quick = !quick;
+      maxSec = maxFor();
+      renderLen();
+      try { localStorage.setItem(VR_LEN_KEY, quick ? 'quick' : 'long'); } catch (_) {}
+    });
+    root.querySelectorAll('#vrQuick button').forEach(b => b.addEventListener('click', () => {
+      caption.value = (caption.value + ' ' + b.dataset.e).trim();
+      if (navigator.vibrate) navigator.vibrate(6);
+    }));
 
     startCamera('user');
   }
