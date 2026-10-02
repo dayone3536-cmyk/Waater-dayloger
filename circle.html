@@ -12,6 +12,7 @@
     person_profiles: 'identified_only',   // only creates profiles for people you identify() below
     capture_pageview: true,
     capture_pageleave: true,
+    disable_session_recording: true,   // private circles: never replay the screen (also frees CPU while filming)
   });
 </script>
 
@@ -2978,18 +2979,51 @@
     } catch (_) { return false; }
   })();
 
+  const VIDEO_PHONE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') ||
+    ((navigator.maxTouchPoints || 0) > 1 && window.matchMedia && window.matchMedia('(pointer:coarse)').matches);
+
   function videoProfile(small){
-    if (small)          return { w: 540,  h: 720,  fps: 24, bps: 1500000 };  // video replies
-    if (VIDEO_LOW_END)  return { w: 720,  h: 960,  fps: 24, bps: 2500000 };  // old phones
-    return                     { w: 1080, h: 1440, fps: 30, bps: 4000000 };  // modern phones
+    // desktop is already great: unchanged. Phones: always 720p+ at a real 30fps with a
+    // bitrate that keeps it clean (lower fps/bitrate is what looked laggy + pixelated).
+    if (!VIDEO_PHONE)   return { w: 1080, h: 1440, fps: 30, bps: small ? 3000000 : 5000000 };
+    if (VIDEO_LOW_END)  return { w: 720,  h: 960,  fps: 30, bps: small ? 3000000 : 4500000 };
+    return                     { w: 1080, h: 1440, fps: 30, bps: small ? 3500000 : 5500000 };
   }
 
+  // Phone cameras expose landscape modes and often silently hand back 640x480 or
+  // 15fps (dim light) when asked for a portrait size. So on phones we ask a few
+  // different ways, CHECK what we really got, and keep the best one.
   async function getVideoStream(facing, small){
     const P = videoProfile(small);
-    return navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: facing || 'user' }, width: { ideal: P.w }, height: { ideal: P.h }, frameRate: { ideal: P.fps, max: 30 } },
-      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }
-    });
+    const audio = { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 };
+    const face = { ideal: facing || 'user' };
+    const gum = (video) => navigator.mediaDevices.getUserMedia({ video, audio });
+    if (!VIDEO_PHONE){
+      return gum({ facingMode: face, width: { ideal: P.w }, height: { ideal: P.h }, frameRate: { ideal: P.fps } });
+    }
+    const tries = [
+      { facingMode: face, width: { ideal: P.w }, height: { ideal: P.h }, frameRate: { ideal: 30, min: 24 } },
+      { facingMode: face, width: { ideal: P.h }, height: { ideal: P.w }, frameRate: { ideal: 30, min: 24 } },
+      { facingMode: face, width: { ideal: P.w }, height: { ideal: P.h }, frameRate: { ideal: 30 } }
+    ];
+    const rate = (st) => Math.min(st.width || 0, st.height || 0) + ((st.frameRate || 30) >= 24 ? 1000 : 0);
+    let best = null, bestScore = -1;
+    for (const v of tries){
+      let st;
+      try { st = await gum(v); }
+      catch (e){
+        if (e && ['NotAllowedError', 'SecurityError', 'NotFoundError'].includes(e.name)) { if (best) best.getTracks().forEach(t => t.stop()); throw e; }
+        continue;
+      }
+      const set = st.getVideoTracks()[0].getSettings();
+      const sc = rate(set);
+      if (sc > bestScore){ if (best) best.getTracks().forEach(t => t.stop()); best = st; bestScore = sc; }
+      else st.getTracks().forEach(t => t.stop());
+      if (Math.min(set.width || 0, set.height || 0) >= 700 && (set.frameRate || 30) >= 24) break;   // good enough
+      await new Promise(r => setTimeout(r, 120));   // let the camera release before re-opening
+    }
+    if (best) return best;
+    return gum({ facingMode: face });
   }
 
   function pickVideoMimeType(){
@@ -4248,6 +4282,27 @@
     let stream = null, facing = 'user', recorder = null, chunks = [];
     let startedAt = 0, raf = 0, holdMode = false, holdTimer = null, closed = false;
     let wakeLock = null, reviewUrl = null, take = null, sending = false;
+    let previewFps = 0, recMeta = null;
+
+    // Count real camera frames for ~1.5s. Dim rooms make phone cameras drop to ~15fps,
+    // which is the #1 cause of "laggy" clips no matter how good the encoder is.
+    function watchFps(){
+      if (!cam.requestVideoFrameCallback) return;
+      let n = 0, t0 = 0, done = false;
+      const cb = (now) => {
+        if (closed || done) return;
+        if (!t0) t0 = now;
+        n++;
+        if (now - t0 >= 1500){
+          done = true;
+          previewFps = Math.round(n / ((now - t0) / 1000));
+          if (previewFps < 22 && state === 'ready') showHint('Dim light makes video choppy \u2014 face a window or lamp');
+          return;
+        }
+        cam.requestVideoFrameCallback(cb);
+      };
+      cam.requestVideoFrameCallback(cb);
+    }
 
     const setState = (s) => { state = s; stage.dataset.state = s; };
     const showHint = (t) => { hint.textContent = t || ''; };
@@ -4287,6 +4342,7 @@
         cam.classList.toggle('mirror', facing === 'user');
         cam.play().catch(() => {});
         goReady();
+        watchFps();
         try {
           const devs = await navigator.mediaDevices.enumerateDevices();
           flipBtn.classList.toggle('hidden', devs.filter(d => d.kind === 'videoinput').length < 2);
@@ -4318,6 +4374,7 @@
     function startRecording(){
       if (state !== 'ready' || !stream) return;
       chunks = [];
+      try { const st = stream.getVideoTracks()[0].getSettings(); recMeta = { w: st.width, h: st.height, cam_fps: st.frameRate, preview_fps: previewFps, bps: videoProfile(mode === 'comment').bps, low_end: VIDEO_LOW_END, phone: VIDEO_PHONE }; } catch (_) { recMeta = null; }
       try { recorder = createVideoRecorder(stream, mode === 'comment'); }
       catch (e){ showToast('Recording isn\u2019t supported on this device', 'error'); return; }
       const mime = recorder.mimeType || pickVideoMimeType() || 'video/webm';
@@ -4361,7 +4418,8 @@
       const p = review.play();
       if (p && p.catch) p.catch(() => { review.muted = true; review.play().catch(() => {}); });
       try { localStorage.setItem(VR_HINT_KEY, '1'); } catch (_) {}
-      try { posthog.capture('video_recorded', { circle_id: circleId, duration_seconds: t.duration, source: t.source, mode }); } catch (_) {}
+      if (/[?&]vdebug/.test(location.search) && t.source === 'camera') showToast(t.mime.split(';')[0] + ' ' + (recMeta ? recMeta.w + 'x' + recMeta.h + ' cam ' + Math.round(recMeta.cam_fps || 0) + 'fps, preview ' + recMeta.preview_fps + 'fps' : '') + ' ' + (t.blob.size / 1048576).toFixed(1) + 'MB');
+      try { posthog.capture('video_recorded', Object.assign({ circle_id: circleId, duration_seconds: t.duration, source: t.source, mode, mime: t.mime, size_mb: Math.round(t.blob.size / 1048576 * 10) / 10 }, t.source === 'camera' ? recMeta : {})); } catch (_) {}
     }
 
     function teardown(){
