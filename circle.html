@@ -33,7 +33,6 @@
     --accent-2:#ffb199;
     --accent-soft:#fff1ec;
     --danger:#e0433f;
-    --nav-w:248px;
     --font-display:'Space Grotesk', sans-serif;
     --font-serif:'Newsreader', serif;
     --font-mono:'JetBrains Mono', monospace;
@@ -50,7 +49,7 @@
     color:var(--ink);
     font-family:var(--font-serif);
     -webkit-font-smoothing:antialiased;
-    padding-bottom:calc(98px + env(safe-area-inset-bottom));
+    padding-bottom:calc(24px + env(safe-area-inset-bottom));
   }
   a{color:inherit;text-decoration:none;}
   button{font-family:inherit;border:none;background:none;cursor:pointer;}
@@ -97,11 +96,11 @@
   .btn-primary{padding:10px 16px;border-radius:10px;font-weight:600;background:var(--accent);color:#fff;transition:background .2s ease;}
   .btn-primary:hover{background:#e64a2a;}
 
-  .app{display:flex;max-width:1180px;margin:0 auto;}
+  .app{display:flex;max-width:932px;margin:0 auto;}
   .main{flex:1;min-width:0;border-left:1px solid var(--line);border-right:1px solid var(--line);}
 
   /* =========================================================
-     NAVIGATION — sidebar (desktop) / topbar + dock (mobile)
+     NAVIGATION — topbar (mobile)
      ========================================================= */
   .wordmark{
     font-family:var(--font-display);font-weight:700;font-size:21px;letter-spacing:-0.03em;
@@ -134,158 +133,10 @@
   .topbar-back:hover svg{transform:translateX(-2px);}
   .topbar-back:active{transform:scale(.94);background:#eaeaec;}
 
-  /* ---------- Desktop sidebar ---------- */
-  .sidebar{
-    display:none;width:var(--nav-w);flex-shrink:0;padding:26px 16px 20px;
-    flex-direction:column;height:100vh;height:100dvh;position:sticky;top:0;
-  }
-  .sidebar .brand{align-self:flex-start;font-size:26px;padding:6px 14px;margin-bottom:26px;border-radius:12px;}
-
-  .nav-wrap{position:relative;}
-  .nav-list{list-style:none;display:flex;flex-direction:column;gap:2px;position:relative;z-index:1;}
-  .nav-pill{
-    position:absolute;left:0;right:0;top:0;height:46px;border-radius:14px;background:#f3f3f4;
-    opacity:0;pointer-events:none;z-index:0;
-    transition:transform .38s var(--ease-spring), height .2s var(--ease), opacity .2s ease;
-  }
-  .nav-pill.on{opacity:1;}
-  .nav-pill.snap{transition:opacity .2s ease;}
-
-  .nav-item{
-    position:relative;display:flex;align-items:center;gap:14px;height:46px;padding:0 14px;
-    border-radius:14px;font-family:var(--font-display);font-size:15.5px;font-weight:500;letter-spacing:-.005em;
-    color:var(--ink-soft);
-    transition:color .18s ease, background .18s ease, transform .15s var(--ease-spring);
-  }
-  .nav-item svg{
-    width:22px;height:22px;flex-shrink:0;stroke:currentColor;
-    transition:transform .35s var(--ease-spring), stroke .18s ease, fill .18s ease;
-  }
-  .nav-item:hover{color:var(--ink);}
-  .nav-item:hover svg{transform:scale(1.12) rotate(-5deg);}
-  .nav-item:active{transform:scale(.97);}
-  .nav-item.active{color:var(--ink);font-weight:600;background:var(--accent-soft);}
-  .nav-item.active svg{stroke:var(--accent);fill:rgba(255,90,54,.16);}
-  .nav-item.active::before{
-    content:'';position:absolute;left:-6px;top:50%;width:4px;height:20px;border-radius:0 4px 4px 0;
-    background:var(--accent);transform:translateY(-50%);
-    animation:navBar .45s var(--ease-spring) both;
-  }
-  @keyframes navBar{ from{transform:translateY(-50%) scaleY(.2);opacity:0;} to{transform:translateY(-50%) scaleY(1);opacity:1;} }
-  .nav-item:focus-visible,.sidebar .brand:focus-visible,.nav-create:focus-visible,
-  .sidebar-profile:focus-visible,.sidebar-signout:focus-visible,.sidebar-signin:focus-visible{
-    outline:2px solid var(--accent);outline-offset:2px;
-  }
-
-  .nav-create{
-    position:relative;overflow:hidden;margin-top:18px;display:flex;align-items:center;justify-content:center;gap:9px;
-    height:48px;border-radius:14px;color:#fff;
-    font-family:var(--font-display);font-weight:600;font-size:15px;
-    background:linear-gradient(135deg,#ff7d59 0%,var(--accent) 55%,#f2431c 100%);
-    box-shadow:0 10px 22px -8px rgba(255,90,54,.6), inset 0 1px 0 rgba(255,255,255,.28);
-    transition:transform .25s var(--ease-spring), box-shadow .25s ease;
-  }
-  .nav-create svg{width:19px;height:19px;stroke:#fff;transition:transform .4s var(--ease-spring);}
-  .nav-create::after{
-    content:'';position:absolute;inset:0;transform:translateX(-130%);
-    background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.38) 50%,transparent 70%);
-    transition:transform .7s var(--ease);
-  }
-  .nav-create:hover{transform:translateY(-2px);box-shadow:0 16px 28px -8px rgba(255,90,54,.65), inset 0 1px 0 rgba(255,255,255,.3);}
-  .nav-create:hover svg{transform:rotate(90deg);}
-  .nav-create:hover::after{transform:translateX(130%);}
-  .nav-create:active{transform:scale(.97);}
-
-  .sidebar-auth{margin-top:auto;}
-  .sidebar-user{
-    display:flex;align-items:center;gap:4px;padding:8px;border-radius:18px;
-    background:#fff;border:1px solid var(--line);
-    transition:border-color .2s ease, box-shadow .2s ease;
-  }
-  .sidebar-user:hover{border-color:var(--line-strong);box-shadow:0 8px 22px -14px rgba(20,21,26,.25);}
-  .sidebar-profile{
-    flex:1;min-width:0;display:flex;align-items:center;gap:11px;padding:3px 6px 3px 3px;border-radius:12px;
-    transition:background .15s ease;
-  }
-  .sidebar-profile:hover{background:#f7f7f8;}
-  .mini-avatar{
-    width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#ffd8c9,var(--accent));
-    flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;
-    font-family:var(--font-display);font-weight:700;font-size:14px;overflow:hidden;
-    box-shadow:0 0 0 2px #fff, 0 0 0 3.5px var(--accent-soft);
-  }
-  .mini-avatar img{width:100%;height:100%;object-fit:cover;}
-  .sidebar-profile .who{display:flex;flex-direction:column;line-height:1.25;flex:1;min-width:0;}
-  .sidebar-profile .who span:first-child{font-family:var(--font-display);font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .sidebar-profile .who span:last-child{font-family:var(--font-mono);font-size:10.5px;color:var(--grey);}
-  .sidebar-signout{
-    width:34px;height:34px;flex-shrink:0;border-radius:11px;display:grid;place-items:center;color:var(--grey);
-    transition:background .15s ease, color .15s ease, transform .15s var(--ease-spring);
-  }
-  .sidebar-signout svg{width:17px;height:17px;stroke:currentColor;}
-  .sidebar-signout:hover{background:#fdeeed;color:var(--danger);}
-  .sidebar-signout:active{transform:scale(.9);}
-  .sidebar-signin{
-    margin-top:auto;display:flex;align-items:center;justify-content:center;gap:8px;height:48px;
-    background:var(--ink);color:#fff!important;border-radius:14px;
-    font-family:var(--font-display);font-weight:600;font-size:14.5px;
-    transition:background .16s ease, transform .2s var(--ease-spring);
-  }
-  .sidebar-signin:hover{background:#000;transform:translateY(-1px);}
-  .sidebar-signin:active{transform:scale(.97);}
-
   @media (min-width:900px){
     body{padding-bottom:0;}
     .topbar{display:none;}
-    .sidebar{display:flex;}
   }
-
-  /* ---------- Mobile floating dock ---------- */
-  .bottom-nav{
-    position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));
-    max-width:440px;margin:0 auto;height:64px;padding:0 6px;
-    display:grid;grid-template-columns:repeat(5,1fr);align-items:center;
-    border-radius:24px;z-index:30;
-    background:rgba(255,255,255,.86);
-    -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
-    border:1px solid rgba(20,21,26,.06);
-    box-shadow:0 14px 34px -10px rgba(20,21,26,.22), 0 2px 8px rgba(20,21,26,.05);
-    transition:transform .32s cubic-bezier(.16,1,.3,1), opacity .22s ease;
-    will-change:transform;
-  }
-  .bottom-nav.hidden,
-  .bottom-nav.scroll-hide{transform:translateY(calc(100% + 20px));opacity:0;pointer-events:none;}
-  .tab{
-    position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-    color:var(--grey);font-family:var(--font-display);font-weight:600;font-size:10.5px;letter-spacing:.005em;
-    -webkit-tap-highlight-color:transparent;
-    transition:color .2s ease, transform .2s var(--ease-spring);
-  }
-  .tab-ico{
-    width:48px;height:30px;border-radius:99px;display:grid;place-items:center;
-    transition:background .25s ease;
-  }
-  .tab svg{width:22px;height:22px;stroke:currentColor;transition:transform .3s var(--ease-spring);}
-  .tab:active svg{transform:scale(.82);}
-  .tab.active{color:var(--ink);}
-  .tab.active .tab-ico{background:var(--accent-soft);}
-  .tab.active svg{stroke:var(--accent);fill:rgba(255,90,54,.16);animation:tabPop .5s var(--ease-spring);}
-  @keyframes tabPop{ 0%{transform:scale(.7);} 100%{transform:scale(1);} }
-  .tab:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:18px;}
-
-  .tab-create{overflow:visible;}
-  .tab-create .ring{
-    width:54px;height:54px;border-radius:50%;display:grid;place-items:center;
-    background:linear-gradient(135deg,#ff7d59,var(--accent) 55%,#f2431c);
-    transform:translateY(-14px);
-    box-shadow:0 0 0 5px #fff, 0 12px 22px -4px rgba(255,90,54,.55), inset 0 1px 0 rgba(255,255,255,.3);
-    transition:transform .3s var(--ease-spring), box-shadow .3s ease;
-  }
-  .tab-create svg{width:24px;height:24px;stroke:#fff;stroke-width:2.4;fill:none;transition:transform .35s var(--ease-spring);}
-  .tab-create:active .ring{transform:translateY(-12px) scale(.92);}
-  .tab-create:active svg{transform:rotate(90deg);}
-  .tab-create .tab-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
-  @media (min-width:900px){ .bottom-nav{display:none;} }
 
   @keyframes riseIn{ from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
   @keyframes spin{ to{transform:rotate(360deg);} }
@@ -1057,9 +908,9 @@
     .pc-stats{order:2;width:100%;justify-content:center;margin-top:2px;}
   }
 
-  /* ---------- mobile sticky join bar — floats above the dock ---------- */
+  /* ---------- mobile sticky join bar — floats at the bottom ---------- */
   .pc-sticky-cta{
-    position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));
+    position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));
     max-width:440px;margin:0 auto;z-index:29;
     display:flex;align-items:center;gap:12px;
     padding:9px 9px 9px 17px;border-radius:20px;
@@ -1078,7 +929,7 @@
   .pc-sticky-cta button:active{transform:scale(.94);}
   @keyframes pcCtaRise{ from{transform:translateY(18px);opacity:0;} to{transform:none;opacity:1;} }
   @media (min-width:900px){ .pc-sticky-cta{display:none;} }
-  body.pc-has-cta{padding-bottom:calc(172px + env(safe-area-inset-bottom));}
+  body.pc-has-cta{padding-bottom:calc(96px + env(safe-area-inset-bottom));}
   @media (min-width:900px){ body.pc-has-cta{padding-bottom:0;} }
 
   /* ---------- body ---------- */
@@ -2310,22 +2161,6 @@
 <body>
 
 <div class="app">
-  <aside class="sidebar">
-    <a href="/" class="wordmark brand" aria-label="Waater home">waater<span class="dot">.</span></a>
-
-    <div class="nav-wrap">
-      <span class="nav-pill" aria-hidden="true"></span>
-      <ul class="nav-list">
-        <li><a href="/" class="nav-item active" data-nav="circles" aria-current="page">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>
-          <span>Circles</span></a></li>
-      </ul>
-    </div>
-
-
-    <div id="sidebarAuthArea" class="sidebar-auth"></div>
-  </aside>
-
   <main class="main">
     <div class="topbar">
       <a href="/circles" class="topbar-back" aria-label="Back to circles">
@@ -2341,17 +2176,6 @@
     </div>
   </main>
 </div>
-
-<nav class="bottom-nav" aria-label="Primary">
-  <a href="/" class="tab active" data-nav="circles" aria-current="page">
-    <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg></span>
-    <span class="tab-label">Circles</span>
-  </a>
-  <a href="/?profile" class="tab" aria-label="My profile">
-    <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span>
-    <span class="tab-label">Me</span>
-  </a>
-</nav>
 
 <div class="waater-toast" id="waaterToast">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
@@ -2756,34 +2580,12 @@
   async function renderSidebar(){
     const { data } = await supabaseClient.auth.getSession();
     currentUser = data.session ? data.session.user : null;
-    const area = document.getElementById('sidebarAuthArea');
-    if (!currentUser){
-      area.innerHTML = `<a href="/auth" class="sidebar-signin">Sign in</a>`;
-      return;
-    }
+    if (!currentUser) return;
     const { data: me } = await supabaseClient.from('profiles').select('username, avatar_url, gh_notify_channel').eq('id', currentUser.id).maybeSingle();
     currentUsername = me?.username || currentUser.email || 'You';
     currentUserGhChannel = me?.gh_notify_channel || 'unset';
     posthog.identify(currentUser.id, { username: currentUsername, email: currentUser.email });
     posthog.group('circle', circleId);
-    const avatarHtml = me?.avatar_url ? `<img src="${escapeHtml(me.avatar_url)}" alt="">` : initials(currentUsername);
-    area.innerHTML = `
-      <div class="sidebar-user">
-        <a href="/?profile" class="sidebar-profile">
-          <div class="mini-avatar">${avatarHtml}</div>
-          <div class="who"><span>${escapeHtml(currentUsername)}</span><span>your profile</span></div>
-        </a>
-        <button class="sidebar-signout" id="signOutBtn" type="button" aria-label="Sign out" title="Sign out">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
-        </button>
-      </div>
-    `;
-    document.getElementById('signOutBtn').addEventListener('click', async () => {
-      posthog.capture('signed_out');
-      posthog.reset();
-      await supabaseClient.auth.signOut();
-      window.location.href = '/';
-    });
   }
 
   const params = new URLSearchParams(window.location.search);
@@ -7503,45 +7305,8 @@
 </script>
 
 <script>
-// Navigation behaviour: active link, sliding hover pill, topbar shadow, dock polish
+// Navigation behaviour: topbar shadow
 (function(){
-  var path = location.pathname.replace(/\.html$/, '').replace(/\/+$/, '') || '/';
-  var first = '/' + (path.split('/')[1] || '');
-  var keyMap = {'/':'circles','/circles':'circles','/circle':'circles'};
-  var key = keyMap[path] || keyMap[first];
-  if (key){
-    document.querySelectorAll('[data-nav]').forEach(function(el){
-      var on = el.getAttribute('data-nav') === key && !el.classList.contains('nav-create') && !el.classList.contains('tab-create');
-      el.classList.toggle('active', on);
-      if (on) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current');
-    });
-  }
-
-  // sliding hover pill (desktop)
-  var list = document.querySelector('.nav-list');
-  var pill = document.querySelector('.nav-pill');
-  if (list && pill){
-    var move = function(el){
-      var y = el.getBoundingClientRect().top - list.getBoundingClientRect().top;
-      pill.style.height = el.offsetHeight + 'px';
-      if (!pill.classList.contains('on')){
-        pill.classList.add('snap');
-        pill.style.transform = 'translateY(' + y + 'px)';
-        void pill.offsetWidth;
-        pill.classList.remove('snap');
-        pill.classList.add('on');
-      } else {
-        pill.style.transform = 'translateY(' + y + 'px)';
-      }
-    };
-    list.querySelectorAll('.nav-item').forEach(function(a){
-      a.addEventListener('mouseenter', function(){ move(a); });
-      a.addEventListener('focus', function(){ if (a.matches(':focus-visible')) move(a); });
-    });
-    list.addEventListener('mouseleave', function(){ pill.classList.remove('on'); });
-    list.addEventListener('focusout', function(){ pill.classList.remove('on'); });
-  }
-
   // topbar gets a soft shadow once you scroll
   var tb = document.querySelector('.topbar');
   if (tb){
@@ -7549,24 +7314,8 @@
     window.addEventListener('scroll', shadowF, {passive:true}); shadowF();
   }
 
-  // dock: light haptic tap, tuck away while typing so the keyboard has room
-  var dock = document.querySelector('.bottom-nav');
-  if (dock){
-    dock.querySelectorAll('.tab').forEach(function(t){
-      t.addEventListener('click', function(){ if (navigator.vibrate) navigator.vibrate(8); });
-    });
-    var FIELD = 'input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=button]):not([type=submit]),textarea,select,[contenteditable="true"]';
-    var isField = function(el){ return el && el.matches && el.matches(FIELD); };
-    document.addEventListener('focusin', function(e){
-      if (isField(e.target) && window.matchMedia('(max-width:899.98px)').matches) dock.classList.add('hidden');
-    });
-    document.addEventListener('focusout', function(){
-      setTimeout(function(){ if (!isField(document.activeElement)) dock.classList.remove('hidden'); }, 60);
-    });
-  }
-
   // ------------------------------------------------------------------
-  // Topbar + dock move together as one navbar, YouTube-style: the
+  // Topbar hides on scroll, YouTube-style: the
   // instant you scroll, it tucks away — and it stays away. It does NOT
   // creep back on its own (no reveal-on-scroll-up, no settling back in
   // once you stop), because the whole point is to get out of the
@@ -7575,7 +7324,7 @@
   // brings the navbar back down, via window.__waaterShowNav below,
   // wired into its click handler. Scrolling after that hides it again.
   // ------------------------------------------------------------------
-  if (tb || dock){
+  if (tb){
     var mobileMQ = window.matchMedia('(max-width:899.98px)');
     var TOP_ZONE = 4;    // basically the very top of the page
     var navHidden = false;
@@ -7583,13 +7332,11 @@
     var show = function(){
       navHidden = false;
       if (tb) tb.classList.remove('nav-hide');
-      if (dock) dock.classList.remove('scroll-hide');
     };
     var hide = function(){
       if (!mobileMQ.matches) return;
       navHidden = true;
       if (tb) tb.classList.add('nav-hide');
-      if (dock) dock.classList.add('scroll-hide');
     };
 
     window.addEventListener('scroll', function(){

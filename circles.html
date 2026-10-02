@@ -925,6 +925,8 @@
   }
   .top-avatar:active{transform:scale(.9);}
   .top-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+  /* desktop: profile already lives in the sidebar, so hide the top-left circle (must come AFTER the base rule) */
+  @media (min-width:900px){ .top-avatar{display:none;} }
   /* mobile: no top bar, so leave room for the floating profile pic */
   @media (max-width:899.98px){ .main{padding-top:calc(40px + env(safe-area-inset-top));} }
 
@@ -1030,6 +1032,37 @@
 
   /* the Invite button glows once, right after your first circle exists */
   .circle-invite-btn.nudge{animation:invitePulse 1.5s ease-in-out infinite;}
+  /* ---------- activity: someone posted while you were away ---------- */
+  .away-card{
+    display:flex;align-items:center;gap:14px;margin:18px 0 4px;padding:14px 16px;border-radius:20px;
+    background:linear-gradient(135deg,#fff3ee,#fff 70%);border:1px solid rgba(255,90,54,.28);
+    box-shadow:0 14px 30px -18px rgba(255,90,54,.55);animation:riseIn .5s var(--ease) both;
+    transition:transform .2s var(--ease-spring), box-shadow .2s ease;
+  }
+  .away-card:hover{transform:translateY(-2px);box-shadow:0 18px 34px -16px rgba(255,90,54,.6);}
+  .away-card:active{transform:scale(.98);}
+  .away-pulse{width:12px;height:12px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:awayPulse 1.8s ease-out infinite;}
+  @keyframes awayPulse{0%{box-shadow:0 0 0 0 rgba(255,90,54,.55);}100%{box-shadow:0 0 0 14px rgba(255,90,54,0);}}
+  .away-text{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.3;}
+  .away-text b{font-family:var(--font-display);font-size:15px;font-weight:700;}
+  .away-text span{font-size:14px;color:var(--ink-soft);}
+  .away-go{display:flex;align-items:center;gap:6px;flex-shrink:0;font-family:var(--font-display);font-weight:600;font-size:12.5px;color:var(--accent);}
+  .away-go svg{width:15px;height:15px;transition:transform .25s var(--ease-spring);}
+  .away-card:hover .away-go svg{transform:translateX(3px);}
+  @media (max-width:520px){ .away-go{display:none;} }
+  .new-badge{
+    min-width:24px;height:24px;padding:0 7px;border-radius:99px;display:grid;place-items:center;flex-shrink:0;
+    background:var(--accent);color:#fff;font-family:var(--font-display);font-weight:700;font-size:12px;
+    box-shadow:0 6px 14px -4px rgba(255,90,54,.6);animation:tabPop .5s var(--ease-spring);
+  }
+  .circle-card.has-new{box-shadow:0 0 0 1.5px rgba(255,90,54,.35), 0 12px 28px -18px rgba(255,90,54,.55);}
+  .circle-meta .new-line{color:var(--accent);font-weight:600;}
+  .circle-card.celebrate{animation:celebrate 1.4s var(--ease) both;}
+  @keyframes celebrate{
+    0%{box-shadow:0 0 0 0 rgba(255,90,54,.6);transform:scale(.97);}
+    35%{transform:scale(1.015);}
+    100%{box-shadow:0 0 0 26px rgba(255,90,54,0);transform:scale(1);}
+  }
   @keyframes invitePulse{
     0%,100%{box-shadow:0 0 0 0 rgba(255,90,54,.45);}
     50%{box-shadow:0 0 0 8px rgba(255,90,54,0);}
@@ -1156,6 +1189,77 @@
 
   }
 
+  // ============================================================
+  // ACTIVITY — "someone posted while you were away"
+  // >>> Match these names to the posts table circle.html writes to. <<<
+  // ============================================================
+  const CIRCLE_POSTS = { table:'circle_posts', circleCol:'circle_id', authorCol:'user_id', timeCol:'created_at' };
+  const seenKey = id => `waater:circleSeen:${currentUser ? currentUser.id : ''}:${id}`;
+  function markCircleSeen(id){ try{ localStorage.setItem(seenKey(id), new Date().toISOString()); }catch(e){} }
+  function timeAgo(iso){
+    const m = Math.max(1, Math.round((Date.now() - Date.parse(iso)) / 60000));
+    if (m < 60) return m + 'm ago';
+    if (m < 1440) return Math.round(m / 60) + 'h ago';
+    return Math.round(m / 1440) + 'd ago';
+  }
+  function whoPosted(c, max){
+    const names = (c.latestAuthors || []).map(id => (c.memberProfiles || []).find(p => p.id === id)?.username).filter(Boolean);
+    if (!names.length) return 'Someone';
+    if (names.length <= max) return names.join(' & ');
+    return names.slice(0, max).join(', ') + ' & ' + (names.length - max) + ' more';
+  }
+  async function attachActivity(circles){
+    circles.forEach(c => { c.unread = 0; });
+    try {
+      const baseOf = c => {
+        let seen = 0; try { seen = Date.parse(localStorage.getItem(seenKey(c.id))) || 0; } catch(e){}
+        return Math.max(seen, Date.parse(c.joined_at) || Date.parse(c.created_at) || 0);
+      };
+      const P = CIRCLE_POSTS;
+      const earliest = Math.min(...circles.map(baseOf));
+      const { data, error } = await supabaseClient.from(P.table)
+        .select(`${P.circleCol}, ${P.authorCol}, ${P.timeCol}`)
+        .in(P.circleCol, circles.map(c => c.id))
+        .neq(P.authorCol, currentUser.id)
+        .gt(P.timeCol, new Date(earliest).toISOString())
+        .order(P.timeCol, { ascending: false }).limit(500);
+      if (error || !data) return;
+      circles.forEach(c => {
+        const b = baseOf(c);
+        const fresh = data.filter(p => p[P.circleCol] === c.id && Date.parse(p[P.timeCol]) > b);
+        if (!fresh.length) return;
+        c.unread = fresh.length;
+        c.latestAt = fresh[0][P.timeCol];
+        c.latestAuthors = [...new Set(fresh.map(p => p[P.authorCol]))];
+      });
+    } catch(e) { /* no posts table yet: page just shows no badges */ }
+  }
+  function renderAwayCard(circles){
+    const live = circles.filter(c => c.unread > 0);
+    if (!live.length) return '';
+    const top = live.slice().sort((a, b) => b.unread - a.unread)[0];
+    const total = live.reduce((n, c) => n + c.unread, 0);
+    const who = live.length === 1 ? whoPosted(top, 2) : whoPosted(top, 1) + (live.length > 1 ? ' and others' : '');
+    return `
+      <a class="away-card" href="${circleHref(top)}" data-seen-circle="${top.id}">
+        <span class="away-pulse" aria-hidden="true"></span>
+        <div class="away-text">
+          <b>While you were away</b>
+          <span>${escapeHtml(who)} posted ${total === 1 ? 'something' : total + ' times'} in ${live.length === 1 ? escapeHtml(top.name) : live.length + ' circles'}.</span>
+        </div>
+        <span class="away-go">See what you missed
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>`;
+  }
+  // opening a circle clears its badge
+  document.addEventListener('click', e => {
+    const a = e.target.closest('.circle-open-btn, .away-card');
+    if (!a) return;
+    const id = a.dataset.seenCircle || a.closest('.circle-card')?.querySelector('.circle-row')?.dataset.circleId;
+    if (id) markCircleSeen(id);
+  }, true);
+
   // cache of the last loaded lists so the search box can filter instantly
   // without a refetch
   let lastMyCircles = [];
@@ -1219,6 +1323,7 @@
       const memberProfilesForCircle = members.map(x => profileById[x.user_id]).filter(Boolean);
       return {
         ...m.circles,
+        joined_at: m.joined_at,
         myRole: m.role,
         memberCount: members.length,
         memberProfiles: memberProfilesForCircle,
@@ -1248,16 +1353,19 @@
     const clusterHtml = renderCircleCluster(circle.memberProfiles || []);
     const accent = accentForId(circle.id);
     return `
-      <div class="circle-card" style="--row-accent:${accent};">
+      <div class="circle-card${circle.unread ? ' has-new' : ''}" style="--row-accent:${accent};">
         <div class="circle-row" data-circle-id="${circle.id}" data-private="${circle.is_private ? '1' : '0'}">
           ${clusterHtml}
           <div class="circle-info">
             <div class="circle-name">${escapeHtml(circle.name)}${circle.myRole === 'owner' ? '<span class="owner-chip">owner</span>' : ''}</div>
             <div class="circle-meta">
               ${circleMetaIcon(circle.is_private)}
-              <span>${circle.is_private ? 'private' : 'public'} · ${circle.memberCount} ${circle.memberCount === 1 ? 'person' : 'people'}</span>
+              ${circle.unread
+                ? `<span class="new-line">${escapeHtml(whoPosted(circle, 2))} posted · ${timeAgo(circle.latestAt)}</span>`
+                : `<span>${circle.is_private ? 'private' : 'public'} · ${circle.memberCount} ${circle.memberCount === 1 ? 'person' : 'people'}</span>`}
             </div>
           </div>
+          ${circle.unread ? `<span class="new-badge" aria-label="${circle.unread} new">${circle.unread > 99 ? '99+' : circle.unread}</span>` : ''}
           <button class="circle-chevron" data-circle-id="${circle.id}" aria-label="Quick actions" title="Quick actions">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
           </button>
@@ -1825,15 +1933,15 @@
           ${seat(198, .9, 'face', '#d9f5cf', '#5fd3c4')}
         </div>
 
-        <div class="welcome-kicker">Welcome to Waater</div>
+        <div class="welcome-kicker">Hey ${escapeHtml(currentUsername || 'you')}, welcome to Waater</div>
         <h1 class="welcome-title">Your people.<br><em>Nobody else.</em></h1>
-        <p class="welcome-sub">A private circle is a tiny room for the few friends you'd actually tell everything. No followers. No strangers. Only the people you let in.</p>
+        <p class="welcome-sub">Somewhere safe to say the thing you can't say anywhere else, to the few people who'd laugh, argue and have your back. No followers. No strangers. Only the people you let in.</p>
 
         <button class="welcome-cta" id="circleNewBtnEmpty" type="button">
           Create your first circle
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </button>
-        <div class="welcome-fine">Takes ten seconds. Then bring your friends in.</div>
+        <div class="welcome-fine">Takes ten seconds. The first time a friend posts, you'll feel it.</div>
 
         <ol class="welcome-steps">
           <li><span class="n">1</span><div><b>Name it</b><span>Something only your people would get.</span></div></li>
@@ -1859,6 +1967,7 @@
     if (!expand) return;
     const row = expand.parentElement.querySelector('.circle-row');
     expand.classList.add('open');
+    expand.parentElement.classList.add('celebrate');
     if (row) row.classList.add('expanded');
     const btn = expand.querySelector('.circle-invite-btn');
     if (btn){
@@ -1889,7 +1998,12 @@
 
     const myCircles = await loadMyCircles(currentUser.id);
 
+    await attachActivity(myCircles);
+    myCircles.sort((a, b) => (b.unread > 0) - (a.unread > 0) || (Date.parse(b.latestAt) || 0) - (Date.parse(a.latestAt) || 0));
     lastMyCircles = myCircles;
+    const unreadTotal = myCircles.reduce((n, c) => n + c.unread, 0);
+    document.title = document.title.replace(/^\(\d+\)\s*/, '');
+    if (unreadTotal) document.title = `(${unreadTotal}) ${document.title}`;
 
     // brand-new here? show the welcome, not an empty list with zeros
     if (myCircles.length === 0){
@@ -1905,9 +2019,10 @@
         <div class="page-head-top">
           <div>
             <h1>Circles</h1>
-            <p>Small, close spaces — create one or get invited into one.</p>
+            <p>${(() => { const h = new Date().getHours(); return h < 5 ? 'Still up' : h < 12 ? 'Good morning' : h < 18 ? 'Hey' : 'Good evening'; })()}, ${escapeHtml(currentUsername || 'you')}. ${unreadTotal ? 'Your people have been talking.' : 'Your people are right here.'}</p>
           </div>
         </div>
+        ${renderAwayCard(myCircles)}
         <div class="stat-pills">
           <div class="stat-pill"><b>${myCircles.length}</b><span>${myCircles.length === 1 ? 'circle' : 'circles'}</span></div>
           <div class="stat-pill"><b>${totalPeople}</b><span>${totalPeople === 1 ? 'person' : 'people'} across them</span></div>
