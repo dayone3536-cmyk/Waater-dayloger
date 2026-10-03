@@ -12,7 +12,15 @@
     person_profiles: 'identified_only',   // only creates profiles for people you identify() below
     capture_pageview: true,
     capture_pageleave: true,
-    disable_session_recording: true,   // private circles: never replay the screen (also frees CPU while filming)
+    // Session replay ON for behaviour research, but locked down for a private app:
+    // all text and inputs are masked and media is blocked, so a replay shows taps,
+    // scrolling, hesitation and navigation, never what friends actually wrote.
+    session_recording: {
+      maskAllInputs: true,
+      maskTextSelector: '*',
+      blockSelector: 'video, audio, img, canvas, .ph-no-capture',
+    },
+    autocapture: false,                // only our own named events; never scrape clicked text from a private circle
   });
 </script>
 
@@ -2432,7 +2440,7 @@
           <div class="who"><b>${escapeHtml(post.author_username || 'someone')}</b>${post.created_at ? `<span>${timeAgo(post.created_at)}</span>` : ''}</div>
         </div>
         <div class="home-post-body">
-          ${post.body ? `<div class="home-post-text">${escapeHtml(post.body)}</div>` : ''}
+          ${(post.caption || post.body) ? `<div class="home-post-text">${escapeHtml(post.caption || post.body)}</div>` : ''}
           ${post.media_url ? `<div class="home-post-media">${
               post.media_type === 'video'
                 ? (/^https?:\/\//i.test(post.media_url)
@@ -3018,7 +3026,7 @@
     currentUsername = me?.username || currentUser.email || 'You';
     currentUserGhChannel = me?.gh_notify_channel || 'unset';
     posthog.identify(currentUser.id, { username: currentUsername, email: currentUser.email });
-    posthog.group('circle', circleId);
+    if (circleId) posthog.group('circle', circleId);
   }
 
   const params = new URLSearchParams(window.location.search);
@@ -4409,6 +4417,7 @@
     vrRecording = true;
     document.querySelectorAll('.home-video video, .home-vc video').forEach(o => { try { o.pause(); } catch (_) {} });
     try { posthog.capture('video_recorder_opened', { circle_id: circleId, from: opts.from || 'unknown' }); } catch (_) {}
+    try { posthog.stopSessionRecording(); } catch (_) {}   // free CPU while filming on slow phones
 
     // On phones the recorder is a small self-view window in the top corner and
     // the circle stays visible + scrollable behind it. A video reply is the
@@ -4727,6 +4736,7 @@
       if (state === 'recording' || sending) return;
       if (state === 'review' && !window.confirm('Discard this video?')) return;
       try { posthog.capture('video_recorder_closed', { circle_id: circleId, had_take: state === 'review' }); } catch (_) {}
+      try { posthog.startSessionRecording(); } catch (_) {}
       teardown();
     }
 
@@ -6032,8 +6042,33 @@
       img.src = url;
     }
 
-    modal.querySelector('#albumTakePhoto').addEventListener('click', () => modal.querySelector('#albumFileCamera').click());
-    modal.querySelector('#albumPickPhoto').addEventListener('click', () => modal.querySelector('#albumFileGallery').click());
+    // Inside the Android/iOS app (Capacitor) the plain <input type=file> route is
+    // flaky (permissions, FileProvider, WebView chooser quirks). If the native
+    // Camera plugin is installed, use it; otherwise fall back to the file inputs.
+    async function nativePick(source){
+      try {
+        const cap = window.Capacitor;
+        if (!cap || !cap.isNativePlatform || !cap.isNativePlatform()) return false;
+        const Cam = (cap.Plugins && cap.Plugins.Camera) || (cap.registerPlugin && cap.registerPlugin('Camera'));
+        if (!Cam || !Cam.getPhoto) return false;
+        const photo = await Cam.getPhoto({ source, resultType: 'uri', quality: 90, width: 1800, correctOrientation: true });
+        if (!photo || !photo.webPath) return false;
+        const res = await fetch(photo.webPath);
+        handleFile(await res.blob());
+        return true;
+      } catch (err) {
+        const msg = String((err && (err.message || err)) || '');
+        if (/cancel/i.test(msg)) return true;   // user backed out, do nothing
+        console.warn('native photo pick failed, using file input', err);
+        return false;
+      }
+    }
+    modal.querySelector('#albumTakePhoto').addEventListener('click', async () => {
+      if (!(await nativePick('CAMERA'))) modal.querySelector('#albumFileCamera').click();
+    });
+    modal.querySelector('#albumPickPhoto').addEventListener('click', async () => {
+      if (!(await nativePick('PHOTOS'))) modal.querySelector('#albumFileGallery').click();
+    });
     // Some Android cameras return the same filename every time, and a browser
     // only fires 'change' when the selection differs — so clear the input once
     // the file has been handed off (handleFile grabs its object URL synchronously).

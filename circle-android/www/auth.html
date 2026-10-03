@@ -368,9 +368,12 @@
   }
 
   function nextUrl() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('next') || '/';
-  }
+        let n = new URLSearchParams(window.location.search).get('next') || 'circles.html';
+        n = n.replace(/^\//, '');
+        if (n === '' || n === 'circles') n = 'circles.html';
+        if (n.startsWith('circle?')) n = 'circle.html?' + n.slice(7);
+        return n;
+      }
 
   // ---- button loading/success states (droplet fill, then a drawn check) ----
   const dropletSVG = `<svg class="droplet" viewBox="0 0 16 20"><path class="outline" d="M8 1.5C8 1.5 14.5 10 14.5 14a6.5 6.5 0 0 1-13 0C1.5 10 8 1.5 8 1.5z"/><clipPath id="clip"><path d="M8 1.5C8 1.5 14.5 10 14.5 14a6.5 6.5 0 0 1-13 0C1.5 10 8 1.5 8 1.5z"/></clipPath><rect class="fill" x="1" y="8" width="14" height="12" clip-path="url(#clip)"/></svg>`;

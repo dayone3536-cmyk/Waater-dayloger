@@ -12,6 +12,7 @@
     person_profiles: 'identified_only',   // only creates profiles for people you identify() below
     capture_pageview: true,
     capture_pageleave: true,
+    disable_session_recording: true,   // private circles: never replay the screen (also frees CPU while filming)
   });
 </script>
 
@@ -33,7 +34,6 @@
     --accent-2:#ffb199;
     --accent-soft:#fff1ec;
     --danger:#e0433f;
-    --nav-w:248px;
     --font-display:'Space Grotesk', sans-serif;
     --font-serif:'Newsreader', serif;
     --font-mono:'JetBrains Mono', monospace;
@@ -50,7 +50,7 @@
     color:var(--ink);
     font-family:var(--font-serif);
     -webkit-font-smoothing:antialiased;
-    padding-bottom:calc(98px + env(safe-area-inset-bottom));
+    padding-bottom:calc(24px + env(safe-area-inset-bottom));
   }
   a{color:inherit;text-decoration:none;}
   button{font-family:inherit;border:none;background:none;cursor:pointer;}
@@ -97,11 +97,11 @@
   .btn-primary{padding:10px 16px;border-radius:10px;font-weight:600;background:var(--accent);color:#fff;transition:background .2s ease;}
   .btn-primary:hover{background:#e64a2a;}
 
-  .app{display:flex;max-width:1180px;margin:0 auto;}
+  .app{display:flex;max-width:932px;margin:0 auto;}
   .main{flex:1;min-width:0;border-left:1px solid var(--line);border-right:1px solid var(--line);}
 
   /* =========================================================
-     NAVIGATION — sidebar (desktop) / topbar + dock (mobile)
+     NAVIGATION — topbar (mobile)
      ========================================================= */
   .wordmark{
     font-family:var(--font-display);font-weight:700;font-size:21px;letter-spacing:-0.03em;
@@ -134,158 +134,10 @@
   .topbar-back:hover svg{transform:translateX(-2px);}
   .topbar-back:active{transform:scale(.94);background:#eaeaec;}
 
-  /* ---------- Desktop sidebar ---------- */
-  .sidebar{
-    display:none;width:var(--nav-w);flex-shrink:0;padding:26px 16px 20px;
-    flex-direction:column;height:100vh;height:100dvh;position:sticky;top:0;
-  }
-  .sidebar .brand{align-self:flex-start;font-size:26px;padding:6px 14px;margin-bottom:26px;border-radius:12px;}
-
-  .nav-wrap{position:relative;}
-  .nav-list{list-style:none;display:flex;flex-direction:column;gap:2px;position:relative;z-index:1;}
-  .nav-pill{
-    position:absolute;left:0;right:0;top:0;height:46px;border-radius:14px;background:#f3f3f4;
-    opacity:0;pointer-events:none;z-index:0;
-    transition:transform .38s var(--ease-spring), height .2s var(--ease), opacity .2s ease;
-  }
-  .nav-pill.on{opacity:1;}
-  .nav-pill.snap{transition:opacity .2s ease;}
-
-  .nav-item{
-    position:relative;display:flex;align-items:center;gap:14px;height:46px;padding:0 14px;
-    border-radius:14px;font-family:var(--font-display);font-size:15.5px;font-weight:500;letter-spacing:-.005em;
-    color:var(--ink-soft);
-    transition:color .18s ease, background .18s ease, transform .15s var(--ease-spring);
-  }
-  .nav-item svg{
-    width:22px;height:22px;flex-shrink:0;stroke:currentColor;
-    transition:transform .35s var(--ease-spring), stroke .18s ease, fill .18s ease;
-  }
-  .nav-item:hover{color:var(--ink);}
-  .nav-item:hover svg{transform:scale(1.12) rotate(-5deg);}
-  .nav-item:active{transform:scale(.97);}
-  .nav-item.active{color:var(--ink);font-weight:600;background:var(--accent-soft);}
-  .nav-item.active svg{stroke:var(--accent);fill:rgba(255,90,54,.16);}
-  .nav-item.active::before{
-    content:'';position:absolute;left:-6px;top:50%;width:4px;height:20px;border-radius:0 4px 4px 0;
-    background:var(--accent);transform:translateY(-50%);
-    animation:navBar .45s var(--ease-spring) both;
-  }
-  @keyframes navBar{ from{transform:translateY(-50%) scaleY(.2);opacity:0;} to{transform:translateY(-50%) scaleY(1);opacity:1;} }
-  .nav-item:focus-visible,.sidebar .brand:focus-visible,.nav-create:focus-visible,
-  .sidebar-profile:focus-visible,.sidebar-signout:focus-visible,.sidebar-signin:focus-visible{
-    outline:2px solid var(--accent);outline-offset:2px;
-  }
-
-  .nav-create{
-    position:relative;overflow:hidden;margin-top:18px;display:flex;align-items:center;justify-content:center;gap:9px;
-    height:48px;border-radius:14px;color:#fff;
-    font-family:var(--font-display);font-weight:600;font-size:15px;
-    background:linear-gradient(135deg,#ff7d59 0%,var(--accent) 55%,#f2431c 100%);
-    box-shadow:0 10px 22px -8px rgba(255,90,54,.6), inset 0 1px 0 rgba(255,255,255,.28);
-    transition:transform .25s var(--ease-spring), box-shadow .25s ease;
-  }
-  .nav-create svg{width:19px;height:19px;stroke:#fff;transition:transform .4s var(--ease-spring);}
-  .nav-create::after{
-    content:'';position:absolute;inset:0;transform:translateX(-130%);
-    background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.38) 50%,transparent 70%);
-    transition:transform .7s var(--ease);
-  }
-  .nav-create:hover{transform:translateY(-2px);box-shadow:0 16px 28px -8px rgba(255,90,54,.65), inset 0 1px 0 rgba(255,255,255,.3);}
-  .nav-create:hover svg{transform:rotate(90deg);}
-  .nav-create:hover::after{transform:translateX(130%);}
-  .nav-create:active{transform:scale(.97);}
-
-  .sidebar-auth{margin-top:auto;}
-  .sidebar-user{
-    display:flex;align-items:center;gap:4px;padding:8px;border-radius:18px;
-    background:#fff;border:1px solid var(--line);
-    transition:border-color .2s ease, box-shadow .2s ease;
-  }
-  .sidebar-user:hover{border-color:var(--line-strong);box-shadow:0 8px 22px -14px rgba(20,21,26,.25);}
-  .sidebar-profile{
-    flex:1;min-width:0;display:flex;align-items:center;gap:11px;padding:3px 6px 3px 3px;border-radius:12px;
-    transition:background .15s ease;
-  }
-  .sidebar-profile:hover{background:#f7f7f8;}
-  .mini-avatar{
-    width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#ffd8c9,var(--accent));
-    flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;
-    font-family:var(--font-display);font-weight:700;font-size:14px;overflow:hidden;
-    box-shadow:0 0 0 2px #fff, 0 0 0 3.5px var(--accent-soft);
-  }
-  .mini-avatar img{width:100%;height:100%;object-fit:cover;}
-  .sidebar-profile .who{display:flex;flex-direction:column;line-height:1.25;flex:1;min-width:0;}
-  .sidebar-profile .who span:first-child{font-family:var(--font-display);font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .sidebar-profile .who span:last-child{font-family:var(--font-mono);font-size:10.5px;color:var(--grey);}
-  .sidebar-signout{
-    width:34px;height:34px;flex-shrink:0;border-radius:11px;display:grid;place-items:center;color:var(--grey);
-    transition:background .15s ease, color .15s ease, transform .15s var(--ease-spring);
-  }
-  .sidebar-signout svg{width:17px;height:17px;stroke:currentColor;}
-  .sidebar-signout:hover{background:#fdeeed;color:var(--danger);}
-  .sidebar-signout:active{transform:scale(.9);}
-  .sidebar-signin{
-    margin-top:auto;display:flex;align-items:center;justify-content:center;gap:8px;height:48px;
-    background:var(--ink);color:#fff!important;border-radius:14px;
-    font-family:var(--font-display);font-weight:600;font-size:14.5px;
-    transition:background .16s ease, transform .2s var(--ease-spring);
-  }
-  .sidebar-signin:hover{background:#000;transform:translateY(-1px);}
-  .sidebar-signin:active{transform:scale(.97);}
-
   @media (min-width:900px){
     body{padding-bottom:0;}
     .topbar{display:none;}
-    .sidebar{display:flex;}
   }
-
-  /* ---------- Mobile floating dock ---------- */
-  .bottom-nav{
-    position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));
-    max-width:440px;margin:0 auto;height:64px;padding:0 6px;
-    display:grid;grid-template-columns:repeat(5,1fr);align-items:center;
-    border-radius:24px;z-index:30;
-    background:rgba(255,255,255,.86);
-    -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
-    border:1px solid rgba(20,21,26,.06);
-    box-shadow:0 14px 34px -10px rgba(20,21,26,.22), 0 2px 8px rgba(20,21,26,.05);
-    transition:transform .32s cubic-bezier(.16,1,.3,1), opacity .22s ease;
-    will-change:transform;
-  }
-  .bottom-nav.hidden,
-  .bottom-nav.scroll-hide{transform:translateY(calc(100% + 20px));opacity:0;pointer-events:none;}
-  .tab{
-    position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-    color:var(--grey);font-family:var(--font-display);font-weight:600;font-size:10.5px;letter-spacing:.005em;
-    -webkit-tap-highlight-color:transparent;
-    transition:color .2s ease, transform .2s var(--ease-spring);
-  }
-  .tab-ico{
-    width:48px;height:30px;border-radius:99px;display:grid;place-items:center;
-    transition:background .25s ease;
-  }
-  .tab svg{width:22px;height:22px;stroke:currentColor;transition:transform .3s var(--ease-spring);}
-  .tab:active svg{transform:scale(.82);}
-  .tab.active{color:var(--ink);}
-  .tab.active .tab-ico{background:var(--accent-soft);}
-  .tab.active svg{stroke:var(--accent);fill:rgba(255,90,54,.16);animation:tabPop .5s var(--ease-spring);}
-  @keyframes tabPop{ 0%{transform:scale(.7);} 100%{transform:scale(1);} }
-  .tab:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:18px;}
-
-  .tab-create{overflow:visible;}
-  .tab-create .ring{
-    width:54px;height:54px;border-radius:50%;display:grid;place-items:center;
-    background:linear-gradient(135deg,#ff7d59,var(--accent) 55%,#f2431c);
-    transform:translateY(-14px);
-    box-shadow:0 0 0 5px #fff, 0 12px 22px -4px rgba(255,90,54,.55), inset 0 1px 0 rgba(255,255,255,.3);
-    transition:transform .3s var(--ease-spring), box-shadow .3s ease;
-  }
-  .tab-create svg{width:24px;height:24px;stroke:#fff;stroke-width:2.4;fill:none;transition:transform .35s var(--ease-spring);}
-  .tab-create:active .ring{transform:translateY(-12px) scale(.92);}
-  .tab-create:active svg{transform:rotate(90deg);}
-  .tab-create .tab-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
-  @media (min-width:900px){ .bottom-nav{display:none;} }
 
   @keyframes riseIn{ from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
   @keyframes spin{ to{transform:rotate(360deg);} }
@@ -1057,9 +909,9 @@
     .pc-stats{order:2;width:100%;justify-content:center;margin-top:2px;}
   }
 
-  /* ---------- mobile sticky join bar — floats above the dock ---------- */
+  /* ---------- mobile sticky join bar — floats at the bottom ---------- */
   .pc-sticky-cta{
-    position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));
+    position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));
     max-width:440px;margin:0 auto;z-index:29;
     display:flex;align-items:center;gap:12px;
     padding:9px 9px 9px 17px;border-radius:20px;
@@ -1078,7 +930,7 @@
   .pc-sticky-cta button:active{transform:scale(.94);}
   @keyframes pcCtaRise{ from{transform:translateY(18px);opacity:0;} to{transform:none;opacity:1;} }
   @media (min-width:900px){ .pc-sticky-cta{display:none;} }
-  body.pc-has-cta{padding-bottom:calc(172px + env(safe-area-inset-bottom));}
+  body.pc-has-cta{padding-bottom:calc(96px + env(safe-area-inset-bottom));}
   @media (min-width:900px){ body.pc-has-cta{padding-bottom:0;} }
 
   /* ---------- body ---------- */
@@ -1349,57 +1201,83 @@
      WELCOME CEREMONY — first-time entry into a private circle
   ============================================================ */
   .welcome-overlay{
-    position:fixed;inset:0;z-index:500;
-    background:linear-gradient(135deg,var(--ink),#2a2c35);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
-    padding:32px;text-align:center;
-    opacity:0;transition:opacity .4s var(--ease);
+    position:fixed;inset:0;z-index:500;overflow-y:auto;
+    background:radial-gradient(circle at 50% 28%, rgba(255,90,54,.28), transparent 58%), var(--ink);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:max(32px,env(safe-area-inset-top)) 28px max(28px,env(safe-area-inset-bottom));
+    text-align:center;opacity:0;transition:opacity .5s var(--ease);
   }
   .welcome-overlay.show{opacity:1;}
-  .welcome-lock{
-    width:46px;height:46px;border-radius:50%;
-    background:rgba(255,90,54,.16);border:1px solid rgba(255,90,54,.35);
+  .welcome-face{
+    position:relative;width:116px;height:116px;border-radius:50%;flex-shrink:0;
+    opacity:0;transform:scale(.7);animation:welcomePop .7s var(--ease-spring) .1s forwards;
+  }
+  .welcome-face::after{
+    content:"";position:absolute;inset:-9px;border-radius:50%;
+    border:1.5px solid rgba(255,177,153,.55);animation:welcomeBreathe 2.8s ease-in-out 1s infinite;
+  }
+  .welcome-face .avatar{
+    width:100%;height:100%;border-radius:50%;overflow:hidden;
+    background:linear-gradient(135deg,#ffd8c9,var(--accent));color:#fff;
     display:flex;align-items:center;justify-content:center;
-    opacity:0;transform:scale(.6);animation:welcomePop .4s var(--ease-spring) forwards;
-    animation-delay:.05s;
+    font-family:var(--font-display);font-weight:700;font-size:46px;
   }
-  .welcome-lock svg{width:20px;height:20px;stroke:var(--accent-2);}
-  .welcome-ring{display:flex;flex-wrap:wrap;justify-content:center;max-width:360px;}
-  .welcome-avatar{
-    margin:0 -14px 8px;opacity:0;transform:translateY(20px) scale(.6);
-    animation:welcomeIn .5s var(--ease-spring) forwards;
-  }
-  .welcome-avatar .avatar{
-    width:56px;height:56px;border-radius:50%;border:3px solid var(--ink);
-    background:linear-gradient(135deg,#ffd8c9,var(--accent));
-    display:flex;align-items:center;justify-content:center;color:#fff;
-    font-family:var(--font-display);font-weight:700;overflow:hidden;
-  }
-  @keyframes welcomeIn{to{opacity:1;transform:translateY(0) scale(1);}}
+  .welcome-face .avatar img{width:100%;height:100%;object-fit:cover;}
   @keyframes welcomePop{to{opacity:1;transform:scale(1);}}
-  .welcome-text{color:#fff;max-width:420px;}
-  .welcome-eyebrow{font-family:var(--font-mono);font-size:12px;color:var(--accent-2);letter-spacing:.08em;text-transform:uppercase;}
-  .welcome-title{font-family:var(--font-display);font-weight:700;font-size:clamp(26px,6vw,34px);margin-top:8px;letter-spacing:-.01em;}
-  .welcome-sub{font-family:var(--font-serif);font-size:15px;color:rgba(255,255,255,.72);margin-top:10px;line-height:1.55;}
+  @keyframes welcomeBreathe{0%,100%{transform:scale(1);opacity:.9;}50%{transform:scale(1.07);opacity:.25;}}
+  @keyframes welcomeRise{to{opacity:1;transform:translateY(0);}}
+  .welcome-step{opacity:0;transform:translateY(14px);animation:welcomeRise .7s var(--ease) forwards;}
+  .welcome-title{
+    font-family:var(--font-display);font-weight:700;color:#fff;
+    font-size:clamp(30px,8vw,42px);line-height:1.1;letter-spacing:-.02em;
+    margin-top:28px;max-width:440px;animation-delay:.7s;
+  }
   .welcome-note{
-    margin-top:16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);
-    border-radius:16px;padding:14px 16px;text-align:left;
+    margin-top:22px;max-width:420px;animation-delay:1.5s;
+    font-family:var(--font-serif);font-weight:500;color:#fff;
+    font-size:clamp(21px,5.6vw,26px);line-height:1.38;
   }
-  .welcome-note b{font-family:var(--font-display);font-size:11.5px;color:var(--accent-2);letter-spacing:.03em;text-transform:uppercase;}
-  .welcome-note p{font-family:var(--font-serif);font-size:14.5px;color:#fff;margin-top:6px;line-height:1.5;}
-  .welcome-privacy-line{
-    display:flex;align-items:center;gap:8px;margin-top:18px;justify-content:center;
-    font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.55);
+  .welcome-note-by{
+    display:block;margin-top:10px;font-family:var(--font-display);font-weight:500;
+    font-size:13.5px;color:var(--accent-2);
   }
-  .welcome-privacy-line svg{width:13px;height:13px;stroke:rgba(255,255,255,.55);flex-shrink:0;}
+  .welcome-left{
+    margin-top:22px;max-width:380px;width:100%;animation-delay:2.2s;text-align:left;
+    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+    border-radius:18px;padding:14px 16px;
+  }
+  .welcome-left b{display:block;font-family:var(--font-display);font-weight:600;font-size:12.5px;color:var(--accent-2);}
+  .welcome-left p{
+    margin-top:6px;font-family:var(--font-serif);font-size:15px;line-height:1.5;color:rgba(255,255,255,.9);
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .welcome-sub{
+    margin-top:20px;max-width:380px;animation-delay:2.2s;
+    font-family:var(--font-serif);font-size:15px;line-height:1.55;color:rgba(255,255,255,.7);
+  }
   .welcome-enter{
-    background:var(--accent);color:#fff;font-family:var(--font-display);font-weight:600;font-size:14px;
-    padding:13px 30px;border-radius:99px;transition:transform .15s var(--ease), background .15s ease;
-    margin-top:4px;
+    margin-top:28px;background:var(--accent);color:#fff;font-family:var(--font-display);
+    font-weight:600;font-size:15px;padding:15px 34px;border-radius:99px;
+    animation-delay:2.9s;transition:transform .15s var(--ease), background .15s ease;
   }
   .welcome-enter:hover{background:#e64a27;}
   .welcome-enter:active{transform:scale(.95);}
+  .welcome-enter:focus-visible{outline:2px solid #fff;outline-offset:3px;}
+  .welcome-privacy-line{
+    margin-top:18px;animation-delay:3.2s;
+    font-family:var(--font-serif);font-size:12.5px;color:rgba(255,255,255,.5);
+  }
 
+  .im-media{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;}
+  .im-chip{font-family:var(--font-display);font-weight:600;font-size:12.5px;padding:8px 13px;border-radius:99px;border:1px solid var(--line-strong);color:var(--ink);background:#fff;}
+  .im-chip:hover{background:#f7f7f8;}
+  .im-chip.rec{background:var(--danger);border-color:var(--danger);color:#fff;}
+  .im-status{font-family:var(--font-serif);font-size:12.5px;color:var(--ink-soft);}
+  .im-status button{color:var(--danger);font-weight:600;margin-left:6px;}
+  .welcome-media{margin-top:22px;max-width:380px;width:100%;animation-delay:1.9s;}
+  .welcome-media video{width:100%;max-height:46vh;border-radius:18px;background:#000;object-fit:cover;}
+  .welcome-media audio{width:100%;}
+  .welcome-media span{display:block;margin-top:8px;font-family:var(--font-display);font-weight:500;font-size:13px;color:var(--accent-2);}
 
   .post-highlight{
   animation: postHighlightPulse 2.2s ease;
@@ -1462,6 +1340,72 @@
   .invite-modal-skip:hover{background:#f7f7f8;}
   .invite-modal-send{background:var(--ink);color:#fff;font-family:var(--font-display);font-weight:600;font-size:12.5px;padding:9px 16px;border-radius:99px;}
   .invite-modal-send:hover{background:#000;}
+
+  /* ---- Empty-circle nudge: write the first post right inside the popup ---- */
+  .invite-modal.en-modal{max-width:380px;overflow:hidden;position:relative;}
+  .en-composer{
+    margin-top:16px;border:1px solid var(--line-strong);border-radius:18px;background:#fafafa;
+    padding:10px 10px 8px;transition:border-color .18s ease,background .18s ease,box-shadow .18s ease;
+  }
+  .en-composer:focus-within{border-color:var(--accent);background:#fff;box-shadow:0 0 0 4px rgba(255,90,54,.10);}
+  .invite-modal .en-composer textarea{
+    display:block;margin:0;border:0;background:transparent;border-radius:0;
+    padding:4px 6px;min-height:46px;max-height:140px;font-size:15px;line-height:1.45;
+  }
+  .invite-modal .en-composer textarea:focus{border:0;}
+  .en-bar{display:flex;align-items:center;gap:2px;margin-top:4px;}
+  .en-tool{
+    width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--ink-soft);
+    transition:background .15s ease,color .15s ease,transform .15s var(--ease-spring);
+  }
+  .en-tool:hover{background:rgba(20,21,26,.06);color:var(--ink);}
+  .en-tool:active{transform:scale(.92);}
+  .en-tool svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+  .en-send{
+    margin-left:auto;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;
+    background:#e4e4e7;color:#fff;cursor:default;
+    transition:background .2s ease,transform .2s var(--ease-spring),box-shadow .2s ease;
+  }
+  .en-send svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
+  .en-send.ready{background:var(--accent);cursor:pointer;box-shadow:0 6px 16px rgba(255,90,54,.35);transform:scale(1.04);}
+  .en-send.ready:hover{transform:scale(1.1);}
+  .en-send.ready:active{transform:scale(.94);}
+  .en-send:disabled:not(.ready){pointer-events:none;}
+  .en-send .mini-spinner{width:16px;height:16px;}
+
+  /* recording strip replaces the textarea while the mic is live */
+  .en-rec{display:none;align-items:center;gap:10px;min-height:46px;padding:4px 6px;}
+  .en-composer.recording .en-rec{display:flex;}
+  .en-composer.recording textarea,
+  .en-composer.recording .en-tool:not(.en-cancel){display:none;}
+  .en-composer.recording .en-cancel{display:grid;}
+  .en-cancel{display:none;}
+  .en-dot{width:9px;height:9px;border-radius:50%;background:var(--danger,#e5484d);animation:enPulse 1.1s ease-in-out infinite;flex-shrink:0;}
+  .en-time{font-family:var(--font-mono);font-size:12.5px;color:var(--ink);min-width:34px;}
+  .en-wave{flex:1;display:flex;align-items:center;gap:3px;height:26px;}
+  .en-wave i{flex:1;max-width:4px;height:6px;border-radius:3px;background:var(--accent);opacity:.85;animation:enWave 1s ease-in-out infinite;}
+  .en-wave i:nth-child(3n){animation-delay:-.25s}
+  .en-wave i:nth-child(3n+1){animation-delay:-.55s}
+  .en-wave i:nth-child(4n){animation-duration:.8s}
+  .en-wave i:nth-child(5n){animation-duration:1.3s}
+  @keyframes enWave{0%,100%{height:5px}50%{height:24px}}
+  @keyframes enPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
+  @keyframes enShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  .invite-modal.en-modal.shake{animation:enShake .28s ease;}
+
+  .en-foot{display:flex;justify-content:center;margin-top:10px;}
+  .en-foot .invite-modal-skip{font-size:12.5px;}
+
+  /* success beat */
+  .en-done{display:none;flex-direction:column;align-items:center;gap:10px;padding:22px 0 8px;text-align:center;}
+  .invite-modal.en-modal.done .en-composer,
+  .invite-modal.en-modal.done .en-foot{display:none;}
+  .invite-modal.en-modal.done .en-done{display:flex;}
+  .en-check{width:46px;height:46px;border-radius:50%;background:var(--accent);display:grid;place-items:center;animation:enPop .45s var(--ease-spring) both;}
+  .en-check svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;}
+  .en-done b{font-family:var(--font-display);font-weight:700;font-size:15px;}
+  .en-done span{font-family:var(--font-serif);font-size:13px;color:var(--ink-soft);}
+  @keyframes enPop{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
 
   /* ---- Circle Album (capture modal — the gallery itself lives in the
      Album tab, styled further down) ---- */
@@ -2168,6 +2112,10 @@
     -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);transition:transform .15s var(--ease-spring), background .15s ease;
   }
   .vr-x:active,.vr-side:active{transform:scale(.9);background:rgba(255,255,255,.28);}
+  /* live blur over a camera feed is very costly on old GPUs — drop it while the camera is on */
+  .vr-stage[data-state="ready"] *,.vr-stage[data-state="recording"] *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;}
+  .vr-stage[data-state="ready"] .vr-x,.vr-stage[data-state="recording"] .vr-x,
+  .vr-stage[data-state="ready"] .vr-side,.vr-stage[data-state="recording"] .vr-side{background:rgba(20,21,26,.45);}
   .vr-x svg,.vr-side svg{width:20px;height:20px;stroke:#fff;fill:none;}
   .vr-pill{
     display:flex;align-items:center;gap:7px;padding:7px 13px;border-radius:99px;background:rgba(20,21,26,.5);
@@ -2281,6 +2229,43 @@
     .vr-lock{display:block;font-family:var(--font-mono);font-size:10.5px;color:rgba(255,255,255,.66);margin-bottom:10px;text-align:center;}
   }
 
+  /* ---------- "Spark" prompt card + playful recorder bits ----------
+     A conversation starter that stays on screen the whole time you record,
+     so a blank mind is never a reason to stop. */
+  .vr-spark{
+    position:absolute;left:14px;right:14px;top:calc(70px + env(safe-area-inset-top,0px));z-index:5;
+    display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;
+  }
+  .vr-spark-q{
+    pointer-events:auto;max-width:340px;text-align:center;color:#fff;
+    font-family:var(--font-display);font-weight:600;font-size:19px;line-height:1.25;letter-spacing:-.01em;
+    padding:12px 16px;border-radius:18px;background:rgba(20,21,26,.52);text-shadow:0 1px 8px rgba(0,0,0,.35);
+    animation:vrSparkIn .35s var(--ease-spring) both;
+  }
+  .vr-spark-q.nudge{background:var(--accent);animation:vrNudge .55s var(--ease-spring) 2;}
+  .vr-spark-row{display:flex;gap:8px;pointer-events:auto;}
+  .vr-chip{
+    height:30px;padding:0 13px;border-radius:99px;background:rgba(20,21,26,.52);color:#fff;
+    font-family:var(--font-display);font-weight:600;font-size:12px;transition:transform .15s var(--ease-spring);
+  }
+  .vr-chip:active{transform:scale(.92);}
+  @keyframes vrSparkIn{from{opacity:0;transform:translateY(6px) scale(.97);}to{opacity:1;transform:none;}}
+  @keyframes vrNudge{0%,100%{transform:scale(1);}40%{transform:scale(1.06) rotate(-1.2deg);}70%{transform:scale(1.03) rotate(1deg);}}
+  .vr-stage[data-state="recording"] .vr-spark-row,
+  .vr-stage[data-state="review"] .vr-spark,
+  .vr-stage[data-state="nocam"] .vr-spark{display:none;}
+  .vr-stage[data-mode="comment"] #vrLen{display:none;}
+  .vr-quick{display:none;gap:8px;justify-content:center;margin-bottom:10px;}
+  .vr-stage[data-mode="post"] .vr-quick{display:flex;}
+  .vr-quick button{width:46px;height:38px;border-radius:99px;background:rgba(255,255,255,.16);font-size:18px;transition:transform .12s var(--ease-spring);}
+  .vr-quick button:active{transform:scale(.88);}
+  @media (max-width:899px){
+    /* phones: the stage is a 150px self-view window — the prompt hangs just below it */
+    .vr-spark{left:auto;right:0;top:calc(100% + 8px);width:214px;align-items:flex-end;}
+    .vr-spark-q{font-size:13px;padding:8px 11px;border-radius:14px;max-width:214px;}
+    .vr-chip{height:26px;padding:0 10px;font-size:11px;}
+  }
+
   /* ---------- video replies ---------- */
   .home-comment-cam{
     width:34px;height:34px;border-radius:50%;flex-shrink:0;
@@ -2310,22 +2295,6 @@
 <body>
 
 <div class="app">
-  <aside class="sidebar">
-    <a href="/" class="wordmark brand" aria-label="Waater home">waater<span class="dot">.</span></a>
-
-    <div class="nav-wrap">
-      <span class="nav-pill" aria-hidden="true"></span>
-      <ul class="nav-list">
-        <li><a href="/" class="nav-item active" data-nav="circles" aria-current="page">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>
-          <span>Circles</span></a></li>
-      </ul>
-    </div>
-
-
-    <div id="sidebarAuthArea" class="sidebar-auth"></div>
-  </aside>
-
   <main class="main">
     <div class="topbar">
       <a href="/circles" class="topbar-back" aria-label="Back to circles">
@@ -2341,17 +2310,6 @@
     </div>
   </main>
 </div>
-
-<nav class="bottom-nav" aria-label="Primary">
-  <a href="/" class="tab active" data-nav="circles" aria-current="page">
-    <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg></span>
-    <span class="tab-label">Circles</span>
-  </a>
-  <a href="/?profile" class="tab" aria-label="My profile">
-    <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span>
-    <span class="tab-label">Me</span>
-  </a>
-</nav>
 
 <div class="waater-toast" id="waaterToast">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
@@ -2550,19 +2508,34 @@
         .eq('circle_id', circleId)
         .eq('user_id', currentUser.id)
         .maybeSingle();
-      if (error || !data) return { note: null, inviter: null };
+      if (error || !data) return { note: null, inviter: null, media: null };
 
-      let inviter = null;
+      let inviter = null, media = null;
       if (data.invited_by){
         const { data: prof } = await supabaseClient
           .from('profiles')
-          .select('username, avatar_url')
+          .select('id, username, avatar_url')
           .eq('id', data.invited_by)
           .maybeSingle();
         inviter = prof || null;
+        try{
+          const { data: rows } = await supabaseClient
+            .from('welcome_media')
+            .select('path, media_type')
+            .eq('circle_id', circleId)
+            .eq('inviter_id', data.invited_by)
+            .order('created_at', { ascending: false })
+            .limit(1);
+          const row = rows && rows[0];
+          if (row){
+            const { data: signed } = await supabaseClient.storage
+              .from('welcome-notes').createSignedUrl(row.path, 3600);
+            if (signed && signed.signedUrl) media = { url: signed.signedUrl, type: row.media_type };
+          }
+        } catch(_){ media = null; }
       }
-      return { note: data.welcome_note || null, inviter };
-    } catch(e){ return { note: null, inviter: null }; }
+      return { note: data.welcome_note || null, inviter, media };
+    } catch(e){ return { note: null, inviter: null, media: null }; }
   }
 
   function renderPeopleRow(){
@@ -2578,53 +2551,74 @@
     `;
   }
 
-  // Full-screen, one-time "you're in" moment. Plays over the feed while it
-  // loads underneath — the moment the person sees the second they land.
-  async function playWelcomeCeremony(note, inviter){
+  // Full-screen, one-time arrival moment. It is about ONE person: whoever
+  // invited this user. Their face, their words, the last thing they posted.
+  // It waits for a tap — no auto-dismiss — so the person actually feels it.
+  async function playWelcomeCeremony(note, inviter, media){
+    // Best-effort: the last thing the inviter posted in this circle.
+    let left = null;
+    try{
+      if (inviter?.id){
+        const { data } = await supabaseClient
+          .from('posts')
+          .select('caption, media_type, is_anonymous')
+          .eq('circle_id', circleId)
+          .eq('user_id', inviter.id)
+          .eq('is_anonymous', false)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        left = (data && data[0]) || null;
+      }
+    } catch(_){ left = null; }
+
     return new Promise(resolve => {
-      const inviterName = inviter?.username || null;
+      const name = inviter?.username || null;
+      const first = name ? name.split(' ')[0] : null;
+      const others = Math.max(members.length - 1, 0);
+      const kind = left && left.media_type === 'video' ? 'a video'
+                 : left && left.media_type === 'voice' ? 'a voice note' : null;
+      const leftBody = left && left.caption ? escapeHtml(left.caption)
+                     : kind ? `They left ${kind} for the group.` : null;
+
       const overlay = document.createElement('div');
       overlay.className = 'welcome-overlay';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-label', 'Welcome');
       overlay.innerHTML = `
-        <div class="welcome-lock">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+        <div class="welcome-face">
+          <div class="avatar">${inviter?.avatar_url ? `<img src="${escapeHtml(inviter.avatar_url)}" alt="">` : initials(name || '?')}</div>
         </div>
-        <div class="welcome-ring">
-          ${members.map((m,i) => `
-            <div class="welcome-avatar" style="animation-delay:${(i*0.08).toFixed(2)}s">
-              <div class="avatar">${m.avatar_url ? `<img src="${escapeHtml(m.avatar_url)}" alt="">` : initials(m.username||'?')}</div>
-            </div>
-          `).join('')}
-        </div>
-        <div class="welcome-text">
-          <div class="welcome-eyebrow">you're special</div>
-          <h1 class="welcome-title">${inviterName ? `That's why @${escapeHtml(inviterName)} invited you` : `Welcome to ${escapeHtml(circle.name)}`}</h1>
-          <p class="welcome-sub">${inviterName ? `Out of everyone @${escapeHtml(inviterName)} knows, they chose you. You're now one of only ${members.length} people in ${escapeHtml(circle.name)}.` : `You're now one of only ${members.length} people who get to be part of ${escapeHtml(circle.name)}.`}</p>
-          ${note ? `
-            <div class="welcome-note">
-              <b>${inviterName ? `a note from @${escapeHtml(inviterName)}` : 'a note for you'}</b>
-              <p>${escapeHtml(note)}</p>
-            </div>
-          ` : ''}
-          <div class="welcome-privacy-line">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
-            No public feed, no usernames, no strangers reading along — just the ${members.length} of you
-          </div>
-          <div class="welcome-privacy-line" style="margin-top:6px;">
-            <span style="font-size:12px;line-height:1;">📸</span>
-            Screenshots are blocked in here — whatever's said stays inside ${escapeHtml(circle.name)}
-          </div>
-        </div>
+        <h1 class="welcome-title welcome-step">${first ? `${escapeHtml(first)} wanted you in here.` : `Welcome to ${escapeHtml(circle.name)}.`}</h1>
+        ${note ? `
+          <p class="welcome-note welcome-step">\u201c${escapeHtml(note)}\u201d
+            <span class="welcome-note-by">\u2014 ${escapeHtml(first)}</span>
+          </p>` : ''}
+        ${media ? `
+          <div class="welcome-media welcome-step">
+            ${media.type === 'video'
+              ? `<video src="${escapeHtml(media.url)}" controls playsinline preload="metadata" controlsList="nodownload"></video>`
+              : `<audio src="${escapeHtml(media.url)}" controls preload="metadata"></audio>`}
+            <span>${escapeHtml(first)} left you ${media.type === 'video' ? 'a video' : 'a voice note'}</span>
+          </div>` : ''}
+        ${leftBody ? `
+          <div class="welcome-left welcome-step">
+            <b>${escapeHtml(first)} posted this in ${escapeHtml(circle.name)}</b>
+            <p>${leftBody}</p>
+          </div>` : ''}
+        <p class="welcome-sub welcome-step">${first
+          ? `${escapeHtml(first)} put you in a room with ${others} ${others === 1 ? 'person' : 'people'} they trust. Nobody else can see in.`
+          : `You're one of ${members.length} people in here. Nobody else can see in.`}</p>
+        <button class="welcome-enter welcome-step" type="button">${first ? `Say hi to ${escapeHtml(first)}` : 'Come in'}</button>
+        <div class="welcome-privacy-line welcome-step">Screenshots are blocked. What's said here stays here.</div>
       `;
       document.body.appendChild(overlay);
       requestAnimationFrame(() => overlay.classList.add('show'));
-      const finish = () => {
+      const btn = overlay.querySelector('.welcome-enter');
+      btn.addEventListener('click', () => {
         overlay.classList.remove('show');
-        setTimeout(() => { overlay.remove(); resolve(); }, 350);
-      };
-      // No button — the ceremony dismisses itself. 3s is enough time to read
-      // the headline + note without making the person tap anything to get in.
-      setTimeout(finish, 3000);
+        setTimeout(() => { overlay.remove(); resolve(); }, 450);
+      });
+      setTimeout(() => { try{ btn.focus({ preventScroll:true }); }catch(_){} }, 3000);
     });
   }
 
@@ -2637,28 +2631,108 @@
       modal.innerHTML = `
         <div class="invite-modal">
           <h3>Invite someone to ${escapeHtml(circle.name)}</h3>
-          <p>Add a personal note — it'll be the first thing they see when they arrive.</p>
+          <p>Say something to them. It's the first thing they'll see, so a voice or a face works best.</p>
           <textarea id="inviteNoteInput" maxlength="140" placeholder="e.g. finally got you in here 🎉"></textarea>
+          <div class="im-media">
+            <button class="im-chip" id="imMic" type="button">🎙 Voice note</button>
+            <button class="im-chip" id="imCam" type="button">🎥 Video</button>
+            <span class="im-status" id="imStatus"></span>
+          </div>
+          <input type="file" id="imFile" accept="video/*" capture="user" hidden>
           <div class="invite-modal-row">
-            <button class="invite-modal-skip" type="button">Skip note</button>
+            <button class="invite-modal-skip" type="button">Skip</button>
             <button class="invite-modal-send" type="button">Create invite</button>
           </div>
         </div>
       `;
       document.body.appendChild(modal);
       requestAnimationFrame(() => modal.classList.add('show'));
-      const close = (note) => {
+      const $ = id => modal.querySelector('#' + id);
+      const mic = $('imMic'), cam = $('imCam'), file = $('imFile'), status = $('imStatus');
+      const send = modal.querySelector('.invite-modal-send');
+      const MAX_VOICE = 30, MAX_VIDEO = 45, MAX_BYTES = 50 * 1024 * 1024;
+      let media = null, rec = null, stream = null, chunks = [], t0 = 0, timer = null;
+
+      const setStatus = (txt) => {
+        status.innerHTML = txt ? `${txt} <button type="button" id="imClear">remove</button>` : '';
+        const c = $('imClear'); if (c) c.onclick = () => { media = null; setStatus(''); };
+      };
+      const stopStream = () => { try{ stream && stream.getTracks().forEach(t => t.stop()); }catch(_){} stream = null; };
+      const finishRec = () => { clearTimeout(timer); if (rec && rec.state === 'recording') rec.stop(); };
+
+      mic.addEventListener('click', async () => {
+        if (rec && rec.state === 'recording') { finishRec(); return; }
+        try{
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch(_){ showToast('Microphone is blocked. Allow it and try again', 'error'); return; }
+        chunks = []; media = null; setStatus('');
+        rec = new MediaRecorder(stream);
+        rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+        rec.onstop = () => {
+          const secs = Math.max(1, Math.round((Date.now() - t0) / 1000));
+          const blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' });
+          stopStream();
+          mic.classList.remove('rec'); mic.textContent = '🎙 Voice note'; send.disabled = false;
+          media = { type: 'voice', blob, mime: blob.type, seconds: secs };
+          setStatus(`Voice note ready (${secs}s)`);
+        };
+        t0 = Date.now(); rec.start();
+        mic.classList.add('rec'); mic.textContent = '⏹ Stop'; send.disabled = true;
+        timer = setTimeout(finishRec, MAX_VOICE * 1000);
+      });
+
+      cam.addEventListener('click', () => file.click());
+      file.addEventListener('change', () => {
+        const f = file.files && file.files[0];
+        file.value = '';
+        if (!f) return;
+        if (f.size > MAX_BYTES) { showToast('That video is too big. Keep it under 45 seconds', 'error'); return; }
+        const v = document.createElement('video');
+        v.preload = 'metadata';
+        v.onloadedmetadata = () => {
+          const secs = Math.round(v.duration || 0);
+          URL.revokeObjectURL(v.src);
+          if (secs > MAX_VIDEO) { showToast(`Keep it under ${MAX_VIDEO} seconds`, 'error'); return; }
+          media = { type: 'video', blob: f, mime: f.type || 'video/mp4', seconds: secs || null };
+          setStatus(`Video ready${secs ? ` (${secs}s)` : ''}`);
+        };
+        v.onerror = () => { media = { type: 'video', blob: f, mime: f.type || 'video/mp4', seconds: null }; setStatus('Video ready'); };
+        v.src = URL.createObjectURL(f);
+      });
+
+      const close = (result) => {
+        clearTimeout(timer);
+        try{ if (rec && rec.state === 'recording') { rec.onstop = null; rec.stop(); } }catch(_){}
+        stopStream();
         modal.classList.remove('show');
         setTimeout(() => modal.remove(), 220);
-        resolve(note);
+        resolve(result);
       };
       modal.querySelector('.invite-modal-skip').addEventListener('click', () => close(null));
-      modal.querySelector('.invite-modal-send').addEventListener('click', () => {
-        const val = modal.querySelector('#inviteNoteInput').value.trim();
-        close(val || null);
+      send.addEventListener('click', () => {
+        const val = $('inviteNoteInput').value.trim();
+        close({ note: val || null, media });
       });
       modal.addEventListener('click', (e) => { if (e.target === modal) close(null); });
     });
+  }
+
+  // Uploads the inviter's voice/video note to the private welcome-notes bucket
+  // and records it so the invitee's welcome screen can play it.
+  async function uploadWelcomeMedia(m){
+    const base = (m.mime || '').split(';')[0].trim();
+    const ext = m.type === 'voice'
+      ? (base.includes('mp4') ? 'm4a' : base.includes('ogg') ? 'ogg' : 'webm')
+      : (base.includes('quicktime') ? 'mov' : base.includes('webm') ? 'webm' : 'mp4');
+    const path = `${currentUser.id}/${circleId}/${Date.now()}.${ext}`;
+    const { error: upErr } = await supabaseClient.storage
+      .from('welcome-notes').upload(path, m.blob, { contentType: base || undefined, cacheControl: '3600' });
+    if (upErr) throw upErr;
+    const { error: insErr } = await supabaseClient.from('welcome_media').insert({
+      circle_id: circleId, inviter_id: currentUser.id, path,
+      media_type: m.type, duration_seconds: m.seconds || null
+    });
+    if (insErr) { supabaseClient.storage.from('welcome-notes').remove([path]); throw insErr; }
   }
 
   // Cold-start nudge: shown to whichever member reaches for "invite" while
@@ -2672,25 +2746,208 @@
       const modal = document.createElement('div');
       modal.className = 'invite-modal-backdrop';
       modal.innerHTML = `
-        <div class="invite-modal">
+        <div class="invite-modal en-modal">
           <h3>${escapeHtml(circle.name)} is still empty</h3>
           <p>Whoever you invite next will land on a blank page. A single line from you gives them something to react to — and a much better reason to stick around.</p>
-          <div class="invite-modal-row">
+
+          <div class="en-composer" id="enComposer">
+            <textarea id="enText" rows="1" maxlength="2000" placeholder="Write something…" aria-label="Write something"></textarea>
+            <div class="en-rec" aria-live="polite">
+              <span class="en-dot"></span>
+              <span class="en-time" id="enTime">0:00</span>
+              <div class="en-wave" aria-hidden="true">${'<i></i>'.repeat(18)}</div>
+            </div>
+            <div class="en-bar">
+              <button class="en-tool" id="enMic" type="button" title="Record a voice post" aria-label="Record a voice post">
+                <svg viewBox="0 0 24 24"><path d="M12 1.8a3 3 0 00-3 3v7.4a3 3 0 006 0V4.8a3 3 0 00-3-3z"/><path d="M18.6 10.8v1.4a6.6 6.6 0 01-13.2 0v-1.4"/><path d="M12 18.8v3.4"/></svg>
+              </button>
+              <button class="en-tool" id="enVideo" type="button" title="Record a video" aria-label="Record a video">
+                <svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="13" height="12" rx="3.2"/><path d="M17.5 10.3l4-2.4a.6.6 0 0 1 .9.5v7.2a.6.6 0 0 1-.9.5l-4-2.4z"/></svg>
+              </button>
+              <button class="en-tool en-cancel" id="enCancelRec" type="button" title="Discard recording" aria-label="Discard recording">
+                <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+              <button class="en-send" id="enSend" type="button" disabled aria-label="Send">
+                <svg viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M5.5 11.5L12 5l6.5 6.5"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="en-done" aria-live="polite">
+            <div class="en-check"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+            <b>It's up</b>
+            <span>Now your invite lands on something real.</span>
+          </div>
+
+          <div class="en-foot">
             <button class="invite-modal-skip" type="button" id="emptyNudgeInviteAnyway">Invite anyway</button>
-            <button class="invite-modal-send" type="button" id="emptyNudgeWrite">Write something first</button>
           </div>
         </div>
       `;
       document.body.appendChild(modal);
       requestAnimationFrame(() => modal.classList.add('show'));
+
+      const card = modal.querySelector('.en-modal');
+      const composer = modal.querySelector('#enComposer');
+      const ta = modal.querySelector('#enText');
+      const sendBtn = modal.querySelector('#enSend');
+      const micBtn = modal.querySelector('#enMic');
+      const videoBtn = modal.querySelector('#enVideo');
+      const cancelRecBtn = modal.querySelector('#enCancelRec');
+      const timerEl = modal.querySelector('#enTime');
+      const SEND_ICON = sendBtn.innerHTML;
+      const MAX_SECONDS = 120;
+
+      let recorder = null, recStream = null, recChunks = [], recStart = 0, recTick = null;
+      let recording = false, discardRec = false, sending = false, closed = false;
+
       const close = (choice) => {
+        if (closed) return;
+        closed = true;
+        discardRec = true;
+        clearInterval(recTick);
+        try { if (recorder && recorder.state !== 'inactive') recorder.stop(); } catch (_) {}
+        if (recStream) recStream.getTracks().forEach(t => t.stop());
         modal.classList.remove('show');
         setTimeout(() => modal.remove(), 220);
         resolve(choice);
       };
+
+      const refresh = () => {
+        const has = !!ta.value.trim() || recording;
+        sendBtn.classList.toggle('ready', has && !sending);
+        sendBtn.disabled = !has || sending;
+      };
+      ta.addEventListener('input', () => {
+        ta.style.height = 'auto';
+        ta.style.height = Math.min(ta.scrollHeight, 140) + 'px';
+        refresh();
+      });
+      setTimeout(() => { try { ta.focus({ preventScroll: true }); } catch (_) { ta.focus(); } }, 260);
+
+      const finishPosted = async (kind, extra) => {
+        circleHasPosts = true;
+        try { posthog.capture('empty_circle_inline_post', { circle_id: circleId, kind, ...(extra || {}) }); } catch (_) {}
+        card.classList.add('done');
+        try { refreshHomeFeed(); } catch (_) {}
+        setTimeout(() => close('posted'), 950);
+      };
+
+      const failSend = (msg) => {
+        sending = false;
+        sendBtn.innerHTML = SEND_ICON;
+        refresh();
+        showToast(msg, 'error');
+      };
+
+      const sendText = async () => {
+        const content = ta.value.trim();
+        if (!content) return;
+        sending = true; refresh();
+        sendBtn.innerHTML = '<span class="mini-spinner"></span>';
+        try {
+          const { error } = await supabaseClient.from('posts').insert({
+            circle_id: circleId, user_id: currentUser.id, caption: content, media_url: null, media_type: null,
+          });
+          if (error) throw error;
+          posthog.capture('post_created', { circle_id: circleId, media_type: 'text', caption_length: content.length, source: 'empty_nudge' });
+          await finishPosted('text');
+        } catch (err) { failSend(err.message || 'Could not post'); }
+      };
+
+      const sendVoice = async (blob, mime, seconds) => {
+        sending = true; refresh();
+        sendBtn.innerHTML = '<span class="mini-spinner"></span>';
+        try {
+          const ext = mime.includes('mp4') ? 'm4a' : 'webm';
+          const path = `${currentUser.id}/${circleId}/${Date.now()}.${ext}`;
+          const { error: upErr } = await supabaseClient.storage.from('voice-posts').upload(path, blob, { contentType: mime });
+          if (upErr) throw upErr;
+          const { error: insErr } = await supabaseClient.from('posts').insert({
+            circle_id: circleId, user_id: currentUser.id, caption: ta.value.trim() || null,
+            media_url: path, media_type: 'voice', duration_seconds: seconds,
+          });
+          if (insErr) throw insErr;
+          posthog.capture('post_created', { circle_id: circleId, media_type: 'voice', duration_seconds: seconds, source: 'empty_nudge' });
+          await finishPosted('voice', { duration_seconds: seconds });
+        } catch (err) {
+          composer.classList.remove('recording');
+          failSend(err.message || 'Could not post voice recording');
+        }
+      };
+
+      const stopRecordingUI = () => {
+        recording = false;
+        clearInterval(recTick);
+        if (recStream) { recStream.getTracks().forEach(t => t.stop()); recStream = null; }
+      };
+
+      const startRecording = async () => {
+        if (!requireAuth() || recording || sending) return;
+        try {
+          recStream = await getVoiceStream();
+          recorder = createVoiceRecorder(recStream);
+          recChunks = []; discardRec = false;
+          recorder.ondataavailable = (e) => { if (e.data && e.data.size) recChunks.push(e.data); };
+          recorder.onstop = () => {
+            const seconds = (Date.now() - recStart) / 1000;
+            const mime = (recorder && recorder.mimeType) || 'audio/webm';
+            const blob = new Blob(recChunks, { type: mime });
+            stopRecordingUI();
+            if (discardRec || closed) { composer.classList.remove('recording'); refresh(); return; }
+            sendVoice(blob, mime, seconds);
+          };
+          recorder.start();
+          recStart = Date.now();
+          recording = true;
+          timerEl.textContent = '0:00';
+          composer.classList.add('recording');
+          recTick = setInterval(() => {
+            const secs = Math.floor((Date.now() - recStart) / 1000);
+            timerEl.textContent = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+            if (secs >= MAX_SECONDS && recorder.state !== 'inactive') recorder.stop();
+          }, 250);
+          refresh();
+        } catch (err) {
+          stopRecordingUI();
+          showToast('Microphone access denied or unavailable', 'error');
+        }
+      };
+
+      sendBtn.addEventListener('click', () => {
+        if (sending) return;
+        if (recording) { discardRec = false; if (recorder.state !== 'inactive') recorder.stop(); return; }
+        sendText();
+      });
+      micBtn.addEventListener('click', startRecording);
+      cancelRecBtn.addEventListener('click', () => {
+        discardRec = true;
+        if (recorder && recorder.state !== 'inactive') recorder.stop(); else stopRecordingUI();
+        composer.classList.remove('recording');
+        refresh();
+      });
+      ta.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendText(); }
+      });
+
+      // Video hands off to the real recorder; whatever was typed rides along as the caption.
+      videoBtn.addEventListener('click', () => {
+        if (sending) return;
+        const main = document.getElementById('homeComposerText');
+        if (main && ta.value.trim()) { main.value = ta.value; main.dispatchEvent(new Event('input')); }
+        close('video');
+      });
+
       modal.querySelector('#emptyNudgeInviteAnyway').addEventListener('click', () => close('invite'));
-      modal.querySelector('#emptyNudgeWrite').addEventListener('click', () => close('write'));
-      modal.addEventListener('click', (e) => { if (e.target === modal) close('cancel'); });
+      // Outside tap cancels the invite — unless there's something to lose.
+      modal.addEventListener('click', (e) => {
+        if (e.target !== modal) return;
+        if (recording || sending || ta.value.trim()) {
+          card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+          return;
+        }
+        close('cancel');
+      });
     });
   }
 
@@ -2756,34 +3013,12 @@
   async function renderSidebar(){
     const { data } = await supabaseClient.auth.getSession();
     currentUser = data.session ? data.session.user : null;
-    const area = document.getElementById('sidebarAuthArea');
-    if (!currentUser){
-      area.innerHTML = `<a href="/auth" class="sidebar-signin">Sign in</a>`;
-      return;
-    }
+    if (!currentUser) return;
     const { data: me } = await supabaseClient.from('profiles').select('username, avatar_url, gh_notify_channel').eq('id', currentUser.id).maybeSingle();
     currentUsername = me?.username || currentUser.email || 'You';
     currentUserGhChannel = me?.gh_notify_channel || 'unset';
     posthog.identify(currentUser.id, { username: currentUsername, email: currentUser.email });
     posthog.group('circle', circleId);
-    const avatarHtml = me?.avatar_url ? `<img src="${escapeHtml(me.avatar_url)}" alt="">` : initials(currentUsername);
-    area.innerHTML = `
-      <div class="sidebar-user">
-        <a href="/?profile" class="sidebar-profile">
-          <div class="mini-avatar">${avatarHtml}</div>
-          <div class="who"><span>${escapeHtml(currentUsername)}</span><span>your profile</span></div>
-        </a>
-        <button class="sidebar-signout" id="signOutBtn" type="button" aria-label="Sign out" title="Sign out">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
-        </button>
-      </div>
-    `;
-    document.getElementById('signOutBtn').addEventListener('click', async () => {
-      posthog.capture('signed_out');
-      posthog.reset();
-      await supabaseClient.auth.signOut();
-      window.location.href = '/';
-    });
   }
 
   const params = new URLSearchParams(window.location.search);
@@ -2912,25 +3147,82 @@
   const VIDEO_MIN_SECONDS = 0.8;
   const VIDEO_MAX_BYTES = 50 * 1024 * 1024;
 
+  // Old / weak phones can't encode 1080p live: the encoder falls behind, drops
+  // frames and blurs everything (= laggy + low quality). So we pick a profile
+  // the phone can actually keep up with.
+  const VIDEO_LOW_END = (function(){
+    try {
+      const cores = navigator.hardwareConcurrency || 4;
+      const mem = navigator.deviceMemory || 4;
+      return cores <= 4 || mem <= 3;
+    } catch (_) { return false; }
+  })();
+
+  const VIDEO_PHONE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') ||
+    ((navigator.maxTouchPoints || 0) > 1 && window.matchMedia && window.matchMedia('(pointer:coarse)').matches);
+
+  function videoProfile(small){
+    // desktop is already great: unchanged. Phones: always 720p+ at a real 30fps with a
+    // bitrate that keeps it clean (lower fps/bitrate is what looked laggy + pixelated).
+    if (!VIDEO_PHONE)   return { w: 1080, h: 1440, fps: 30, bps: small ? 3000000 : 5000000 };
+    if (VIDEO_LOW_END)  return { w: 720,  h: 960,  fps: 30, bps: small ? 3000000 : 4500000 };
+    return                     { w: 1080, h: 1440, fps: 30, bps: small ? 3500000 : 5500000 };
+  }
+
+  // Phone cameras expose landscape modes and often silently hand back 640x480 or
+  // 15fps (dim light) when asked for a portrait size. So on phones we ask a few
+  // different ways, CHECK what we really got, and keep the best one.
   async function getVideoStream(facing, small){
-    return navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: facing || 'user' }, width: { ideal: small ? 720 : 1080 }, height: { ideal: small ? 960 : 1440 }, frameRate: { ideal: 30 } },
-      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }
-    });
+    const P = videoProfile(small);
+    const audio = { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 };
+    const face = { ideal: facing || 'user' };
+    const gum = (video) => navigator.mediaDevices.getUserMedia({ video, audio });
+    if (!VIDEO_PHONE){
+      return gum({ facingMode: face, width: { ideal: P.w }, height: { ideal: P.h }, frameRate: { ideal: P.fps } });
+    }
+    const tries = [
+      { facingMode: face, width: { ideal: P.w }, height: { ideal: P.h }, frameRate: { ideal: 30, min: 24 } },
+      { facingMode: face, width: { ideal: P.h }, height: { ideal: P.w }, frameRate: { ideal: 30, min: 24 } },
+      { facingMode: face, width: { ideal: P.w }, height: { ideal: P.h }, frameRate: { ideal: 30 } }
+    ];
+    const rate = (st) => Math.min(st.width || 0, st.height || 0) + ((st.frameRate || 30) >= 24 ? 1000 : 0);
+    let best = null, bestScore = -1;
+    for (const v of tries){
+      let st;
+      try { st = await gum(v); }
+      catch (e){
+        if (e && ['NotAllowedError', 'SecurityError', 'NotFoundError'].includes(e.name)) { if (best) best.getTracks().forEach(t => t.stop()); throw e; }
+        continue;
+      }
+      const set = st.getVideoTracks()[0].getSettings();
+      const sc = rate(set);
+      if (sc > bestScore){ if (best) best.getTracks().forEach(t => t.stop()); best = st; bestScore = sc; }
+      else st.getTracks().forEach(t => t.stop());
+      if (Math.min(set.width || 0, set.height || 0) >= 700 && (set.frameRate || 30) >= 24) break;   // good enough
+      await new Promise(r => setTimeout(r, 120));   // let the camera release before re-opening
+    }
+    if (best) return best;
+    return gum({ facingMode: face });
   }
 
   function pickVideoMimeType(){
-    const preferred = [
+    // Low-end: baseline/main H.264 (hardware encoders on old phones) and VP8
+    // before VP9 (VP9 software encoding is what melts old CPUs).
+    const preferred = VIDEO_LOW_END ? [
+      'video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4;codecs=avc1.4D401F,mp4a.40.2',
+      'video/mp4',
+      'video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9,opus', 'video/webm'
+    ] : [
       'video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1.4D401F,mp4a.40.2',
       'video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4',
-      'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'
+      'video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9,opus', 'video/webm'
     ];
     return preferred.find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
   }
 
   function createVideoRecorder(stream, small){
     const mimeType = pickVideoMimeType();
-    const opts = { videoBitsPerSecond: small ? 2500000 : 5000000, audioBitsPerSecond: 128000 };
+    const opts = { videoBitsPerSecond: videoProfile(small).bps, audioBitsPerSecond: 96000 };
     if (mimeType) opts.mimeType = mimeType;
     return new MediaRecorder(stream, opts);
   }
@@ -3881,6 +4173,35 @@
   }
 
   const VR_HINT_KEY = 'waater_vr_hint_seen';
+  const VR_LEN_KEY = 'waater_vr_len';           // 'long' = full 60s; anything else = quick
+  const VR_QUICK_SECONDS = 15;                  // the default: "you only need 15 seconds"
+  // Conversation starters. Casual on purpose — nobody has ever been blocked by "tell us about your day".
+  const VR_PROMPTS = {
+    post: [
+      "What's the funniest thing that happened today? \uD83D\uDE02",
+      "Spill the tea \u2615 \u2014 it stays in this circle",
+      "Something small that made you smile today",
+      "Say what you'd text the group chat right now",
+      "Hot take. Go. \uD83D\uDD25",
+      "Show us what you're looking at right now \uD83D\uDC40",
+      "Confess something small \uD83D\uDE48",
+      "Rate your day out of 10 and explain",
+      "The weirdest thing you saw today?",
+      "One tiny win from today",
+      "What are you about to do? Narrate it.",
+      "What's been on your mind lately?",
+      "Last thing that made you laugh out loud?",
+      "Tell us one thing that annoyed you today \uD83D\uDE24"
+    ],
+    comment: [
+      "Your honest reaction \uD83D\uDC40",
+      "React first. Think later.",
+      "Say it like you would in person",
+      "Roast them (lovingly) \uD83D\uDE02",
+      "What did this remind you of?",
+      "Add your take in one sentence"
+    ]
+  };
   const VR_ICON = {
     x: '<svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
     flip: '<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0115-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 01-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>',
@@ -3889,12 +4210,13 @@
   };
 
   // ---- feed playback: autoplay muted in view, tap for sound ----
+  let vrRecording = false;               // recorder open: feed videos stay paused so the camera gets the CPU
   let videoSoundOn = false;              // once they unmute one, the next ones start with sound
   const vrObserved = new Set();
   const vrIO = ('IntersectionObserver' in window) ? new IntersectionObserver((entries) => {
     entries.forEach(en => {
       const v = en.target;
-      if (en.isIntersecting && en.intersectionRatio >= 0.6) vrPlay(v);
+      if (!vrRecording && en.isIntersecting && en.intersectionRatio >= 0.6) vrPlay(v);
       else v.pause();
     });
   }, { threshold: [0, 0.6, 1] }) : null;
@@ -3905,6 +4227,7 @@
   }
 
   function vrPlay(v){
+    if (vrRecording) return;
     const wrap = v.closest('.home-video');
     if (wrap && wrap.classList.contains('upaused')) return;
     document.querySelectorAll('.home-video video, .home-vc video').forEach(o => { if (o !== v && !o.paused) o.pause(); });
@@ -4047,7 +4370,7 @@
       });
 
       vrJobs.delete(job.id);
-      showToast('Video sent');
+      showToast('Sent to the circle \uD83C\uDF89');
       await refreshHomeFeed();
       const stale = document.getElementById('vrp-' + job.id);
       if (stale) stale.remove();
@@ -4083,6 +4406,8 @@
     if (!requireAuth()) return;
     if (vrOpen) return;
     vrOpen = true;
+    vrRecording = true;
+    document.querySelectorAll('.home-video video, .home-vc video').forEach(o => { try { o.pause(); } catch (_) {} });
     try { posthog.capture('video_recorder_opened', { circle_id: circleId, from: opts.from || 'unknown' }); } catch (_) {}
 
     // On phones the recorder is a small self-view window in the top corner and
@@ -4090,7 +4415,10 @@
     // same recorder, but shorter, lighter, and sent straight to the thread.
     const mode = opts.from === 'comment' ? 'comment' : 'post';
     const isPip = !!(window.matchMedia && window.matchMedia('(max-width: 899px)').matches);
-    const maxSec = mode === 'comment' ? VIDEO_COMMENT_MAX_SECONDS : VIDEO_MAX_SECONDS;
+    let quick = true;
+    try { quick = localStorage.getItem(VR_LEN_KEY) !== 'long'; } catch (_) {}
+    const maxFor = () => mode === 'comment' ? VIDEO_COMMENT_MAX_SECONDS : (quick ? VR_QUICK_SECONDS : VIDEO_MAX_SECONDS);
+    let maxSec = maxFor();
 
     const composerText = document.getElementById('homeComposerText');
     const prefill = (mode === 'post' && composerText) ? composerText.value.trim() : '';
@@ -4117,6 +4445,13 @@
           <div class="vr-pill"><span class="rec-dot"></span><span id="vrPillText"></span></div>
           <div class="vr-spacer"></div>
         </div>
+        <div class="vr-spark" id="vrSpark">
+          <div class="vr-spark-q" id="vrSparkQ"></div>
+          <div class="vr-spark-row">
+            <button class="vr-chip" type="button" id="vrShuffle">🎲 Another</button>
+            <button class="vr-chip" type="button" id="vrLen"></button>
+          </div>
+        </div>
         <div class="vr-bottom">
           <div class="vr-hint" id="vrHint"></div>
           <div class="vr-controls vr-rec-wrap">
@@ -4129,7 +4464,10 @@
           </div>
           <div class="vr-review-bar">
             <div class="vr-lock">${escapeHtml(lockText)}</div>
-            <input class="vr-caption" id="vrCaption" type="text" maxlength="300" placeholder="Say something about it\u2026 (optional)" enterkeyhint="send" autocomplete="off">
+            <div class="vr-quick" id="vrQuick">
+              <button type="button" data-e="😂">😂</button><button type="button" data-e="💀">💀</button><button type="button" data-e="👀">👀</button><button type="button" data-e="🔥">🔥</button><button type="button" data-e="😭">😭</button>
+            </div>
+            <input class="vr-caption" id="vrCaption" type="text" maxlength="300" placeholder="Add a caption \u2014 or just send it" enterkeyhint="send" autocomplete="off">
             <div class="vr-review-row">
               <button class="vr-retake" type="button" id="vrRetake">Retake</button>
               <button class="vr-send" type="button" id="vrSend">${mode === 'comment' ? 'Reply' : 'Send'} ${VR_ICON.send}</button>
@@ -4165,6 +4503,27 @@
     let stream = null, facing = 'user', recorder = null, chunks = [];
     let startedAt = 0, raf = 0, holdMode = false, holdTimer = null, closed = false;
     let wakeLock = null, reviewUrl = null, take = null, sending = false;
+    let previewFps = 0, recMeta = null;
+
+    // Count real camera frames for ~1.5s. Dim rooms make phone cameras drop to ~15fps,
+    // which is the #1 cause of "laggy" clips no matter how good the encoder is.
+    function watchFps(){
+      if (!cam.requestVideoFrameCallback) return;
+      let n = 0, t0 = 0, done = false;
+      const cb = (now) => {
+        if (closed || done) return;
+        if (!t0) t0 = now;
+        n++;
+        if (now - t0 >= 1500){
+          done = true;
+          previewFps = Math.round(n / ((now - t0) / 1000));
+          if (previewFps < 22 && state === 'ready') showHint('Dim light makes video choppy \u2014 face a window or lamp');
+          return;
+        }
+        cam.requestVideoFrameCallback(cb);
+      };
+      cam.requestVideoFrameCallback(cb);
+    }
 
     const setState = (s) => { state = s; stage.dataset.state = s; };
     const showHint = (t) => { hint.textContent = t || ''; };
@@ -4177,7 +4536,7 @@
     function goReady(){
       setState('ready');
       pillText.textContent = lockText;
-      showHint(seenHint ? '' : 'Tap to record \u00b7 or hold');
+      showHint(seenHint ? '' : 'Just talk \u2014 tap, or hold like a voice note');
       resetRing();
     }
 
@@ -4204,6 +4563,7 @@
         cam.classList.toggle('mirror', facing === 'user');
         cam.play().catch(() => {});
         goReady();
+        watchFps();
         try {
           const devs = await navigator.mediaDevices.enumerateDevices();
           flipBtn.classList.toggle('hidden', devs.filter(d => d.kind === 'videoinput').length < 2);
@@ -4219,18 +4579,81 @@
       }
     }
 
+    // ---- "stuck" detector: if the mic goes quiet for ~3s mid-take, nudge with the prompt ----
+    let audioCtx = null, analyser = null, anBuf = null, lastVoiceAt = 0, nudged = false, lastNudgeAt = 0, cheerIdx = 0;
+    function startMeter(){
+      stopMeter();
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC || !stream || !stream.getAudioTracks().length) return;
+        audioCtx = new AC();
+        const src = audioCtx.createMediaStreamSource(stream);
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 512;
+        anBuf = new Uint8Array(analyser.fftSize);
+        src.connect(analyser);               // analysis only — never routed to the speakers
+      } catch (_) { analyser = null; }
+    }
+    function stopMeter(){
+      analyser = null;
+      try { if (audioCtx) audioCtx.close(); } catch (_) {}
+      audioCtx = null;
+    }
+    function voiceLevel(){
+      if (!analyser) return 1;               // can't measure → never nag
+      analyser.getByteTimeDomainData(anBuf);
+      let s = 0;
+      for (let i = 0; i < anBuf.length; i++){ const v = (anBuf[i] - 128) / 128; s += v * v; }
+      return Math.sqrt(s / anBuf.length);
+    }
+    function nudgeStuck(){
+      lastNudgeAt = Date.now();
+      sparkQ.classList.remove('nudge'); void sparkQ.offsetWidth; sparkQ.classList.add('nudge');
+      showHint('Blank? Just read the prompt out loud \uD83D\uDE04');
+      if (navigator.vibrate) navigator.vibrate(15);
+      try { posthog.capture('video_stuck_nudge', { circle_id: circleId, mode, prompt: currentPrompt }); } catch (_) {}
+    }
+
+    // ---- prompt card ----
+    const sparkQ = $('vrSparkQ');
+    const lenBtn = $('vrLen');
+    let currentPrompt = '';
+    function newPrompt(){
+      const list = VR_PROMPTS[mode] || VR_PROMPTS.post;
+      let next = currentPrompt;
+      for (let i = 0; i < 6 && next === currentPrompt; i++) next = list[Math.floor(Math.random() * list.length)];
+      currentPrompt = next;
+      sparkQ.textContent = next;
+      sparkQ.classList.remove('nudge');
+      sparkQ.style.animation = 'none'; void sparkQ.offsetWidth; sparkQ.style.animation = '';
+    }
+    const renderLen = () => { lenBtn.textContent = '\u23F1 ' + (quick ? VR_QUICK_SECONDS : VIDEO_MAX_SECONDS) + 's'; };
+
     // ---- recording ----
-    function tick(){
+    let lastUi = 0;
+    function tick(ts){
       const el = (Date.now() - startedAt) / 1000;
-      ring.style.strokeDashoffset = String(RING_LEN * (1 - Math.min(1, el / maxSec)));
-      pillText.textContent = vrFmt(el, true) + ' / ' + vrFmt(maxSec);
       if (el >= maxSec){ stopRecording(); return; }
+      if (!ts || ts - lastUi > 200){   // ~5 UI updates/sec instead of 60: keeps the main thread free for the camera
+        lastUi = ts || 0;
+        ring.style.strokeDashoffset = String(RING_LEN * (1 - Math.min(1, el / maxSec)));
+        pillText.textContent = vrFmt(el, true);
+        const now = Date.now();
+        if (voiceLevel() > 0.02){ lastVoiceAt = now; nudged = false; }
+        else if (!nudged && el > 1.5 && now - lastVoiceAt > 3000){ nudged = true; nudgeStuck(); }
+        const cheers = [[4, 'Keep going \uD83D\uDD25'], [9, 'Love it \u2014 keep going'], [maxSec - 4, 'Wrap it up \uD83C\uDFAC']];
+        if (cheerIdx < cheers.length && el >= cheers[cheerIdx][0]){
+          if (now - lastNudgeAt > 3000) showHint(cheers[cheerIdx][1]);
+          cheerIdx++;
+        }
+      }
       raf = requestAnimationFrame(tick);
     }
 
     function startRecording(){
       if (state !== 'ready' || !stream) return;
       chunks = [];
+      try { const st = stream.getVideoTracks()[0].getSettings(); recMeta = { w: st.width, h: st.height, cam_fps: st.frameRate, preview_fps: previewFps, bps: videoProfile(mode === 'comment').bps, low_end: VIDEO_LOW_END, phone: VIDEO_PHONE }; } catch (_) { recMeta = null; }
       try { recorder = createVideoRecorder(stream, mode === 'comment'); }
       catch (e){ showToast('Recording isn\u2019t supported on this device', 'error'); return; }
       const mime = recorder.mimeType || pickVideoMimeType() || 'video/webm';
@@ -4238,16 +4661,20 @@
       recorder.onerror = () => showToast('Recording failed \u2014 try again', 'error');
       recorder.onstop = () => {
         cancelAnimationFrame(raf);
+        stopMeter();
         if (closed) return;
         const duration = (Date.now() - startedAt) / 1000;
         if (duration < VIDEO_MIN_SECONDS || !chunks.length){
-          goReady(); showHint('Hold a little longer');
+          goReady(); showHint('Too quick \u2014 go again \uD83D\uDE42');
           return;
         }
         enterReview({ blob: new Blob(chunks, { type: mime }), mime, duration, source: 'camera' });
       };
       recorder.start(1000);
       startedAt = Date.now();
+      lastVoiceAt = startedAt; nudged = false; lastNudgeAt = 0; cheerIdx = 0;
+      startMeter();
+      try { posthog.capture('video_record_started', { circle_id: circleId, mode, prompt: currentPrompt, quick: mode === 'post' ? quick : null, max_seconds: maxSec }); } catch (_) {}
       setState('recording');
       showHint('Tap to stop');
       if (navigator.vibrate) navigator.vibrate(10);
@@ -4274,15 +4701,19 @@
       const p = review.play();
       if (p && p.catch) p.catch(() => { review.muted = true; review.play().catch(() => {}); });
       try { localStorage.setItem(VR_HINT_KEY, '1'); } catch (_) {}
-      try { posthog.capture('video_recorded', { circle_id: circleId, duration_seconds: t.duration, source: t.source, mode }); } catch (_) {}
+      if (/[?&]vdebug/.test(location.search) && t.source === 'camera') showToast(t.mime.split(';')[0] + ' ' + (recMeta ? recMeta.w + 'x' + recMeta.h + ' cam ' + Math.round(recMeta.cam_fps || 0) + 'fps, preview ' + recMeta.preview_fps + 'fps' : '') + ' ' + (t.blob.size / 1048576).toFixed(1) + 'MB');
+      try { posthog.capture('video_recorded', Object.assign({ circle_id: circleId, duration_seconds: t.duration, source: t.source, mode, mime: t.mime, size_mb: Math.round(t.blob.size / 1048576 * 10) / 10 }, t.source === 'camera' ? recMeta : {})); } catch (_) {}
     }
 
     function teardown(){
       if (closed) return;
       closed = true; vrOpen = false;
+      vrRecording = false;
+      if (vrIO) vrObserved.forEach(v => { vrIO.unobserve(v); vrIO.observe(v); });  // let in-view feed video resume
       cancelAnimationFrame(raf); clearTimeout(holdTimer);
       try { if (recorder && recorder.state !== 'inactive') recorder.stop(); } catch (_) {}
       stopStream();
+      stopMeter();
       try { if (wakeLock) wakeLock.release(); } catch (_) {}
       wakeLock = null;
       if (reviewUrl){ URL.revokeObjectURL(reviewUrl); reviewUrl = null; }
@@ -4414,6 +4845,26 @@
     };
     $('vrSend').addEventListener('click', send);
     caption.addEventListener('keydown', (e) => { if (e.key === 'Enter'){ e.preventDefault(); send(); } });
+
+    // ---- prompt + length + emoji wiring ----
+    newPrompt();
+    renderLen();
+    $('vrShuffle').addEventListener('click', () => {
+      if (state === 'recording') return;
+      newPrompt();
+      try { posthog.capture('video_prompt_shuffled', { circle_id: circleId, mode }); } catch (_) {}
+    });
+    lenBtn.addEventListener('click', () => {
+      if (state !== 'ready') return;
+      quick = !quick;
+      maxSec = maxFor();
+      renderLen();
+      try { localStorage.setItem(VR_LEN_KEY, quick ? 'quick' : 'long'); } catch (_) {}
+    });
+    root.querySelectorAll('#vrQuick button').forEach(b => b.addEventListener('click', () => {
+      caption.value = (caption.value + ' ' + b.dataset.e).trim();
+      if (navigator.vibrate) navigator.vibrate(6);
+    }));
 
     startCamera('user');
   }
@@ -5581,8 +6032,33 @@
       img.src = url;
     }
 
-    modal.querySelector('#albumTakePhoto').addEventListener('click', () => modal.querySelector('#albumFileCamera').click());
-    modal.querySelector('#albumPickPhoto').addEventListener('click', () => modal.querySelector('#albumFileGallery').click());
+    // Inside the Android/iOS app (Capacitor) the plain <input type=file> route is
+    // flaky (permissions, FileProvider, WebView chooser quirks). If the native
+    // Camera plugin is installed, use it; otherwise fall back to the file inputs.
+    async function nativePick(source){
+      try {
+        const cap = window.Capacitor;
+        if (!cap || !cap.isNativePlatform || !cap.isNativePlatform()) return false;
+        const Cam = (cap.Plugins && cap.Plugins.Camera) || (cap.registerPlugin && cap.registerPlugin('Camera'));
+        if (!Cam || !Cam.getPhoto) return false;
+        const photo = await Cam.getPhoto({ source, resultType: 'uri', quality: 90, width: 1800, correctOrientation: true });
+        if (!photo || !photo.webPath) return false;
+        const res = await fetch(photo.webPath);
+        handleFile(await res.blob());
+        return true;
+      } catch (err) {
+        const msg = String((err && (err.message || err)) || '');
+        if (/cancel/i.test(msg)) return true;   // user backed out, do nothing
+        console.warn('native photo pick failed, using file input', err);
+        return false;
+      }
+    }
+    modal.querySelector('#albumTakePhoto').addEventListener('click', async () => {
+      if (!(await nativePick('CAMERA'))) modal.querySelector('#albumFileCamera').click();
+    });
+    modal.querySelector('#albumPickPhoto').addEventListener('click', async () => {
+      if (!(await nativePick('PHOTOS'))) modal.querySelector('#albumFileGallery').click();
+    });
     // Some Android cameras return the same filename every time, and a browser
     // only fires 'change' when the selection differs — so clear the input once
     // the file has been handed off (handleFile grabs its object URL synchronously).
@@ -5870,6 +6346,7 @@
     const justJoinedRecently = justJoined(meRow) && !sessionStorage.getItem(`welcomed_${circleId}`);
     let welcomeNote = null;
     let welcomeInviter = null;
+    let welcomeMedia = null;
     let shouldWelcome = false;
     if (justJoinedRecently){
       sessionStorage.setItem(`welcomed_${circleId}`, '1');
@@ -5877,6 +6354,7 @@
       if (w.inviter){
         welcomeNote = w.note;
         welcomeInviter = w.inviter;
+        welcomeMedia = w.media;
         shouldWelcome = true;
       }
     }
@@ -6154,18 +6632,19 @@
         posthog.capture('empty_circle_invite_nudge_shown', { circle_id: circleId });
         const choice = await openEmptyCircleNudge();
         posthog.capture('empty_circle_invite_nudge_choice', { circle_id: circleId, choice });
-        if (choice === 'write') {
-          const composer = document.getElementById('homeComposer');
-          const composerText = document.getElementById('homeComposerText');
-          if (composer) composer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          setTimeout(() => composerText && composerText.focus(), 280);
+        if (choice === 'video') {
+          // Video recorder takes over; once it's sent, tapping Invite goes straight through.
+          openVideoRecorder({ from: 'composer' });
           return;
         }
         if (choice === 'cancel') return;
-        // choice === 'invite' falls through to send the invite as normal.
+        // 'invite' (invite anyway) and 'posted' (they just wrote something) both
+        // fall through to the normal invite flow.
       }
 
-      const note = await openInviteModal();
+      const inviteRes = await openInviteModal();
+      const note = inviteRes ? inviteRes.note : null;
+      const inviteMedia = inviteRes ? inviteRes.media : null;
       try {
         // Try passing the note through to the RPC. If the backend hasn't
         // been updated to accept p_note yet, fall back to the plain call
@@ -6181,7 +6660,11 @@
         }
         const { data, error } = rpcResult;
         if (error) throw error;
-        posthog.capture('invite_sent', { circle_id: circleId, has_note: !!note, invites_used_today: invitesUsedToday + 1 });
+        if (inviteMedia) {
+          try { await uploadWelcomeMedia(inviteMedia); }
+          catch (e) { showToast(`Invite is ready, but your ${inviteMedia.type === 'voice' ? 'voice note' : 'video'} didn't upload`, 'error'); }
+        }
+        posthog.capture('invite_sent', { circle_id: circleId, has_note: !!note, has_media: inviteMedia ? inviteMedia.type : null, invites_used_today: invitesUsedToday + 1 });
 
         invitesUsedToday += 1;
         const badge = document.getElementById('inviteCountBadge');
@@ -6227,7 +6710,7 @@
     subscribeToGoldenHourPrompts();
 
     // Play the ceremony without blocking the feed load beneath it.
-    if (shouldWelcome) playWelcomeCeremony(welcomeNote, welcomeInviter);
+    if (shouldWelcome) playWelcomeCeremony(welcomeNote, welcomeInviter, welcomeMedia);
 
     return { shouldWelcome };
   }
@@ -7503,45 +7986,8 @@
 </script>
 
 <script>
-// Navigation behaviour: active link, sliding hover pill, topbar shadow, dock polish
+// Navigation behaviour: topbar shadow
 (function(){
-  var path = location.pathname.replace(/\.html$/, '').replace(/\/+$/, '') || '/';
-  var first = '/' + (path.split('/')[1] || '');
-  var keyMap = {'/':'circles','/circles':'circles','/circle':'circles'};
-  var key = keyMap[path] || keyMap[first];
-  if (key){
-    document.querySelectorAll('[data-nav]').forEach(function(el){
-      var on = el.getAttribute('data-nav') === key && !el.classList.contains('nav-create') && !el.classList.contains('tab-create');
-      el.classList.toggle('active', on);
-      if (on) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current');
-    });
-  }
-
-  // sliding hover pill (desktop)
-  var list = document.querySelector('.nav-list');
-  var pill = document.querySelector('.nav-pill');
-  if (list && pill){
-    var move = function(el){
-      var y = el.getBoundingClientRect().top - list.getBoundingClientRect().top;
-      pill.style.height = el.offsetHeight + 'px';
-      if (!pill.classList.contains('on')){
-        pill.classList.add('snap');
-        pill.style.transform = 'translateY(' + y + 'px)';
-        void pill.offsetWidth;
-        pill.classList.remove('snap');
-        pill.classList.add('on');
-      } else {
-        pill.style.transform = 'translateY(' + y + 'px)';
-      }
-    };
-    list.querySelectorAll('.nav-item').forEach(function(a){
-      a.addEventListener('mouseenter', function(){ move(a); });
-      a.addEventListener('focus', function(){ if (a.matches(':focus-visible')) move(a); });
-    });
-    list.addEventListener('mouseleave', function(){ pill.classList.remove('on'); });
-    list.addEventListener('focusout', function(){ pill.classList.remove('on'); });
-  }
-
   // topbar gets a soft shadow once you scroll
   var tb = document.querySelector('.topbar');
   if (tb){
@@ -7549,24 +7995,8 @@
     window.addEventListener('scroll', shadowF, {passive:true}); shadowF();
   }
 
-  // dock: light haptic tap, tuck away while typing so the keyboard has room
-  var dock = document.querySelector('.bottom-nav');
-  if (dock){
-    dock.querySelectorAll('.tab').forEach(function(t){
-      t.addEventListener('click', function(){ if (navigator.vibrate) navigator.vibrate(8); });
-    });
-    var FIELD = 'input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=button]):not([type=submit]),textarea,select,[contenteditable="true"]';
-    var isField = function(el){ return el && el.matches && el.matches(FIELD); };
-    document.addEventListener('focusin', function(e){
-      if (isField(e.target) && window.matchMedia('(max-width:899.98px)').matches) dock.classList.add('hidden');
-    });
-    document.addEventListener('focusout', function(){
-      setTimeout(function(){ if (!isField(document.activeElement)) dock.classList.remove('hidden'); }, 60);
-    });
-  }
-
   // ------------------------------------------------------------------
-  // Topbar + dock move together as one navbar, YouTube-style: the
+  // Topbar hides on scroll, YouTube-style: the
   // instant you scroll, it tucks away — and it stays away. It does NOT
   // creep back on its own (no reveal-on-scroll-up, no settling back in
   // once you stop), because the whole point is to get out of the
@@ -7575,7 +8005,7 @@
   // brings the navbar back down, via window.__waaterShowNav below,
   // wired into its click handler. Scrolling after that hides it again.
   // ------------------------------------------------------------------
-  if (tb || dock){
+  if (tb){
     var mobileMQ = window.matchMedia('(max-width:899.98px)');
     var TOP_ZONE = 4;    // basically the very top of the page
     var navHidden = false;
@@ -7583,13 +8013,11 @@
     var show = function(){
       navHidden = false;
       if (tb) tb.classList.remove('nav-hide');
-      if (dock) dock.classList.remove('scroll-hide');
     };
     var hide = function(){
       if (!mobileMQ.matches) return;
       navHidden = true;
       if (tb) tb.classList.add('nav-hide');
-      if (dock) dock.classList.add('scroll-hide');
     };
 
     window.addEventListener('scroll', function(){

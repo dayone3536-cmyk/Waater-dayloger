@@ -12,6 +12,7 @@
   "type": "commonjs",
   "dependencies": {
     "@capacitor/android": "^8.5.2",
+    "@capacitor/camera": "^8.2.5",
     "@capacitor/cli": "^8.5.2",
     "@capacitor/core": "^8.5.2"
   }
