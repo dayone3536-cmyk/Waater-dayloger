@@ -1201,57 +1201,83 @@
      WELCOME CEREMONY — first-time entry into a private circle
   ============================================================ */
   .welcome-overlay{
-    position:fixed;inset:0;z-index:500;
-    background:linear-gradient(135deg,var(--ink),#2a2c35);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
-    padding:32px;text-align:center;
-    opacity:0;transition:opacity .4s var(--ease);
+    position:fixed;inset:0;z-index:500;overflow-y:auto;
+    background:radial-gradient(circle at 50% 28%, rgba(255,90,54,.28), transparent 58%), var(--ink);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:max(32px,env(safe-area-inset-top)) 28px max(28px,env(safe-area-inset-bottom));
+    text-align:center;opacity:0;transition:opacity .5s var(--ease);
   }
   .welcome-overlay.show{opacity:1;}
-  .welcome-lock{
-    width:46px;height:46px;border-radius:50%;
-    background:rgba(255,90,54,.16);border:1px solid rgba(255,90,54,.35);
+  .welcome-face{
+    position:relative;width:116px;height:116px;border-radius:50%;flex-shrink:0;
+    opacity:0;transform:scale(.7);animation:welcomePop .7s var(--ease-spring) .1s forwards;
+  }
+  .welcome-face::after{
+    content:"";position:absolute;inset:-9px;border-radius:50%;
+    border:1.5px solid rgba(255,177,153,.55);animation:welcomeBreathe 2.8s ease-in-out 1s infinite;
+  }
+  .welcome-face .avatar{
+    width:100%;height:100%;border-radius:50%;overflow:hidden;
+    background:linear-gradient(135deg,#ffd8c9,var(--accent));color:#fff;
     display:flex;align-items:center;justify-content:center;
-    opacity:0;transform:scale(.6);animation:welcomePop .4s var(--ease-spring) forwards;
-    animation-delay:.05s;
+    font-family:var(--font-display);font-weight:700;font-size:46px;
   }
-  .welcome-lock svg{width:20px;height:20px;stroke:var(--accent-2);}
-  .welcome-ring{display:flex;flex-wrap:wrap;justify-content:center;max-width:360px;}
-  .welcome-avatar{
-    margin:0 -14px 8px;opacity:0;transform:translateY(20px) scale(.6);
-    animation:welcomeIn .5s var(--ease-spring) forwards;
-  }
-  .welcome-avatar .avatar{
-    width:56px;height:56px;border-radius:50%;border:3px solid var(--ink);
-    background:linear-gradient(135deg,#ffd8c9,var(--accent));
-    display:flex;align-items:center;justify-content:center;color:#fff;
-    font-family:var(--font-display);font-weight:700;overflow:hidden;
-  }
-  @keyframes welcomeIn{to{opacity:1;transform:translateY(0) scale(1);}}
+  .welcome-face .avatar img{width:100%;height:100%;object-fit:cover;}
   @keyframes welcomePop{to{opacity:1;transform:scale(1);}}
-  .welcome-text{color:#fff;max-width:420px;}
-  .welcome-eyebrow{font-family:var(--font-mono);font-size:12px;color:var(--accent-2);letter-spacing:.08em;text-transform:uppercase;}
-  .welcome-title{font-family:var(--font-display);font-weight:700;font-size:clamp(26px,6vw,34px);margin-top:8px;letter-spacing:-.01em;}
-  .welcome-sub{font-family:var(--font-serif);font-size:15px;color:rgba(255,255,255,.72);margin-top:10px;line-height:1.55;}
+  @keyframes welcomeBreathe{0%,100%{transform:scale(1);opacity:.9;}50%{transform:scale(1.07);opacity:.25;}}
+  @keyframes welcomeRise{to{opacity:1;transform:translateY(0);}}
+  .welcome-step{opacity:0;transform:translateY(14px);animation:welcomeRise .7s var(--ease) forwards;}
+  .welcome-title{
+    font-family:var(--font-display);font-weight:700;color:#fff;
+    font-size:clamp(30px,8vw,42px);line-height:1.1;letter-spacing:-.02em;
+    margin-top:28px;max-width:440px;animation-delay:.7s;
+  }
   .welcome-note{
-    margin-top:16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);
-    border-radius:16px;padding:14px 16px;text-align:left;
+    margin-top:22px;max-width:420px;animation-delay:1.5s;
+    font-family:var(--font-serif);font-weight:500;color:#fff;
+    font-size:clamp(21px,5.6vw,26px);line-height:1.38;
   }
-  .welcome-note b{font-family:var(--font-display);font-size:11.5px;color:var(--accent-2);letter-spacing:.03em;text-transform:uppercase;}
-  .welcome-note p{font-family:var(--font-serif);font-size:14.5px;color:#fff;margin-top:6px;line-height:1.5;}
-  .welcome-privacy-line{
-    display:flex;align-items:center;gap:8px;margin-top:18px;justify-content:center;
-    font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.55);
+  .welcome-note-by{
+    display:block;margin-top:10px;font-family:var(--font-display);font-weight:500;
+    font-size:13.5px;color:var(--accent-2);
   }
-  .welcome-privacy-line svg{width:13px;height:13px;stroke:rgba(255,255,255,.55);flex-shrink:0;}
+  .welcome-left{
+    margin-top:22px;max-width:380px;width:100%;animation-delay:2.2s;text-align:left;
+    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+    border-radius:18px;padding:14px 16px;
+  }
+  .welcome-left b{display:block;font-family:var(--font-display);font-weight:600;font-size:12.5px;color:var(--accent-2);}
+  .welcome-left p{
+    margin-top:6px;font-family:var(--font-serif);font-size:15px;line-height:1.5;color:rgba(255,255,255,.9);
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .welcome-sub{
+    margin-top:20px;max-width:380px;animation-delay:2.2s;
+    font-family:var(--font-serif);font-size:15px;line-height:1.55;color:rgba(255,255,255,.7);
+  }
   .welcome-enter{
-    background:var(--accent);color:#fff;font-family:var(--font-display);font-weight:600;font-size:14px;
-    padding:13px 30px;border-radius:99px;transition:transform .15s var(--ease), background .15s ease;
-    margin-top:4px;
+    margin-top:28px;background:var(--accent);color:#fff;font-family:var(--font-display);
+    font-weight:600;font-size:15px;padding:15px 34px;border-radius:99px;
+    animation-delay:2.9s;transition:transform .15s var(--ease), background .15s ease;
   }
   .welcome-enter:hover{background:#e64a27;}
   .welcome-enter:active{transform:scale(.95);}
+  .welcome-enter:focus-visible{outline:2px solid #fff;outline-offset:3px;}
+  .welcome-privacy-line{
+    margin-top:18px;animation-delay:3.2s;
+    font-family:var(--font-serif);font-size:12.5px;color:rgba(255,255,255,.5);
+  }
 
+  .im-media{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;}
+  .im-chip{font-family:var(--font-display);font-weight:600;font-size:12.5px;padding:8px 13px;border-radius:99px;border:1px solid var(--line-strong);color:var(--ink);background:#fff;}
+  .im-chip:hover{background:#f7f7f8;}
+  .im-chip.rec{background:var(--danger);border-color:var(--danger);color:#fff;}
+  .im-status{font-family:var(--font-serif);font-size:12.5px;color:var(--ink-soft);}
+  .im-status button{color:var(--danger);font-weight:600;margin-left:6px;}
+  .welcome-media{margin-top:22px;max-width:380px;width:100%;animation-delay:1.9s;}
+  .welcome-media video{width:100%;max-height:46vh;border-radius:18px;background:#000;object-fit:cover;}
+  .welcome-media audio{width:100%;}
+  .welcome-media span{display:block;margin-top:8px;font-family:var(--font-display);font-weight:500;font-size:13px;color:var(--accent-2);}
 
   .post-highlight{
   animation: postHighlightPulse 2.2s ease;
@@ -2482,19 +2508,34 @@
         .eq('circle_id', circleId)
         .eq('user_id', currentUser.id)
         .maybeSingle();
-      if (error || !data) return { note: null, inviter: null };
+      if (error || !data) return { note: null, inviter: null, media: null };
 
-      let inviter = null;
+      let inviter = null, media = null;
       if (data.invited_by){
         const { data: prof } = await supabaseClient
           .from('profiles')
-          .select('username, avatar_url')
+          .select('id, username, avatar_url')
           .eq('id', data.invited_by)
           .maybeSingle();
         inviter = prof || null;
+        try{
+          const { data: rows } = await supabaseClient
+            .from('welcome_media')
+            .select('path, media_type')
+            .eq('circle_id', circleId)
+            .eq('inviter_id', data.invited_by)
+            .order('created_at', { ascending: false })
+            .limit(1);
+          const row = rows && rows[0];
+          if (row){
+            const { data: signed } = await supabaseClient.storage
+              .from('welcome-notes').createSignedUrl(row.path, 3600);
+            if (signed && signed.signedUrl) media = { url: signed.signedUrl, type: row.media_type };
+          }
+        } catch(_){ media = null; }
       }
-      return { note: data.welcome_note || null, inviter };
-    } catch(e){ return { note: null, inviter: null }; }
+      return { note: data.welcome_note || null, inviter, media };
+    } catch(e){ return { note: null, inviter: null, media: null }; }
   }
 
   function renderPeopleRow(){
@@ -2510,53 +2551,74 @@
     `;
   }
 
-  // Full-screen, one-time "you're in" moment. Plays over the feed while it
-  // loads underneath — the moment the person sees the second they land.
-  async function playWelcomeCeremony(note, inviter){
+  // Full-screen, one-time arrival moment. It is about ONE person: whoever
+  // invited this user. Their face, their words, the last thing they posted.
+  // It waits for a tap — no auto-dismiss — so the person actually feels it.
+  async function playWelcomeCeremony(note, inviter, media){
+    // Best-effort: the last thing the inviter posted in this circle.
+    let left = null;
+    try{
+      if (inviter?.id){
+        const { data } = await supabaseClient
+          .from('posts')
+          .select('caption, media_type, is_anonymous')
+          .eq('circle_id', circleId)
+          .eq('user_id', inviter.id)
+          .eq('is_anonymous', false)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        left = (data && data[0]) || null;
+      }
+    } catch(_){ left = null; }
+
     return new Promise(resolve => {
-      const inviterName = inviter?.username || null;
+      const name = inviter?.username || null;
+      const first = name ? name.split(' ')[0] : null;
+      const others = Math.max(members.length - 1, 0);
+      const kind = left && left.media_type === 'video' ? 'a video'
+                 : left && left.media_type === 'voice' ? 'a voice note' : null;
+      const leftBody = left && left.caption ? escapeHtml(left.caption)
+                     : kind ? `They left ${kind} for the group.` : null;
+
       const overlay = document.createElement('div');
       overlay.className = 'welcome-overlay';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-label', 'Welcome');
       overlay.innerHTML = `
-        <div class="welcome-lock">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+        <div class="welcome-face">
+          <div class="avatar">${inviter?.avatar_url ? `<img src="${escapeHtml(inviter.avatar_url)}" alt="">` : initials(name || '?')}</div>
         </div>
-        <div class="welcome-ring">
-          ${members.map((m,i) => `
-            <div class="welcome-avatar" style="animation-delay:${(i*0.08).toFixed(2)}s">
-              <div class="avatar">${m.avatar_url ? `<img src="${escapeHtml(m.avatar_url)}" alt="">` : initials(m.username||'?')}</div>
-            </div>
-          `).join('')}
-        </div>
-        <div class="welcome-text">
-          <div class="welcome-eyebrow">you're special</div>
-          <h1 class="welcome-title">${inviterName ? `That's why @${escapeHtml(inviterName)} invited you` : `Welcome to ${escapeHtml(circle.name)}`}</h1>
-          <p class="welcome-sub">${inviterName ? `Out of everyone @${escapeHtml(inviterName)} knows, they chose you. You're now one of only ${members.length} people in ${escapeHtml(circle.name)}.` : `You're now one of only ${members.length} people who get to be part of ${escapeHtml(circle.name)}.`}</p>
-          ${note ? `
-            <div class="welcome-note">
-              <b>${inviterName ? `a note from @${escapeHtml(inviterName)}` : 'a note for you'}</b>
-              <p>${escapeHtml(note)}</p>
-            </div>
-          ` : ''}
-          <div class="welcome-privacy-line">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
-            No public feed, no usernames, no strangers reading along — just the ${members.length} of you
-          </div>
-          <div class="welcome-privacy-line" style="margin-top:6px;">
-            <span style="font-size:12px;line-height:1;">📸</span>
-            Screenshots are blocked in here — whatever's said stays inside ${escapeHtml(circle.name)}
-          </div>
-        </div>
+        <h1 class="welcome-title welcome-step">${first ? `${escapeHtml(first)} wanted you in here.` : `Welcome to ${escapeHtml(circle.name)}.`}</h1>
+        ${note ? `
+          <p class="welcome-note welcome-step">\u201c${escapeHtml(note)}\u201d
+            <span class="welcome-note-by">\u2014 ${escapeHtml(first)}</span>
+          </p>` : ''}
+        ${media ? `
+          <div class="welcome-media welcome-step">
+            ${media.type === 'video'
+              ? `<video src="${escapeHtml(media.url)}" controls playsinline preload="metadata" controlsList="nodownload"></video>`
+              : `<audio src="${escapeHtml(media.url)}" controls preload="metadata"></audio>`}
+            <span>${escapeHtml(first)} left you ${media.type === 'video' ? 'a video' : 'a voice note'}</span>
+          </div>` : ''}
+        ${leftBody ? `
+          <div class="welcome-left welcome-step">
+            <b>${escapeHtml(first)} posted this in ${escapeHtml(circle.name)}</b>
+            <p>${leftBody}</p>
+          </div>` : ''}
+        <p class="welcome-sub welcome-step">${first
+          ? `${escapeHtml(first)} put you in a room with ${others} ${others === 1 ? 'person' : 'people'} they trust. Nobody else can see in.`
+          : `You're one of ${members.length} people in here. Nobody else can see in.`}</p>
+        <button class="welcome-enter welcome-step" type="button">${first ? `Say hi to ${escapeHtml(first)}` : 'Come in'}</button>
+        <div class="welcome-privacy-line welcome-step">Screenshots are blocked. What's said here stays here.</div>
       `;
       document.body.appendChild(overlay);
       requestAnimationFrame(() => overlay.classList.add('show'));
-      const finish = () => {
+      const btn = overlay.querySelector('.welcome-enter');
+      btn.addEventListener('click', () => {
         overlay.classList.remove('show');
-        setTimeout(() => { overlay.remove(); resolve(); }, 350);
-      };
-      // No button — the ceremony dismisses itself. 3s is enough time to read
-      // the headline + note without making the person tap anything to get in.
-      setTimeout(finish, 3000);
+        setTimeout(() => { overlay.remove(); resolve(); }, 450);
+      });
+      setTimeout(() => { try{ btn.focus({ preventScroll:true }); }catch(_){} }, 3000);
     });
   }
 
@@ -2569,28 +2631,108 @@
       modal.innerHTML = `
         <div class="invite-modal">
           <h3>Invite someone to ${escapeHtml(circle.name)}</h3>
-          <p>Add a personal note — it'll be the first thing they see when they arrive.</p>
+          <p>Say something to them. It's the first thing they'll see, so a voice or a face works best.</p>
           <textarea id="inviteNoteInput" maxlength="140" placeholder="e.g. finally got you in here 🎉"></textarea>
+          <div class="im-media">
+            <button class="im-chip" id="imMic" type="button">🎙 Voice note</button>
+            <button class="im-chip" id="imCam" type="button">🎥 Video</button>
+            <span class="im-status" id="imStatus"></span>
+          </div>
+          <input type="file" id="imFile" accept="video/*" capture="user" hidden>
           <div class="invite-modal-row">
-            <button class="invite-modal-skip" type="button">Skip note</button>
+            <button class="invite-modal-skip" type="button">Skip</button>
             <button class="invite-modal-send" type="button">Create invite</button>
           </div>
         </div>
       `;
       document.body.appendChild(modal);
       requestAnimationFrame(() => modal.classList.add('show'));
-      const close = (note) => {
+      const $ = id => modal.querySelector('#' + id);
+      const mic = $('imMic'), cam = $('imCam'), file = $('imFile'), status = $('imStatus');
+      const send = modal.querySelector('.invite-modal-send');
+      const MAX_VOICE = 30, MAX_VIDEO = 45, MAX_BYTES = 50 * 1024 * 1024;
+      let media = null, rec = null, stream = null, chunks = [], t0 = 0, timer = null;
+
+      const setStatus = (txt) => {
+        status.innerHTML = txt ? `${txt} <button type="button" id="imClear">remove</button>` : '';
+        const c = $('imClear'); if (c) c.onclick = () => { media = null; setStatus(''); };
+      };
+      const stopStream = () => { try{ stream && stream.getTracks().forEach(t => t.stop()); }catch(_){} stream = null; };
+      const finishRec = () => { clearTimeout(timer); if (rec && rec.state === 'recording') rec.stop(); };
+
+      mic.addEventListener('click', async () => {
+        if (rec && rec.state === 'recording') { finishRec(); return; }
+        try{
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch(_){ showToast('Microphone is blocked. Allow it and try again', 'error'); return; }
+        chunks = []; media = null; setStatus('');
+        rec = new MediaRecorder(stream);
+        rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+        rec.onstop = () => {
+          const secs = Math.max(1, Math.round((Date.now() - t0) / 1000));
+          const blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' });
+          stopStream();
+          mic.classList.remove('rec'); mic.textContent = '🎙 Voice note'; send.disabled = false;
+          media = { type: 'voice', blob, mime: blob.type, seconds: secs };
+          setStatus(`Voice note ready (${secs}s)`);
+        };
+        t0 = Date.now(); rec.start();
+        mic.classList.add('rec'); mic.textContent = '⏹ Stop'; send.disabled = true;
+        timer = setTimeout(finishRec, MAX_VOICE * 1000);
+      });
+
+      cam.addEventListener('click', () => file.click());
+      file.addEventListener('change', () => {
+        const f = file.files && file.files[0];
+        file.value = '';
+        if (!f) return;
+        if (f.size > MAX_BYTES) { showToast('That video is too big. Keep it under 45 seconds', 'error'); return; }
+        const v = document.createElement('video');
+        v.preload = 'metadata';
+        v.onloadedmetadata = () => {
+          const secs = Math.round(v.duration || 0);
+          URL.revokeObjectURL(v.src);
+          if (secs > MAX_VIDEO) { showToast(`Keep it under ${MAX_VIDEO} seconds`, 'error'); return; }
+          media = { type: 'video', blob: f, mime: f.type || 'video/mp4', seconds: secs || null };
+          setStatus(`Video ready${secs ? ` (${secs}s)` : ''}`);
+        };
+        v.onerror = () => { media = { type: 'video', blob: f, mime: f.type || 'video/mp4', seconds: null }; setStatus('Video ready'); };
+        v.src = URL.createObjectURL(f);
+      });
+
+      const close = (result) => {
+        clearTimeout(timer);
+        try{ if (rec && rec.state === 'recording') { rec.onstop = null; rec.stop(); } }catch(_){}
+        stopStream();
         modal.classList.remove('show');
         setTimeout(() => modal.remove(), 220);
-        resolve(note);
+        resolve(result);
       };
       modal.querySelector('.invite-modal-skip').addEventListener('click', () => close(null));
-      modal.querySelector('.invite-modal-send').addEventListener('click', () => {
-        const val = modal.querySelector('#inviteNoteInput').value.trim();
-        close(val || null);
+      send.addEventListener('click', () => {
+        const val = $('inviteNoteInput').value.trim();
+        close({ note: val || null, media });
       });
       modal.addEventListener('click', (e) => { if (e.target === modal) close(null); });
     });
+  }
+
+  // Uploads the inviter's voice/video note to the private welcome-notes bucket
+  // and records it so the invitee's welcome screen can play it.
+  async function uploadWelcomeMedia(m){
+    const base = (m.mime || '').split(';')[0].trim();
+    const ext = m.type === 'voice'
+      ? (base.includes('mp4') ? 'm4a' : base.includes('ogg') ? 'ogg' : 'webm')
+      : (base.includes('quicktime') ? 'mov' : base.includes('webm') ? 'webm' : 'mp4');
+    const path = `${currentUser.id}/${circleId}/${Date.now()}.${ext}`;
+    const { error: upErr } = await supabaseClient.storage
+      .from('welcome-notes').upload(path, m.blob, { contentType: base || undefined, cacheControl: '3600' });
+    if (upErr) throw upErr;
+    const { error: insErr } = await supabaseClient.from('welcome_media').insert({
+      circle_id: circleId, inviter_id: currentUser.id, path,
+      media_type: m.type, duration_seconds: m.seconds || null
+    });
+    if (insErr) { supabaseClient.storage.from('welcome-notes').remove([path]); throw insErr; }
   }
 
   // Cold-start nudge: shown to whichever member reaches for "invite" while
@@ -6179,6 +6321,7 @@
     const justJoinedRecently = justJoined(meRow) && !sessionStorage.getItem(`welcomed_${circleId}`);
     let welcomeNote = null;
     let welcomeInviter = null;
+    let welcomeMedia = null;
     let shouldWelcome = false;
     if (justJoinedRecently){
       sessionStorage.setItem(`welcomed_${circleId}`, '1');
@@ -6186,6 +6329,7 @@
       if (w.inviter){
         welcomeNote = w.note;
         welcomeInviter = w.inviter;
+        welcomeMedia = w.media;
         shouldWelcome = true;
       }
     }
@@ -6473,7 +6617,9 @@
         // fall through to the normal invite flow.
       }
 
-      const note = await openInviteModal();
+      const inviteRes = await openInviteModal();
+      const note = inviteRes ? inviteRes.note : null;
+      const inviteMedia = inviteRes ? inviteRes.media : null;
       try {
         // Try passing the note through to the RPC. If the backend hasn't
         // been updated to accept p_note yet, fall back to the plain call
@@ -6489,7 +6635,11 @@
         }
         const { data, error } = rpcResult;
         if (error) throw error;
-        posthog.capture('invite_sent', { circle_id: circleId, has_note: !!note, invites_used_today: invitesUsedToday + 1 });
+        if (inviteMedia) {
+          try { await uploadWelcomeMedia(inviteMedia); }
+          catch (e) { showToast(`Invite is ready, but your ${inviteMedia.type === 'voice' ? 'voice note' : 'video'} didn't upload`, 'error'); }
+        }
+        posthog.capture('invite_sent', { circle_id: circleId, has_note: !!note, has_media: inviteMedia ? inviteMedia.type : null, invites_used_today: invitesUsedToday + 1 });
 
         invitesUsedToday += 1;
         const badge = document.getElementById('inviteCountBadge');
@@ -6535,7 +6685,7 @@
     subscribeToGoldenHourPrompts();
 
     // Play the ceremony without blocking the feed load beneath it.
-    if (shouldWelcome) playWelcomeCeremony(welcomeNote, welcomeInviter);
+    if (shouldWelcome) playWelcomeCeremony(welcomeNote, welcomeInviter, welcomeMedia);
 
     return { shouldWelcome };
   }
