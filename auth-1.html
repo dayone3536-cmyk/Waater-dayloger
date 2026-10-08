@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign up — Waater</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,650&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --paper:#f6f9fa;
+    --ink:#0d1b1e;
+    --ink-soft:#4d6167;
+    --grey:#93a3a7;
+    --line:#dbe6e8;
+    --accent:#0f7a8c;
+    --accent-deep:#0b5c6a;
+    --accent-soft:#e3f4f6;
+    --danger:#c1483b;
+    --danger-soft:#fbebe8;
+    --success:#1f8f6b;
+    --success-soft:#e7f6ef;
+    --font-display:'Fraunces', serif;
+    --font-body:'Inter', sans-serif;
+    --ease:cubic-bezier(.22,.9,.32,1);
+    --ease-spring:cubic-bezier(.34,1.45,.4,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    overflow-x:hidden;
+    position:relative;
+  }
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;border:none;background:none;cursor:pointer;}
+  ::selection{background:var(--accent-soft);color:var(--accent-deep);}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;}
+  }
+
+  /* ---------- ambient backdrop: one slow, quiet drift ---------- */
+  .glow{
+    position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:radial-gradient(560px 460px at 22% 20%, rgba(15,122,140,.10), transparent 60%),
+               radial-gradient(620px 520px at 82% 86%, rgba(15,122,140,.07), transparent 65%);
+    animation:drift 26s ease-in-out infinite alternate;
+  }
+  @keyframes drift{
+    from{transform:translate(0,0);}
+    to{transform:translate(-14px,10px);}
+  }
+
+  .stage{
+    position:relative;z-index:1;
+    min-height:100vh;
+    display:flex;align-items:center;justify-content:center;
+    padding:32px 24px;
+  }
+
+  .card{
+    width:100%;max-width:378px;
+  }
+
+  /* ---------- masthead ---------- */
+  .mast{
+    text-align:center;
+    margin-bottom:8px;
+    opacity:0;
+    animation:riseIn .6s var(--ease) .05s forwards;
+  }
+  @keyframes riseIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+  .wordmark{
+    font-family:var(--font-display);
+    font-optical-sizing:auto;
+    font-weight:600;
+    font-size:32px;
+    letter-spacing:-0.01em;
+    color:var(--ink);
+  }
+  .wordmark .drop{color:var(--accent);}
+
+  .tagline{
+    font-family:var(--font-body);
+    font-size:14px;
+    color:var(--ink-soft);
+    margin-top:6px;
+  }
+
+  .wave{
+    display:block;
+    width:132px;height:14px;
+    margin:18px auto 30px;
+    opacity:0;
+    animation:riseIn .5s var(--ease) .3s forwards;
+  }
+  .wave path{
+    stroke:var(--accent);
+    stroke-width:1.6;
+    fill:none;
+    stroke-linecap:round;
+    stroke-dasharray:170;
+    stroke-dashoffset:170;
+    animation:draw 1s var(--ease) .45s forwards;
+  }
+  @keyframes draw{to{stroke-dashoffset:0;}}
+
+  .panel-switch{display:none;}
+  .panel-switch.active{
+    display:block;
+    opacity:0;
+    animation:riseIn .45s var(--ease) forwards;
+  }
+
+  /* ---------- google, first and plain ---------- */
+  .google-btn{
+    width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
+    border:1px solid var(--ink);border-radius:9px;padding:13px;
+    font-family:var(--font-body);font-weight:600;font-size:14px;color:var(--ink);
+    transition:background .18s var(--ease), color .18s var(--ease), border-color .18s var(--ease);
+  }
+  .google-btn:hover{background:var(--ink);color:#fff;}
+  .google-btn:active{transform:scale(.99);}
+  .google-btn svg{width:18px;height:18px;flex-shrink:0;}
+
+  .divider{
+    display:flex;align-items:center;gap:12px;margin:22px 0;
+    font-size:13px;color:var(--grey);
+  }
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--line);}
+
+  /* ---------- text tabs with a liquid underline ---------- */
+  .tabs{
+    position:relative;
+    display:flex;gap:22px;
+    margin-bottom:26px;
+    border-bottom:1px solid var(--line);
+  }
+  .tab-btn{
+    padding:0 0 12px;
+    font-family:var(--font-body);font-weight:600;font-size:14.5px;
+    color:var(--grey);
+    transition:color .2s var(--ease);
+  }
+  .tab-btn.active{color:var(--ink);}
+  .tab-underline{
+    position:absolute;bottom:-1px;height:2px;
+    background:var(--accent);
+    border-radius:2px;
+    transition:transform .4s var(--ease-spring), width .4s var(--ease-spring);
+    transform-origin:left;
+  }
+
+  .field{margin-bottom:16px;}
+  .field label{
+    display:block;font-weight:500;font-size:12.5px;
+    color:var(--ink-soft);margin-bottom:6px;
+  }
+  .field-wrap{position:relative;}
+  .field input{
+    width:100%;border:none;border-bottom:1.5px solid var(--line);
+    background:transparent;
+    padding:9px 2px 10px;font-family:var(--font-body);font-size:15px;
+    color:var(--ink);outline:none;
+    transition:border-color .2s var(--ease);
+  }
+  .field input.has-toggle{padding-right:32px;}
+  .field-wrap::after{
+    content:'';position:absolute;left:0;bottom:0;height:1.5px;width:0;
+    background:var(--accent);
+    transition:width .35s var(--ease-spring);
+  }
+  .field-wrap:focus-within::after{width:100%;}
+
+  .pw-toggle{
+    position:absolute;right:0;bottom:8px;
+    width:22px;height:22px;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--grey);transition:color .15s var(--ease);
+  }
+  .pw-toggle:hover{color:var(--ink);}
+  .pw-toggle svg{width:16px;height:16px;stroke:currentColor;}
+
+  .field-hint{
+    font-size:12px;color:var(--grey);
+    margin-top:6px;
+  }
+
+  .primary-btn{
+    width:100%;background:var(--ink);color:#fff;
+    font-family:var(--font-body);font-weight:600;font-size:14.5px;
+    padding:13px;border-radius:9px;margin-top:6px;
+    display:flex;align-items:center;justify-content:center;gap:9px;
+    transition:background .18s var(--ease), opacity .18s var(--ease);
+    position:relative;overflow:hidden;
+  }
+  .primary-btn:hover:not(:disabled){background:var(--accent-deep);}
+  .primary-btn:active:not(:disabled){transform:scale(.99);}
+  .primary-btn:disabled{opacity:.8;cursor:not-allowed;}
+  .primary-btn.is-success{background:var(--success);}
+
+  /* droplet loading indicator: fills instead of spinning */
+  .droplet{width:15px;height:19px;flex-shrink:0;}
+  .droplet .outline{fill:none;stroke:rgba(255,255,255,.55);stroke-width:1.4;}
+  .droplet .fill{fill:#fff;transform-origin:50% 100%;animation:fillDrop 1.1s ease-in-out infinite;}
+  @keyframes fillDrop{
+    0%,100%{transform:scaleY(.15);}
+    50%{transform:scaleY(.85);}
+  }
+
+  .check-pop{width:16px;height:16px;flex-shrink:0;}
+  .check-pop path{stroke-dasharray:20;stroke-dashoffset:20;animation:drawCheck .4s var(--ease) forwards;}
+  @keyframes drawCheck{to{stroke-dashoffset:0;}}
+
+  .status-msg{
+    margin-top:14px;font-size:13px;
+    padding:10px 12px;border-radius:8px;display:none;
+  }
+  .status-msg.show{display:flex;align-items:center;gap:7px;animation:riseIn .3s var(--ease);}
+  .status-msg.error{background:var(--danger-soft);color:var(--danger);}
+  .status-msg.error.shake{animation:riseIn .3s var(--ease), shakeX .4s var(--ease);}
+  @keyframes shakeX{
+    0%,100%{transform:translateX(0);}
+    20%{transform:translateX(-4px);}
+    40%{transform:translateX(4px);}
+    60%{transform:translateX(-3px);}
+    80%{transform:translateX(3px);}
+  }
+  .status-msg.success{background:var(--success-soft);color:var(--success);}
+
+  .hint{
+    text-align:center;font-size:12.5px;
+    color:var(--grey);margin-top:24px;line-height:1.6;
+  }
+
+  .username-note{
+    font-family:var(--font-display);font-weight:500;font-size:17px;
+    color:var(--ink);text-align:center;margin-bottom:24px;line-height:1.5;
+  }
+</style>
+</head>
+<body>
+
+<div class="glow"></div>
+
+<div class="stage">
+  <div class="card">
+
+    <div class="mast">
+      <div class="wordmark">waater<span class="drop">.</span></div>
+      <p class="tagline">your day, one clip at a time</p>
+    </div>
+
+    <svg class="wave" viewBox="0 0 132 14" aria-hidden="true">
+      <path d="M2 8 C 14 -2, 24 18, 36 8 S 58 -2, 70 8 S 92 18, 104 8 S 126 -2, 130 8"/>
+    </svg>
+
+    <!-- STEP 1: sign up / sign in -->
+    <div class="panel-switch active" id="authPanel">
+
+      <button type="button" class="google-btn" id="googleBtn">
+        <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.5 29.5 3.5 24 3.5 12.7 3.5 3.5 12.7 3.5 24S12.7 44.5 24 44.5 44.5 35.3 44.5 24c0-1.2-.1-2.4-.3-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.5 5.5 29.5 3.5 24 3.5c-7.6 0-14.1 4.3-17.7 10.5z"/><path fill="#4CAF50" d="M24 44.5c5.4 0 10.3-1.8 14-4.9l-6.5-5.5c-2 1.4-4.6 2.3-7.5 2.3-5.3 0-9.7-3.1-11.3-7.5l-6.6 5.1C9.8 40.1 16.4 44.5 24 44.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.7l6.5 5.5C40.9 36.5 44.5 30.9 44.5 24c0-1.2-.1-2.4-.3-3.5z"/></svg>
+        Continue with Google
+      </button>
+
+      <div class="divider">or continue with email</div>
+
+      <div class="tabs">
+        <button type="button" class="tab-btn active" id="tabSignUp">Join</button>
+        <button type="button" class="tab-btn" id="tabSignIn">Sign in</button>
+        <div class="tab-underline" id="tabUnderline"></div>
+      </div>
+
+      <!-- Sign up form (default) -->
+      <form id="signUpForm">
+        <div class="field">
+          <label for="suUsername">Username</label>
+          <div class="field-wrap">
+            <input type="text" id="suUsername" required minlength="3" maxlength="24" pattern="[a-zA-Z0-9_]+" title="Letters, numbers, and underscores only" autocomplete="username">
+          </div>
+        </div>
+        <div class="field">
+          <label for="suEmail">Email</label>
+          <div class="field-wrap">
+            <input type="email" id="suEmail" required autocomplete="email">
+          </div>
+        </div>
+        <div class="field">
+          <label for="suPassword">Password</label>
+          <div class="field-wrap">
+            <input type="password" id="suPassword" class="has-toggle" required minlength="6" autocomplete="new-password">
+            <button type="button" class="pw-toggle" data-target="suPassword" aria-label="Show password">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="field-hint">At least 6 characters</div>
+        </div>
+        <button type="submit" class="primary-btn" id="suBtn">
+          <span id="suBtnLabel">Create account</span>
+        </button>
+      </form>
+
+      <!-- Sign in form -->
+      <form id="signInForm" style="display:none;">
+        <div class="field">
+          <label for="siEmail">Email</label>
+          <div class="field-wrap">
+            <input type="email" id="siEmail" required autocomplete="email">
+          </div>
+        </div>
+        <div class="field">
+          <label for="siPassword">Password</label>
+          <div class="field-wrap">
+            <input type="password" id="siPassword" class="has-toggle" required autocomplete="current-password">
+            <button type="button" class="pw-toggle" data-target="siPassword" aria-label="Show password">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="primary-btn" id="siBtn">
+          <span id="siBtnLabel">Sign in</span>
+        </button>
+      </form>
+
+      <div class="status-msg" id="authStatus"></div>
+      <p class="hint">By continuing you agree to log your day, one clip at a time.</p>
+    </div>
+
+    <!-- STEP 2: pick a username (Google sign-ins land here) -->
+    <div class="panel-switch" id="usernamePanel">
+      <p class="username-note">Almost there — pick a username so people know whose day this is.</p>
+      <form id="usernameForm">
+        <div class="field">
+          <label for="pickUsername">Username</label>
+          <div class="field-wrap">
+            <input type="text" id="pickUsername" required minlength="3" maxlength="24" pattern="[a-zA-Z0-9_]+" title="Letters, numbers, and underscores only">
+          </div>
+        </div>
+        <button type="submit" class="primary-btn" id="pickBtn">
+          <span id="pickBtnLabel">Continue</span>
+        </button>
+      </form>
+      <div class="status-msg" id="usernameStatus"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://yacrwbpvcqurxsqpmron.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_Any50PwhIupj5rZbez1W4Q_dIx-VRIs';
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const authPanel = document.getElementById('authPanel');
+  const usernamePanel = document.getElementById('usernamePanel');
+
+  function showStatus(el, msg, type) {
+    el.textContent = msg;
+    el.className = `status-msg show ${type}${type === 'error' ? ' shake' : ''}`;
+  }
+
+  function nextUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('next') || '/';
+  }
+
+  // ---- button loading/success states (droplet fill, then a drawn check) ----
+  const dropletSVG = `<svg class="droplet" viewBox="0 0 16 20"><path class="outline" d="M8 1.5C8 1.5 14.5 10 14.5 14a6.5 6.5 0 0 1-13 0C1.5 10 8 1.5 8 1.5z"/><clipPath id="clip"><path d="M8 1.5C8 1.5 14.5 10 14.5 14a6.5 6.5 0 0 1-13 0C1.5 10 8 1.5 8 1.5z"/></clipPath><rect class="fill" x="1" y="8" width="14" height="12" clip-path="url(#clip)"/></svg>`;
+
+  function setBtnState(btn, labelSpan, state, idleText) {
+    if (state === 'loading') {
+      btn.disabled = true;
+      labelSpan.textContent = '';
+      const wrap = document.createElement('span');
+      wrap.className = 'btn-droplet';
+      wrap.id = btn.id + 'Droplet';
+      wrap.innerHTML = dropletSVG;
+      btn.insertBefore(wrap, labelSpan);
+    } else if (state === 'success') {
+      btn.classList.add('is-success');
+      const droplet = document.getElementById(btn.id + 'Droplet');
+      if (droplet) droplet.remove();
+      labelSpan.textContent = '';
+      const check = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      check.setAttribute('viewBox', '0 0 24 24');
+      check.setAttribute('fill', 'none');
+      check.setAttribute('stroke', 'currentColor');
+      check.setAttribute('stroke-width', '2.4');
+      check.setAttribute('class', 'check-pop');
+      check.innerHTML = '<path d="M20 6L9 17l-5-5"/>';
+      btn.insertBefore(check, labelSpan);
+    } else {
+      btn.disabled = false;
+      btn.classList.remove('is-success');
+      const droplet = document.getElementById(btn.id + 'Droplet');
+      if (droplet) droplet.remove();
+      const check = btn.querySelector('.check-pop');
+      if (check) check.remove();
+      labelSpan.textContent = idleText;
+    }
+  }
+
+  // ---- password visibility toggle ----
+  document.querySelectorAll('.pw-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.target);
+      const isPw = input.type === 'password';
+      input.type = isPw ? 'text' : 'password';
+      btn.innerHTML = isPw
+        ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17.94 17.94A10.94 10.94 0 0112 20C5 20 1 12 1 12a19.4 19.4 0 015.06-6.06M9.9 4.24A10.94 10.94 0 0112 4c7 0 11 8 11 8a19.5 19.5 0 01-3.16 4.4M14.12 14.12a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>`;
+      btn.setAttribute('aria-label', isPw ? 'Hide password' : 'Show password');
+    });
+  });
+
+  // ---- text tabs with a liquid underline that measures each label ----
+  const tabUnderline = document.getElementById('tabUnderline');
+  const tabSignUp = document.getElementById('tabSignUp');
+  const tabSignIn = document.getElementById('tabSignIn');
+  const signInForm = document.getElementById('signInForm');
+  const signUpForm = document.getElementById('signUpForm');
+
+  function moveUnderlineTo(btn) {
+    tabUnderline.style.width = btn.offsetWidth + 'px';
+    tabUnderline.style.transform = `translateX(${btn.offsetLeft}px)`;
+  }
+
+  tabSignUp.addEventListener('click', () => {
+    tabSignUp.classList.add('active');
+    tabSignIn.classList.remove('active');
+    moveUnderlineTo(tabSignUp);
+    signUpForm.style.display = 'block';
+    signInForm.style.display = 'none';
+  });
+  tabSignIn.addEventListener('click', () => {
+    tabSignIn.classList.add('active');
+    tabSignUp.classList.remove('active');
+    moveUnderlineTo(tabSignIn);
+    signInForm.style.display = 'block';
+    signUpForm.style.display = 'none';
+  });
+  window.addEventListener('load', () => moveUnderlineTo(tabSignUp));
+
+  // ---- routing after auth ----
+  async function routeAfterAuth(user) {
+    const { data: profile, error } = await supabaseClient
+      .from('profiles')
+      .select('username')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Failed to load profile:', error);
+      return;
+    }
+
+    if (profile && profile.username) {
+      window.location.href = nextUrl();
+    } else {
+      authPanel.classList.remove('active');
+      usernamePanel.classList.add('active');
+    }
+  }
+
+  supabaseClient.auth.getSession().then(({ data }) => {
+    // Guests (anonymous sessions) must still be able to sign in to an existing account.
+    if (data.session && !data.session.user.is_anonymous) routeAfterAuth(data.session.user);
+  });
+
+  // ---- sign up ----
+  signUpForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('suBtn');
+    const label = document.getElementById('suBtnLabel');
+    const statusEl = document.getElementById('authStatus');
+    statusEl.className = 'status-msg';
+    setBtnState(btn, label, 'loading');
+
+    const username = document.getElementById('suUsername').value.trim();
+    const email = document.getElementById('suEmail').value.trim();
+    const password = document.getElementById('suPassword').value;
+
+    const { data, error } = await supabaseClient.auth.signUp({
+      email,
+      password,
+      options: { data: { username } }
+    });
+
+    if (error) {
+      setBtnState(btn, label, 'idle', 'Create account');
+      showStatus(statusEl, error.message, 'error');
+      return;
+    }
+
+    if (!data.session) {
+      setBtnState(btn, label, 'idle', 'Create account');
+      showStatus(statusEl, 'Check your email to confirm your account, then sign in.', 'success');
+      tabSignIn.click();
+      return;
+    }
+
+    setBtnState(btn, label, 'success');
+    setTimeout(() => routeAfterAuth(data.user), 400);
+  });
+
+  // ---- sign in ----
+  signInForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('siBtn');
+    const label = document.getElementById('siBtnLabel');
+    const statusEl = document.getElementById('authStatus');
+    statusEl.className = 'status-msg';
+    setBtnState(btn, label, 'loading');
+
+    const email = document.getElementById('siEmail').value.trim();
+    const password = document.getElementById('siPassword').value;
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      setBtnState(btn, label, 'idle', 'Sign in');
+      showStatus(statusEl, error.message, 'error');
+      return;
+    }
+
+    setBtnState(btn, label, 'success');
+    setTimeout(() => routeAfterAuth(data.user), 400);
+  });
+
+  // ---- Google OAuth ----
+  document.getElementById('googleBtn').addEventListener('click', async () => {
+    const redirectTo = `${window.location.origin}/auth${window.location.search ? window.location.search : ''}`;
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo }
+    });
+    if (error) {
+      showStatus(document.getElementById('authStatus'), error.message, 'error');
+    }
+  });
+
+  // ---- username step ----
+  document.getElementById('usernameForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('pickBtn');
+    const label = document.getElementById('pickBtnLabel');
+    const statusEl = document.getElementById('usernameStatus');
+    statusEl.className = 'status-msg';
+    setBtnState(btn, label, 'loading');
+
+    const username = document.getElementById('pickUsername').value.trim();
+    const { data: { user } } = await supabaseClient.auth.getUser();
+
+    if (!user) {
+      setBtnState(btn, label, 'idle', 'Continue');
+      showStatus(statusEl, 'Session expired — please sign in again.', 'error');
+      return;
+    }
+
+    const { error } = await supabaseClient
+      .from('profiles')
+      .upsert({ id: user.id, username });
+
+    if (error) {
+      setBtnState(btn, label, 'idle', 'Continue');
+      const msg = error.message.includes('duplicate') ? 'That username is taken.' : error.message;
+      showStatus(statusEl, msg, 'error');
+      return;
+    }
+
+    setBtnState(btn, label, 'success');
+    setTimeout(() => { window.location.href = nextUrl(); }, 400);
+  });
+</script>
+
+</body>
+</html>
