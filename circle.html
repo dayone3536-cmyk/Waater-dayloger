@@ -2568,6 +2568,7 @@
   .gs-ok{margin-top:10px;font:500 14px/1.5 var(--font-display);color:var(--ink);}
   .gs-alt{margin-top:14px;text-align:center;font:400 13.5px var(--font-serif);color:var(--grey);}
   .gs-alt a,.gs-alt button{color:var(--ink);text-decoration:underline;text-underline-offset:3px;font:inherit;}
+  .hv-gone{padding:22px 16px;border-radius:16px;background:var(--accent-soft);color:#c24020;font-size:13.5px;line-height:1.4;text-align:center;font-weight:600;}
 </style>
 </head>
 <body>
@@ -3376,8 +3377,8 @@
   // ever shown through a short-lived signed link. Storage policies
   // (circle membership) decide who is allowed to get a link at all.
   // =========================================================
-  const SIGNED_TTL = 1800;                          // links live 30 minutes
-  const SIGNED_CACHE_MS = (SIGNED_TTL - 300) * 1000; // re-sign 5 min before expiry
+  const SIGNED_TTL = 600;                           // links live 10 minutes
+  const SIGNED_CACHE_MS = (SIGNED_TTL - 120) * 1000; // re-sign 2 min before expiry
   const signedCache = new Map();                    // "bucket/path" -> { url, exp }
   const MEDIA_BUCKETS = ['voice-posts', 'voice-comments', 'album-photos', 'video-posts'];
   const PUBLIC_MARK = '/storage/v1/object/public/';
@@ -3738,6 +3739,16 @@
     // Timed videos: hide once the creator's chosen time (1/6/12/24h) is up.
     list = list.filter(p => !p.expires_hours || (Date.now() - new Date(p.created_at).getTime()) < p.expires_hours * 3600000);
 
+    // View-once: a video this person already watched stays gone for them (and only them).
+    if (currentUser) {
+      const vids = list.filter(p => p.media_type === 'video' && p.user_id !== currentUser.id).map(p => p.id);
+      if (vids.length) {
+        const { data: seenRows } = await supabaseClient.from('post_seen').select('post_id').eq('user_id', currentUser.id).in('post_id', vids);
+        const seenIds = new Set((seenRows || []).map(r => r.post_id));
+        if (seenIds.size) list = list.map(p => seenIds.has(p.id) ? { ...p, media_url: '', _viewed: true } : p);
+      }
+    }
+
     if (list.length > 0) {
       const userIds = [...new Set(list.map(p => p.user_id))];
       const { data: profs } = await supabaseClient.from('profiles').select('id, username, avatar_url').in('id', userIds);
@@ -4050,7 +4061,9 @@
         </svg>`
       
       : (post.profiles?.avatar_url ? `<img src="${escapeHtml(post.profiles.avatar_url)}" alt="">` : initials(name));
-    const mediaHtml = post.media_url
+    const mediaHtml = post._viewed
+      ? '<div class="home-post-media"><div class="hv-gone">\uD83D\uDC40 You watched this one. It\u2019s gone for you now, still there for anyone who hasn\u2019t.</div></div>'
+      : post.media_url
       ? `<div class="home-post-media">${
           post.media_type === 'voice'
             ? `<div class="home-voice-bubble"><b>🎙️ Voice post${post.duration_seconds ? ` · ${Math.round(post.duration_seconds)}s` : ''}</b><audio src="${escapeHtml(post.media_url)}" controls controlsList="nodownload noremoteplayback" oncontextmenu="return false;"></audio></div>`
@@ -4642,6 +4655,19 @@
     vrSyncSoundUi(v);
   }
 
+  // View-once: record the view, then remove the video for this person only.
+  async function vrMarkSeen(postId){
+    if (!currentUser) return;
+    try { await supabaseClient.from('post_seen').insert({ post_id: postId, user_id: currentUser.id }); } catch (_) {}
+  }
+  function vrGoneForMe(wrap, v){
+    try { v.pause(); v.removeAttribute('src'); v.load(); } catch (_) {}
+    if (vrIO) vrIO.unobserve(v);
+    vrObserved.delete(v);
+    const media = wrap.closest('.home-post-media') || wrap;
+    media.innerHTML = '<div class="hv-gone">\uD83D\uDC40 You watched this one. It\u2019s gone for you now, still there for anyone who hasn\u2019t.</div>';
+  }
+
   function initVideoCards(root = document){
     vrObserved.forEach(v => { if (!v.isConnected){ if (vrIO) vrIO.unobserve(v); vrObserved.delete(v); } });
     root.querySelectorAll('.home-video').forEach(wrap => {
@@ -4650,6 +4676,20 @@
       const v = wrap.querySelector('video');
       const bar = wrap.querySelector('.hv-progress i');
       if (!v) return;
+      const vcard = wrap.closest('.home-post-card');
+      const vid = vcard && vcard.dataset.postId;
+      const vOwn = !vcard || !!vcard.querySelector('.home-post-delete');   // your own videos never vanish for you
+      let vSeen = false;
+      if (!vOwn && vid) {
+        v.addEventListener('timeupdate', () => {
+          if (vSeen || !v.duration || !isFinite(v.duration)) return;
+          if (v.currentTime >= v.duration * 0.9) {   // watched ~90%: let this play finish, no loop, no replay
+            vSeen = true; v.loop = false;
+            vrMarkSeen(vid);
+          }
+        });
+        v.addEventListener('ended', () => { if (vSeen) vrGoneForMe(wrap, v); });
+      }
       v.addEventListener('timeupdate', () => {
         if (bar && v.duration && isFinite(v.duration)) bar.style.width = (v.currentTime / v.duration * 100) + '%';
       });
