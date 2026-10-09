@@ -2569,6 +2569,60 @@
   .gs-alt{margin-top:14px;text-align:center;font:400 13.5px var(--font-serif);color:var(--grey);}
   .gs-alt a,.gs-alt button{color:var(--ink);text-decoration:underline;text-underline-offset:3px;font:inherit;}
   .hv-gone{padding:22px 16px;border-radius:16px;background:var(--accent-soft);color:#c24020;font-size:13.5px;line-height:1.4;text-align:center;font-weight:600;}
+
+  /* =========================================================
+     REACTION CAM — a friend's face, a few seconds, seen once
+     ========================================================= */
+  .hv-react{position:absolute;top:10px;left:10px;z-index:3;display:flex;align-items:center;gap:5px;padding:5px 10px 5px 8px;border-radius:99px;border:0;cursor:pointer;background:rgba(20,21,26,.55);color:#fff;font-family:var(--font-display);font-weight:600;font-size:11.5px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);-webkit-tap-highlight-color:transparent;}
+  .hv-react.off{background:rgba(20,21,26,.38);color:rgba(255,255,255,.75);}
+  .hv-react.off span{filter:grayscale(1);opacity:.7;}
+  .rx-live{position:fixed;right:14px;top:calc(64px + env(safe-area-inset-top));z-index:2600;width:96px;height:96px;border-radius:50%;cursor:pointer;animation:rxPop .25s ease;}
+  .rx-live video{width:100%;height:100%;border-radius:50%;object-fit:cover;transform:scaleX(-1);border:3px solid #fff;box-shadow:0 8px 24px rgba(0,0,0,.35);display:block;background:#111;}
+  .rx-live-tag{position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;background:#e0433f;color:#fff;font-family:var(--font-mono);font-size:10px;white-space:nowrap;}
+  .rx-live-tag i{width:6px;height:6px;border-radius:50%;background:#fff;animation:rxBlink 1s infinite;}
+  @keyframes rxBlink{50%{opacity:.25;}}
+  @keyframes rxPop{from{transform:scale(.6);opacity:0;}to{transform:scale(1);opacity:1;}}
+  @keyframes rxFade{from{opacity:0;}to{opacity:1;}}
+  .rx-sheet{position:fixed;left:0;right:0;bottom:0;z-index:2600;display:flex;justify-content:center;padding:0 12px calc(14px + env(safe-area-inset-bottom));transform:translateY(120%);transition:transform .26s ease;pointer-events:none;}
+  .rx-sheet.in{transform:translateY(0);pointer-events:auto;}
+  .rx-sheet-card{position:relative;overflow:hidden;width:100%;max-width:460px;background:#fff;border-radius:22px;box-shadow:0 18px 50px rgba(20,21,26,.28);padding:14px;display:grid;grid-template-columns:64px 1fr;gap:10px 12px;align-items:center;}
+  .rx-sheet-card video{width:64px;height:64px;border-radius:50%;object-fit:cover;background:#111;grid-row:1 / span 2;}
+  .rx-sheet-txt{display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .rx-sheet-txt b{font-family:var(--font-display);font-size:14px;color:var(--ink);}
+  .rx-sheet-txt span{font-size:12px;color:var(--grey);}
+  .rx-sheet-btns{display:flex;gap:8px;justify-content:flex-end;}
+  .rx-sheet-btns button{border:0;border-radius:99px;padding:8px 16px;font-family:var(--font-display);font-weight:700;font-size:13px;cursor:pointer;}
+  .rx-x{background:#f0f0ee;color:var(--ink-soft);}
+  .rx-go{background:var(--accent);color:#fff;}
+  .rx-bar{display:block;position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--accent);transform-origin:left;transform:scaleX(1);}
+  .rx-intro{position:fixed;inset:0;z-index:2600;background:rgba(0,0,0,.62);display:flex;align-items:flex-end;justify-content:center;animation:rxFade .2s ease;}
+  .rx-intro-card{width:100%;max-width:460px;background:#fff;border-radius:26px 26px 0 0;padding:24px 22px calc(22px + env(safe-area-inset-bottom));text-align:center;}
+  .rx-intro-emoji{font-size:44px;line-height:1;}
+  .rx-intro-card h3{margin:10px 0 6px;font-family:var(--font-display);font-size:19px;color:var(--ink);}
+  .rx-intro-card p{margin:0 0 10px;font-size:13.5px;line-height:1.45;color:var(--ink-soft);}
+  .rx-intro-card ul{list-style:none;margin:0 0 10px;padding:0;text-align:left;display:flex;flex-direction:column;gap:6px;}
+  .rx-intro-card li{font-size:13px;color:var(--ink);padding-left:22px;position:relative;}
+  .rx-intro-card li::before{content:'\2713';position:absolute;left:2px;color:var(--accent);font-weight:800;}
+  .rx-intro-card small{display:block;margin:0 0 14px;font-size:11.5px;line-height:1.4;color:var(--grey);}
+  .rx-yes{width:100%;border:0;border-radius:99px;padding:14px;background:var(--accent);color:#fff;font-family:var(--font-display);font-weight:700;font-size:15px;cursor:pointer;}
+  .rx-no{width:100%;border:0;background:none;padding:12px;color:var(--grey);font-family:var(--font-display);font-weight:600;font-size:13px;cursor:pointer;}
+  .rx-pill{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:190;display:flex;align-items:center;gap:8px;padding:10px 16px;border:0;border-radius:99px;background:linear-gradient(135deg,#ff5a36,#ff8a3d);color:#fff;font-family:var(--font-display);font-size:13px;cursor:pointer;box-shadow:0 12px 30px rgba(255,90,54,.45);animation:rxPill 2.4s ease-in-out infinite;white-space:nowrap;}
+  .rx-pill b{font-weight:700;}
+  .rx-pill em{font-style:normal;opacity:.85;font-size:12px;}
+  .rx-pill-e{font-size:18px;}
+  @keyframes rxPill{50%{transform:translateX(-50%) scale(1.05);}}
+  @keyframes rxPillPop{0%{transform:translateX(-50%) scale(.6);}60%{transform:translateX(-50%) scale(1.15);}100%{transform:translateX(-50%) scale(1);}}
+  .rx-pill.pop{animation:rxPillPop .5s ease, rxPill 2.4s ease-in-out .5s infinite;}
+  .rx-view{position:fixed;inset:0;z-index:2600;background:rgba(10,10,14,.92);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .25s ease;}
+  .rx-view.in{opacity:1;}
+  .rx-view-in{display:flex;flex-direction:column;align-items:center;gap:16px;color:#fff;font-family:var(--font-display);}
+  .rx-view-name{font-weight:700;font-size:16px;}
+  .rx-view-disc{width:min(74vw,300px);height:min(74vw,300px);border-radius:50%;overflow:hidden;border:4px solid #fff;background:#111;transition:opacity .6s ease,transform .6s ease,filter .6s ease;}
+  .rx-view-disc video{width:100%;height:100%;object-fit:cover;display:block;}
+  .rx-view-disc.gone{opacity:0;transform:scale(.7);filter:blur(14px);}
+  .rx-view-note{font-size:12px;opacity:.65;}
+  .rx-view-bar{display:block;width:min(74vw,300px);height:3px;border-radius:3px;background:var(--accent);transform-origin:left;transform:scaleX(0);}
+  @keyframes rxbar{from{transform:scaleX(1);}to{transform:scaleX(0);}}
 </style>
 </head>
 <body>
@@ -4080,7 +4134,7 @@
       : '';
     const isOwnPost = currentUser && post.user_id === currentUser.id;
     return `
-      <div class="home-post-card${isAnonPost ? ' whisper' : ''}${isGhAnswer ? ' gh-answer' : ''}" data-post-id="${post.id}">
+      <div class="home-post-card${isAnonPost ? ' whisper' : ''}${isGhAnswer ? ' gh-answer' : ''}" data-post-id="${post.id}" data-owner-id="${post.user_id}">
         <div class="home-post-head">
           <div class="avatar${isAnonPost ? ' anon-avatar' : ''}">${avatarHtml}</div>
           <div class="who"><b style="${isAnonPost ? 'color:var(--grey);font-style:italic;' : ''}">${escapeHtml(name)}</b><span>${timeAgo(post.created_at)}</span></div>
@@ -4647,6 +4701,7 @@
     document.querySelectorAll('.home-video video, .home-vc video').forEach(o => { if (o !== v && !o.paused) o.pause(); });
     v.muted = !videoSoundOn;
     const p = v.play();
+    if (p && p.then) p.then(() => { if (!v.muted) rxMaybeArm(v); }).catch(() => {});
     if (p && p.catch) p.catch(() => {
       // browser refused sound without a fresh tap — fall back to muted
       v.muted = true; videoSoundOn = false; vrSyncSoundUi(v);
@@ -4668,6 +4723,435 @@
     media.innerHTML = '<div class="hv-gone">\uD83D\uDC40 You watched this one. It\u2019s gone for you now, still there for anyone who hasn\u2019t.</div>';
   }
 
+
+  // =========================================================
+  // REACTION CAM
+  // A friend watches your video; on the last few seconds we capture
+  // their face (NO sound), show them a preview with a cancel button,
+  // then send it to you. You watch it once and the server copy is
+  // deleted the moment it is on your device. Off switch on every video.
+  // =========================================================
+  const RX_SECONDS = 5;                    // length of the reaction clip
+  const RX_AUTOSEND_MS = 3000;             // preview window before it sends
+  const RX_TTL_MS = 24 * 3600 * 1000;      // an unopened reaction is swept after a day
+  const RX_ON_KEY = 'waater_rx_on';        // '0' = reactions off for this person
+  const RX_INTRO_KEY = 'waater_rx_intro';  // the explainer was answered
+  let rxBusy = null;                       // the capture in progress (warming / recording)
+  let rxIntroOpen = false;
+  let rxCamBlocked = false;
+  const rxDone = new Set();                // posts already reacted to this session
+
+  function rxEnabled(){ try { return localStorage.getItem(RX_ON_KEY) !== '0'; } catch (_) { return true; } }
+  function rxIntroSeen(){ try { return localStorage.getItem(RX_INTRO_KEY) === '1'; } catch (_) { return false; } }
+  function rxSetEnabled(on){
+    try { localStorage.setItem(RX_ON_KEY, on ? '1' : '0'); } catch (_) {}
+    document.querySelectorAll('.home-video').forEach(rxSyncChip);
+  }
+  function rxMime(){
+    const list = ['video/mp4;codecs=avc1.42E01E', 'video/mp4', 'video/webm;codecs=vp8', 'video/webm'];
+    return list.find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
+  }
+  function rxSyncChip(wrap){
+    const chip = wrap.querySelector('.hv-react');
+    if (!chip) return;
+    const on = rxEnabled();
+    chip.classList.toggle('off', !on);
+    const b = chip.querySelector('b');
+    if (b) b.textContent = on ? 'React: on' : 'React: off';
+    const snd = wrap.querySelector('.hv-sound');
+    const last = snd && snd.lastChild;
+    if (last && last.nodeType === 3) last.textContent = on ? 'Tap to watch & react' : 'Tap for sound';
+  }
+
+  // Who is this video from? null = we never react (own video, whisper, not signed in).
+  function rxCardInfo(v){
+    const card = v.closest('.home-post-card');
+    if (!card || !currentUser) return null;
+    if (card.querySelector('.home-post-delete') || card.classList.contains('whisper')) return null;
+    const postId = card.dataset.postId, ownerId = card.dataset.ownerId;
+    if (!postId || !ownerId || ownerId === currentUser.id) return null;
+    const nameEl = card.querySelector('.home-post-head .who b');
+    return { postId, ownerId, ownerName: (nameEl && nameEl.textContent) || 'your friend' };
+  }
+
+  function rxMaybeArm(v){
+    if (!v || v._rxArmed || vrRecording || v.muted) return;
+    if (!rxEnabled() || rxCamBlocked) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) return;
+    const info = rxCardInfo(v);
+    if (!info || rxDone.has(info.postId)) return;
+    if (!rxIntroSeen()){ rxShowIntro(v); return; }
+    rxArm(v, info);
+  }
+
+  // Armed = listening to the video. The camera only opens ~1.4s before the last
+  // RX_SECONDS and closes the moment the clip is done.
+  function rxArm(v, info){
+    v._rxArmed = true;
+    const st = { v, info, state: 'idle', stream: null, rec: null, chunks: [], timer: null, tick: null, live: null, aborted: false, listeners: [] };
+    const on = (el, ev, fn) => { el.addEventListener(ev, fn); st.listeners.push([el, ev, fn]); };
+    st.check = () => {
+      if (st.aborted || !v.duration || !isFinite(v.duration)) return;
+      const left = v.duration - v.currentTime;
+      if (st.state === 'idle' && left <= RX_SECONDS + 1.4) rxWarm(st);
+      else if (st.state === 'ready' && left <= RX_SECONDS + 0.05) rxStart(st);
+    };
+    on(v, 'timeupdate', st.check);
+    on(v, 'pause', () => { if (!v.ended && (st.state === 'warming' || st.state === 'ready')) rxCool(st); });
+    on(v, 'ended', () => { if (st.state === 'recording') rxStop(st); });
+    on(document, 'visibilitychange', () => {
+      if (!document.hidden) return;
+      if (st.state === 'recording') rxAbort(st);
+      else if (st.state === 'warming' || st.state === 'ready') rxCool(st);
+    });
+  }
+  function rxDetach(st){ st.listeners.forEach(([el, ev, fn]) => el.removeEventListener(ev, fn)); st.listeners = []; }
+  function rxStopStream(st){ if (st.stream){ st.stream.getTracks().forEach(t => t.stop()); st.stream = null; } }
+
+  async function rxWarm(st){
+    if (rxBusy && rxBusy !== st) return;
+    rxBusy = st; st.state = 'warming';
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 480 }, height: { ideal: 640 }, frameRate: { ideal: 24, max: 30 } },
+        audio: false
+      });
+      if (st.aborted || st.state !== 'warming'){ stream.getTracks().forEach(t => t.stop()); return; }
+      st.stream = stream; st.state = 'ready';
+      st.check();
+    } catch (e) {
+      if (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError')){
+        rxCamBlocked = true;
+        showToast('Camera is blocked, so reactions are off', 'error');
+      }
+      rxAbort(st);
+    }
+  }
+  // Back to idle (camera closed) without giving up on this video.
+  function rxCool(st){
+    rxStopStream(st);
+    st.state = 'idle';
+    if (rxBusy === st) rxBusy = null;
+  }
+  function rxStart(st){
+    if (st.state !== 'ready' || !st.stream) return;
+    let rec;
+    try {
+      const mime = rxMime();
+      rec = new MediaRecorder(st.stream, mime ? { mimeType: mime, videoBitsPerSecond: 800000 } : { videoBitsPerSecond: 800000 });
+    } catch (_) { rxAbort(st); return; }
+    st.state = 'recording';
+    st.rec = rec; st.mime = rec.mimeType || rxMime() || 'video/webm'; st.chunks = [];
+    rec.ondataavailable = (e) => { if (e.data && e.data.size) st.chunks.push(e.data); };
+    rec.onstop = () => rxFinish(st);
+    rec.start(250);
+    rxShowLive(st);
+    st.timer = setTimeout(() => rxStop(st), RX_SECONDS * 1000 + 300);
+  }
+  function rxStop(st){
+    if (st.state !== 'recording') return;
+    st.state = 'stopping';
+    clearTimeout(st.timer);
+    try { st.rec.stop(); } catch (_) { rxAbort(st); }
+  }
+  function rxAbort(st){
+    st.aborted = true;
+    clearTimeout(st.timer);
+    if ((st.state === 'recording' || st.state === 'stopping') && st.rec && st.rec.state !== 'inactive'){
+      try { st.rec.stop(); return; } catch (_) {}   // onstop -> rxFinish discards it
+    }
+    rxHideLive(st); rxStopStream(st); rxDetach(st);
+    if (rxBusy === st) rxBusy = null;
+    st.state = 'done';
+  }
+  function rxFinish(st){
+    rxHideLive(st); rxStopStream(st); rxDetach(st);
+    const blob = new Blob(st.chunks, { type: (st.mime || 'video/webm').split(';')[0] });
+    st.chunks = [];
+    st.state = 'done';
+    if (rxBusy === st) rxBusy = null;
+    if (st.aborted || blob.size < 1500) return;
+    rxDone.add(st.info.postId);
+    rxShowSendSheet(st.info, blob, st.mime);
+  }
+
+  // The red self-view bubble: you always see when your camera is on. Tap it to cancel.
+  function rxShowLive(st){
+    const el = document.createElement('div');
+    el.className = 'rx-live';
+    el.innerHTML = '<video muted playsinline autoplay></video><span class="rx-live-tag"><i></i>Reacting <b>' + RX_SECONDS + '</b> \u2715</span>';
+    const pv = el.querySelector('video');
+    pv.srcObject = st.stream; pv.muted = true;
+    pv.play().catch(() => {});
+    el.addEventListener('click', () => rxAbort(st));
+    document.body.appendChild(el);
+    st.live = el;
+    let n = RX_SECONDS;
+    st.tick = setInterval(() => { n -= 1; const b = el.querySelector('b'); if (b) b.textContent = Math.max(0, n); }, 1000);
+  }
+  function rxHideLive(st){
+    clearInterval(st.tick);
+    if (st.live){ st.live.remove(); st.live = null; }
+  }
+
+  // Preview + 3 second window to cancel. Nothing leaves the phone before it ends.
+  function rxShowSendSheet(info, blob, mime){
+    const url = URL.createObjectURL(blob);
+    const el = document.createElement('div');
+    el.className = 'rx-sheet';
+    el.innerHTML =
+      '<div class="rx-sheet-card">' +
+        '<video src="' + url + '" muted loop playsinline autoplay></video>' +
+        '<div class="rx-sheet-txt"><b>Sending your reaction to ' + escapeHtml(info.ownerName) + '</b><span>They watch it once, then it\u2019s gone.</span></div>' +
+        '<div class="rx-sheet-btns"><button type="button" class="rx-x">Cancel</button><button type="button" class="rx-go">Send now</button></div>' +
+        '<i class="rx-bar"></i>' +
+      '</div>';
+    document.body.appendChild(el);
+    const pv = el.querySelector('video');
+    pv.muted = true; pv.play().catch(() => {});
+    const bar = el.querySelector('.rx-bar');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      bar.style.transition = 'transform ' + RX_AUTOSEND_MS + 'ms linear';
+      bar.style.transform = 'scaleX(0)';
+      el.classList.add('in');
+    }));
+    let finished = false;
+    let timer = null;
+    const close = () => {
+      clearTimeout(timer);
+      el.classList.remove('in');
+      setTimeout(() => { el.remove(); URL.revokeObjectURL(url); }, 280);
+    };
+    const go = async () => {
+      if (finished) return;
+      finished = true; close();
+      try {
+        await rxUpload(info, blob, mime);
+        showToast('Reaction sent \uD83D\uDE2E');
+        try { posthog.capture('reaction_sent', { circle_id: circleId, post_id: info.postId }); } catch (_) {}
+      } catch (e) { console.warn('reaction not sent', e); }
+    };
+    timer = setTimeout(go, RX_AUTOSEND_MS);
+    el.querySelector('.rx-go').addEventListener('click', go);
+    el.querySelector('.rx-x').addEventListener('click', () => {
+      if (finished) return;
+      finished = true; close();
+      showToast('Deleted. Nothing was sent.');
+    });
+  }
+
+  async function rxUpload(info, blob, mime){
+    const base = ((mime || blob.type || 'video/webm').split(';')[0].trim()) || 'video/webm';
+    const ext = base.includes('mp4') ? 'mp4' : 'webm';
+    const path = currentUser.id + '/' + circleId + '/' + info.postId + '.' + ext;
+    const { error: upErr } = await supabaseClient.storage.from('reactions').upload(path, blob, { contentType: base, cacheControl: '60' });
+    if (upErr){
+      if (String(upErr.statusCode) !== '409') showToast('Couldn\u2019t send your reaction', 'error');
+      throw upErr;
+    }
+    const { error: insErr } = await supabaseClient.from('reactions').insert({
+      post_id: info.postId, circle_id: circleId, from_user: currentUser.id, to_user: info.ownerId, path
+    });
+    if (insErr){
+      supabaseClient.storage.from('reactions').remove([path]);   // no orphan file
+      if (insErr.code !== '23505') showToast('Couldn\u2019t send your reaction', 'error');
+      throw insErr;
+    }
+  }
+
+  // One-time explainer. Shown the first time sound-on playback would start a reaction.
+  function rxShowIntro(v){
+    if (rxIntroOpen) return;
+    rxIntroOpen = true;
+    try { v.pause(); } catch (_) {}
+    const el = document.createElement('div');
+    el.className = 'rx-intro';
+    el.innerHTML =
+      '<div class="rx-intro-card">' +
+        '<div class="rx-intro-emoji">\uD83D\uDE2E</div>' +
+        '<h3>Let them see your reaction</h3>' +
+        '<p>While you watch a friend\u2019s video, we capture the last ' + RX_SECONDS + ' seconds of your face. No sound, and you get a preview with a cancel button before anything is sent.</p>' +
+        '<ul>' +
+          '<li>Only the friend who made the video gets it</li>' +
+          '<li>They can watch it once, then it\u2019s deleted</li>' +
+          '<li>Your camera light and a red bubble show whenever it\u2019s on</li>' +
+          '<li>Turn it off any time with the \uD83D\uDE2E button on a video</li>' +
+        '</ul>' +
+        '<small>No app can stop a friend from screen-recording, so react how you\u2019d be fine with them seeing.</small>' +
+        '<button class="rx-yes" type="button">Turn on reactions</button>' +
+        '<button class="rx-no" type="button">No thanks</button>' +
+      '</div>';
+    document.body.appendChild(el);
+    const closeIntro = () => { el.remove(); rxIntroOpen = false; };
+    el.querySelector('.rx-yes').addEventListener('click', async () => {
+      try { localStorage.setItem(RX_INTRO_KEY, '1'); localStorage.setItem(RX_ON_KEY, '1'); } catch (_) {}
+      // ask for the camera now, with the explanation fresh, then release it right away
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+        s.getTracks().forEach(t => t.stop());
+      } catch (e) {
+        if (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError')){ rxCamBlocked = true; showToast('Camera is blocked, so reactions are off', 'error'); }
+      }
+      closeIntro();
+      rxSetEnabled(true);
+      try { posthog.capture('reaction_cam_opt_in', { circle_id: circleId }); } catch (_) {}
+      vrPlay(v);
+      setTimeout(() => rxMaybeArm(v), 400);
+    });
+    el.querySelector('.rx-no').addEventListener('click', () => {
+      try { localStorage.setItem(RX_INTRO_KEY, '1'); } catch (_) {}
+      closeIntro();
+      rxSetEnabled(false);
+      try { posthog.capture('reaction_cam_opt_out', { circle_id: circleId }); } catch (_) {}
+      vrPlay(v);
+    });
+  }
+
+  // ---------- the other side: the friend who made the video ----------
+  let rxInbox = [];
+  let rxChannel = null;
+  let rxViewerOpen = false;
+
+  async function rxNames(ids){
+    const out = {};
+    const uniq = [...new Set(ids)].filter(Boolean);
+    if (!uniq.length) return out;
+    const { data } = await supabaseClient.from('profiles').select('id, username').in('id', uniq);
+    (data || []).forEach(p => { out[p.id] = p.username; });
+    return out;
+  }
+
+  async function rxInit(){
+    if (!currentUser || !circleId) return;
+    await rxLoadInbox();
+    rxSubscribe();
+  }
+
+  async function rxLoadInbox(){
+    try {
+      const { data, error } = await supabaseClient.from('reactions')
+        .select('id, post_id, from_user, path, created_at')
+        .eq('to_user', currentUser.id).eq('circle_id', circleId)
+        .order('created_at', { ascending: true }).limit(50);
+      if (error || !data) return;
+      const stale = data.filter(r => Date.now() - new Date(r.created_at).getTime() > RX_TTL_MS);
+      const fresh = data.filter(r => stale.indexOf(r) === -1);
+      if (stale.length){
+        // never opened within a day: erase for real
+        const { data: gone, error: e2 } = await supabaseClient.storage.from('reactions').remove(stale.map(r => r.path));
+        if (!e2 && gone) await supabaseClient.from('reactions').delete().in('id', stale.map(r => r.id));
+      }
+      const names = await rxNames(fresh.map(r => r.from_user));
+      rxInbox = fresh.map(r => ({ ...r, name: names[r.from_user] || 'a friend' }));
+      rxRenderPill();
+    } catch (_) {}
+  }
+
+  function rxSubscribe(){
+    if (rxChannel) return;
+    rxChannel = supabaseClient
+      .channel('reactions-' + currentUser.id)
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'reactions', filter: 'to_user=eq.' + currentUser.id },
+        async (payload) => {
+          const r = payload.new;
+          if (!r || r.circle_id !== circleId || rxInbox.some(x => x.id === r.id)) return;
+          const names = await rxNames([r.from_user]);
+          const name = names[r.from_user] || 'a friend';
+          rxInbox.push({ id: r.id, post_id: r.post_id, from_user: r.from_user, path: r.path, created_at: r.created_at, name });
+          rxRenderPill(true);
+          showToast(name + ' reacted to your video \uD83D\uDE2E');
+          if (navigator.vibrate) navigator.vibrate(12);
+        })
+      .subscribe();
+  }
+  window.addEventListener('beforeunload', () => { if (rxChannel) supabaseClient.removeChannel(rxChannel); });
+
+  function rxRenderPill(pop){
+    let pill = document.getElementById('rxPill');
+    const n = rxInbox.length;
+    if (!n){ if (pill) pill.remove(); return; }
+    if (!pill){
+      pill = document.createElement('button');
+      pill.type = 'button'; pill.id = 'rxPill'; pill.className = 'rx-pill';
+      pill.addEventListener('click', rxOpenViewer);
+      document.body.appendChild(pill);
+    }
+    pill.innerHTML = '<span class="rx-pill-e">\uD83D\uDE2E</span><b>' +
+      (n === 1 ? escapeHtml(rxInbox[0].name) + ' reacted' : n + ' new reactions') +
+      '</b><em>Tap to watch</em>';
+    if (pop){ pill.classList.remove('pop'); void pill.offsetWidth; pill.classList.add('pop'); }
+  }
+
+  async function rxOpenViewer(){
+    if (rxViewerOpen || !rxInbox.length) return;
+    rxViewerOpen = true;
+    document.querySelectorAll('.home-video video, .home-vc video').forEach(o => { try { o.pause(); } catch (_) {} });
+    const el = document.createElement('div');
+    el.className = 'rx-view';
+    el.innerHTML = '<div class="rx-view-in"><div class="rx-view-name"></div><div class="rx-view-disc"><video playsinline muted></video></div><i class="rx-view-bar"></i><div class="rx-view-note">Gone for good after this</div></div>';
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('in'));
+    while (rxInbox.length){
+      const ok = await rxPlayOne(el, rxInbox[0]);
+      if (!ok) break;          // could not load: keep it for next time
+      rxInbox.shift();
+      rxRenderPill();
+    }
+    el.classList.remove('in');
+    setTimeout(() => el.remove(), 300);
+    rxViewerOpen = false;
+  }
+
+  // Download the clip, erase the server copy straight away, then play it from memory.
+  async function rxPlayOne(el, item){
+    const disc = el.querySelector('.rx-view-disc');
+    const pv = disc.querySelector('video');
+    const bar = el.querySelector('.rx-view-bar');
+    el.querySelector('.rx-view-name').textContent = item.name + ' reacted \uD83D\uDE2E';
+    disc.classList.remove('gone');
+    let blobUrl = null;
+    try {
+      const { data: signed, error: sErr } = await supabaseClient.storage.from('reactions').createSignedUrl(item.path, 60);
+      if (sErr || !signed || !signed.signedUrl){
+        await supabaseClient.from('reactions').delete().eq('id', item.id);   // file already gone: drop the dangling row
+        return true;
+      }
+      const res = await fetch(signed.signedUrl);
+      if (!res.ok) throw new Error('fetch ' + res.status);
+      const blob = await res.blob();
+      blobUrl = URL.createObjectURL(blob);
+      const { data: removed, error: rmErr } = await supabaseClient.storage.from('reactions').remove([item.path]);
+      if (!rmErr && removed && removed.length) await supabaseClient.from('reactions').delete().eq('id', item.id);
+      else console.warn('reaction file was not erased from the server', rmErr);
+    } catch (e) {
+      showToast('Couldn\u2019t load that reaction. Try again.', 'error');
+      return false;
+    }
+    await new Promise((resolve) => {
+      let done = false;
+      let cap = null;
+      const finish = () => {
+        if (done) return;
+        done = true; clearTimeout(cap);
+        disc.classList.add('gone');
+        setTimeout(() => {
+          try { pv.pause(); pv.removeAttribute('src'); pv.load(); } catch (_) {}
+          URL.revokeObjectURL(blobUrl);
+          resolve();
+        }, 650);
+      };
+      cap = setTimeout(finish, (RX_SECONDS + 1.5) * 1000);
+      pv.onended = finish; pv.onerror = finish;
+      el.onclick = finish;             // tap to skip to the next one
+      pv.src = blobUrl; pv.muted = true; pv.loop = false;
+      bar.style.animation = 'none'; void bar.offsetWidth;
+      bar.style.animation = 'rxbar ' + RX_SECONDS + 's linear forwards';
+      pv.play().catch(() => {});
+    });
+    return true;
+  }
+
   function initVideoCards(root = document){
     vrObserved.forEach(v => { if (!v.isConnected){ if (vrIO) vrIO.unobserve(v); vrObserved.delete(v); } });
     root.querySelectorAll('.home-video').forEach(wrap => {
@@ -4680,6 +5164,20 @@
       const vid = vcard && vcard.dataset.postId;
       const vOwn = !vcard || !!vcard.querySelector('.home-post-delete');   // your own videos never vanish for you
       let vSeen = false;
+      if (!vOwn && vcard && vcard.dataset.ownerId && !vcard.classList.contains('whisper') && currentUser && vcard.dataset.ownerId !== currentUser.id){
+        const chip = document.createElement('button');
+        chip.type = 'button'; chip.className = 'hv-react'; chip.setAttribute('aria-label', 'Reactions on or off');
+        chip.innerHTML = '<span>\uD83D\uDE2E</span><b></b>';
+        chip.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const turnOn = !rxEnabled();
+          rxSetEnabled(turnOn);
+          if (!turnOn && rxBusy) rxAbort(rxBusy);
+          showToast(turnOn ? 'Reactions on: friends see your face for a few seconds' : 'Reactions off: no camera, nothing sent');
+        });
+        wrap.appendChild(chip);
+        rxSyncChip(wrap);
+      }
       if (!vOwn && vid) {
         v.addEventListener('timeupdate', () => {
           if (vSeen || !v.duration || !isFinite(v.duration)) return;
@@ -4704,6 +5202,7 @@
           v.play().catch(() => { v.muted = true; videoSoundOn = false; vrSyncSoundUi(v); });
           vrSyncSoundUi(v);
           if (navigator.vibrate) navigator.vibrate(6);
+          setTimeout(() => rxMaybeArm(v), 400);
         } else if (v.paused){
           wrap.classList.remove('upaused');
           v.play().catch(() => {});
@@ -7399,6 +7898,7 @@
     initGoldenHourCard();
     subscribeToCircleActivity();
     subscribeToGoldenHourPrompts();
+    rxInit();
 
     // Play the ceremony without blocking the feed load beneath it.
     if (shouldWelcome) playWelcomeCeremony(welcomeNote, welcomeInviter, welcomeMedia);
