@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://yacrwbpvcqurxsqpmron.supabase.co" crossorigin>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <!-- PostHog analytics -->
@@ -28,6 +30,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Circle — Waater</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
@@ -2232,7 +2235,7 @@
     .vr-overlay{background:rgba(20,21,26,.72);}
     .vr-stage{width:440px;height:min(88vh,780px);border-radius:26px;box-shadow:0 30px 80px rgba(0,0,0,.5);}
   }
-  .vr-stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;}
+  .vr-stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;}   /* contain = the whole 3:4 frame, no zoom */
   .vr-cam.mirror{transform:scaleX(-1);}
   .vr-review{display:none;}
   .vr-stage[data-state="review"] .vr-review{display:block;}
@@ -2341,6 +2344,7 @@
       pointer-events:auto;position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:10px;
       width:150px;height:188px;border-radius:20px;overflow:visible;background:transparent;
     }
+    .vr-overlay:not(.vr-full) .vr-stage video{object-fit:cover;}   /* the small corner window is almost 3:4 already */
     .vr-overlay:not(.vr-full) .vr-stage video, .vr-overlay:not(.vr-full) .vr-shade-top, .vr-overlay:not(.vr-full) .vr-shade-bot, .vr-overlay:not(.vr-full) .vr-nocam{border-radius:20px;}
     .vr-overlay:not(.vr-full) .vr-stage::before{content:'';position:absolute;inset:0;border-radius:20px;pointer-events:none;z-index:6;
       box-shadow:0 10px 30px rgba(0,0,0,.35), inset 0 0 0 2px rgba(255,255,255,.85);}
@@ -3521,29 +3525,43 @@
     if (!VIDEO_PHONE)   return { w: 1080, h: 1440, fps: 30, bps: small ? 3000000 : 5000000 };
     // Measured-weak phone: 540p is what its encoder can hold at a steady frame rate.
     // Smooth 540p beats choppy 1080p every time.
-    if (VIDEO_DEGRADED) return { w: 540,  h: 960,  fps: 30, bps: small ? 2000000 : 3000000 };
+    if (VIDEO_DEGRADED) return { w: 540,  h: 720,  fps: 30, bps: small ? 2000000 : 3000000 };
     // Old/weak phone: 720p with a generous bitrate so every frame stays clean.
-    if (VIDEO_LOW_END)  return { w: 720,  h: 1280, fps: 30, bps: small ? 3500000 : 5000000 };
-    return                     { w: 1080, h: 1920, fps: 30, bps: small ? 3500000 : 6000000 };
+    if (VIDEO_LOW_END)  return { w: 720,  h: 960,  fps: 30, bps: small ? 3500000 : 5000000 };
+    return                     { w: 1080, h: 1440, fps: 30, bps: small ? 3500000 : 6000000 };   // all profiles are 3:4 = the full sensor view, not a zoomed crop
   }
 
   // Phone cameras expose landscape modes and often silently hand back 640x480 or
   // 15fps (dim light) when asked for a portrait size. So on phones we ask a few
   // different ways, CHECK what we really got, and keep the best one.
+  // Ask the camera to zoom all the way out (phones that expose a zoom control often
+  // start the front camera slightly zoomed in). Harmless where it isn't supported.
+  function vrZoomOut(st){
+    try {
+      const tr = st.getVideoTracks()[0];
+      const caps = tr && tr.getCapabilities && tr.getCapabilities();
+      if (caps && caps.zoom && typeof caps.zoom.min === 'number') tr.applyConstraints({ advanced: [{ zoom: caps.zoom.min }] }).catch(() => {});
+    } catch (_) {}
+    return st;
+  }
+
+  // The old request was a tall 9:16 frame. Phone sensors are 4:3, so 9:16 made the browser
+  // CROP the sensor (= the zoomed-in face). We now ask for 3:4 so the whole sensor is used,
+  // and we open the camera once; we only retry when the first result is really small.
   async function getVideoStream(facing, small){
     const P = videoProfile(small);
     const audio = { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 };
     const face = { ideal: facing || 'user' };
     const gum = (video) => navigator.mediaDevices.getUserMedia({ video, audio });
+    const ar = P.w / P.h;
     if (!VIDEO_PHONE){
-      return gum({ facingMode: face, width: { ideal: P.w }, height: { ideal: P.h }, frameRate: { ideal: P.fps } });
+      return vrZoomOut(await gum({ facingMode: face, width: { ideal: P.w }, height: { ideal: P.h }, aspectRatio: { ideal: ar }, frameRate: { ideal: P.fps } }));
     }
     const tries = [
-      { facingMode: face, width: { ideal: P.w }, height: { ideal: P.h }, frameRate: { ideal: 30, min: 24 } },
-      { facingMode: face, width: { ideal: P.h }, height: { ideal: P.w }, frameRate: { ideal: 30, min: 24 } },
-      { facingMode: face, width: { ideal: P.w }, height: { ideal: P.h }, frameRate: { ideal: 30 } }
+      { facingMode: face, width: { ideal: P.w }, height: { ideal: P.h }, aspectRatio: { ideal: ar }, frameRate: { ideal: 30 } },
+      { facingMode: face, width: { ideal: P.h }, height: { ideal: P.w }, aspectRatio: { ideal: 1 / ar }, frameRate: { ideal: 30 } }
     ];
-    const rate = (st) => Math.min(st.width || 0, st.height || 0) + ((st.frameRate || 30) >= 24 ? 1000 : 0);
+    const rate = (st) => Math.min(st.width || 0, st.height || 0);
     let best = null, bestScore = -1;
     for (const v of tries){
       let st;
@@ -3556,11 +3574,11 @@
       const sc = rate(set);
       if (sc > bestScore){ if (best) best.getTracks().forEach(t => t.stop()); best = st; bestScore = sc; }
       else st.getTracks().forEach(t => t.stop());
-      if (Math.min(set.width || 0, set.height || 0) >= 700 && (set.frameRate || 30) >= 24) break;   // good enough
-      await new Promise(r => setTimeout(r, 120));   // let the camera release before re-opening
+      if (bestScore >= 540) break;                      // good enough: no second camera open
+      await new Promise(r => setTimeout(r, 120));       // let the camera release before re-opening
     }
-    if (best) return best;
-    return gum({ facingMode: face });
+    if (best) return vrZoomOut(best);
+    return vrZoomOut(await gum({ facingMode: face }));
   }
 
   function pickVideoMimeType(){
@@ -3805,21 +3823,20 @@
     // Timed videos: hide once the creator's chosen time (1/6/12/24h) is up.
     list = list.filter(p => !p.expires_hours || (Date.now() - new Date(p.created_at).getTime()) < p.expires_hours * 3600000);
 
-    // View-once: a video this person already watched stays gone for them (and only them).
-    if (currentUser) {
-      const vids = list.filter(p => p.media_type === 'video' && p.user_id !== currentUser.id).map(p => p.id);
-      if (vids.length) {
-        const { data: seenRows } = await supabaseClient.from('post_seen').select('post_id').eq('user_id', currentUser.id).in('post_id', vids);
-        const seenIds = new Set((seenRows || []).map(r => r.post_id));
-        if (seenIds.size) list = list.map(p => seenIds.has(p.id) ? { ...p, media_url: '', _viewed: true } : p);
-      }
-    }
+    // View-once check and profile lookup run at the same time (they used to run one after the other).
+    const vids = currentUser ? list.filter(p => p.media_type === 'video' && p.user_id !== currentUser.id).map(p => p.id) : [];
+    const userIds = [...new Set(list.map(p => p.user_id))];
+    const [seenRes, profRes] = await Promise.all([
+      vids.length ? supabaseClient.from('post_seen').select('post_id').eq('user_id', currentUser.id).in('post_id', vids) : Promise.resolve({ data: null }),
+      userIds.length ? supabaseClient.from('profiles').select('id, username, avatar_url').in('id', userIds) : Promise.resolve({ data: [] })
+    ]);
+    // A video this person already watched stays gone for them (and only them).
+    const seenIds = new Set(((seenRes && seenRes.data) || []).map(r => r.post_id));
+    if (seenIds.size) list = list.map(p => seenIds.has(p.id) ? { ...p, media_url: '', _viewed: true } : p);
 
     if (list.length > 0) {
-      const userIds = [...new Set(list.map(p => p.user_id))];
-      const { data: profs } = await supabaseClient.from('profiles').select('id, username, avatar_url').in('id', userIds);
       const profileById = {};
-      (profs || []).forEach(p => { profileById[p.id] = p; });
+      ((profRes && profRes.data) || []).forEach(p => { profileById[p.id] = p; });
       list = list.map(p => ({ ...p, profiles: profileById[p.user_id] || null }));
     }
 
@@ -5559,7 +5576,7 @@
               const st = tr && tr.getSettings();
               if (tr && st && Math.max(st.width || 0, st.height || 0) > 1000){
                 const portrait = (st.height || 0) >= (st.width || 0);
-                tr.applyConstraints(portrait ? { width: { ideal: 540 }, height: { ideal: 960 } } : { width: { ideal: 960 }, height: { ideal: 540 } }).catch(() => {});
+                tr.applyConstraints(portrait ? { width: { ideal: 540 }, height: { ideal: 720 } } : { width: { ideal: 720 }, height: { ideal: 540 } }).catch(() => {});
               }
             } catch (_) {}
             if (nativeChip) nativeChip.classList.remove('hidden');
