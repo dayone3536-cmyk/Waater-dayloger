@@ -2185,6 +2185,18 @@
   }
   .hv-play svg{width:26px;height:26px;fill:#fff;stroke:none;margin-left:3px;}
   .home-video.upaused .hv-play{display:flex;}
+  .hv-cover{
+    position:absolute;top:0;left:0;right:0;bottom:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+    text-align:center;color:#fff;background:rgba(14,15,19,.42);pointer-events:none;
+    -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  }
+  .hv-cover-btn{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;margin-bottom:4px;}
+  .hv-cover-btn svg{width:26px;height:26px;fill:#fff;stroke:none;margin-left:3px;}
+  .hv-cover b{font-family:var(--font-display);font-weight:700;font-size:16px;}
+  .hv-cover span{font-size:12.5px;opacity:.8;}
+  .home-video.hv-once .hv-cover{display:flex;}
+  .home-video.hv-once.hv-playing .hv-cover{display:none;}
+  .home-video.hv-once .hv-sound,.home-video.hv-once .hv-play{display:none !important;}
   .hv-progress{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.25);pointer-events:none;}
   .hv-progress i{display:block;height:100%;width:0;background:var(--accent);}
 
@@ -2983,7 +2995,7 @@
       const $ = id => modal.querySelector('#' + id);
       const mic = $('imMic'), cam = $('imCam'), file = $('imFile'), status = $('imStatus');
       const send = modal.querySelector('.invite-modal-send');
-      const MAX_VOICE = 30, MAX_VIDEO = 45, MAX_BYTES = 50 * 1024 * 1024;
+      const MAX_VOICE = 30, MAX_VIDEO = 30, MAX_BYTES = 50 * 1024 * 1024;
       let media = null, rec = null, stream = null, chunks = [], t0 = 0, timer = null;
 
       const setStatus = (txt) => {
@@ -3019,7 +3031,7 @@
         const f = file.files && file.files[0];
         file.value = '';
         if (!f) return;
-        if (f.size > MAX_BYTES) { showToast('That video is too big. Keep it under 45 seconds', 'error'); return; }
+        if (f.size > MAX_BYTES) { showToast('That video is too big (over 50 MB). Keep it to 30 seconds or less', 'error'); return; }
         const v = document.createElement('video');
         v.preload = 'metadata';
         v.onloadedmetadata = () => {
@@ -3475,7 +3487,7 @@
   // Prefers MP4 (plays on every friend's phone, incl. iPhones),
   // falls back to WebM. ~2.5 Mbps keeps a 60s clip near 20 MB.
   // =========================================================
-  const VIDEO_MAX_SECONDS = 15;   // Waater videos are 15 seconds, full stop (DB trigger enforces it too)
+  const VIDEO_MAX_SECONDS = 30;   // Waater videos are up to 30 seconds (the DB trigger on public.posts must allow 30 too)
   const VIDEO_COMMENT_MAX_SECONDS = 30;   // video replies stay short and light
   const VIDEO_MIN_SECONDS = 0.8;
   const VIDEO_MAX_BYTES = 50 * 1024 * 1024;
@@ -4115,6 +4127,8 @@
         </svg>`
       
       : (post.profiles?.avatar_url ? `<img src="${escapeHtml(post.profiles.avatar_url)}" alt="">` : initials(name));
+    // View-once: anyone else's video sits behind a "Tap to watch" cover; only your own autoplays.
+    const onceVid = post.media_type === 'video' && !(currentUser && post.user_id === currentUser.id);
     const mediaHtml = post._viewed
       ? '<div class="home-post-media"><div class="hv-gone">\uD83D\uDC40 You watched this one. It\u2019s gone for you now, still there for anyone who hasn\u2019t.</div></div>'
       : post.media_url
@@ -4122,11 +4136,12 @@
           post.media_type === 'voice'
             ? `<div class="home-voice-bubble"><b>🎙️ Voice post${post.duration_seconds ? ` · ${Math.round(post.duration_seconds)}s` : ''}</b><audio src="${escapeHtml(post.media_url)}" controls controlsList="nodownload noremoteplayback" oncontextmenu="return false;"></audio></div>`
           : post.media_type === 'video'
-            ? `<div class="home-video">
-                <video src="${escapeHtml(post.media_url)}#t=0.1" muted loop playsinline preload="metadata" disablepictureinpicture disableremoteplayback controlsList="nodownload noremoteplayback" oncontextmenu="return false;"></video>
+            ? `<div class="home-video${onceVid ? ' hv-once' : ''}" data-dur="${post.duration_seconds ? Number(post.duration_seconds) : ''}">
+                <video src="${escapeHtml(post.media_url)}#t=0.1" muted ${onceVid ? '' : 'loop'} playsinline preload="metadata" disablepictureinpicture disableremoteplayback controlsList="nodownload noremoteplayback" oncontextmenu="return false;"></video>
                 <div class="hv-badge"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>${post.duration_seconds ? vrFmt(post.duration_seconds) : 'Video'}</div>
                 <div class="hv-sound"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>Tap for sound</div>
                 <div class="hv-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+                ${onceVid ? '<div class="hv-cover"><div class="hv-cover-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div><b>Tap to watch</b><span>Plays once, with sound</span></div>' : ''}
                 <div class="hv-progress"><i></i></div>
               </div>`
             : `<img src="${escapeHtml(post.media_url)}" alt="">`
@@ -4642,7 +4657,7 @@
   const VR_BLUR_KEY = 'waater_vr_blur';                 // '0' = the person turned the blur shield off
   const VR_BLUR_INTRO_KEY = 'waater_vr_blur_intro';     // first-time explainer already seen
   const VR_LEN_KEY = 'waater_vr_len';           // 'long' = full 60s; anything else = quick
-  const VR_QUICK_SECONDS = 15;                  // the default: "you only need 15 seconds"
+  const VR_QUICK_SECONDS = 30;                  // the default: "you only need 30 seconds"
   // Conversation starters. Casual on purpose — nobody has ever been blocked by "tell us about your day".
   const VR_PROMPTS = {
     post: [
@@ -4697,6 +4712,7 @@
   function vrPlay(v){
     if (vrRecording) return;
     const wrap = v.closest('.home-video');
+    if (wrap && wrap.classList.contains('hv-once')) return;   // view-once videos only ever start from a tap
     if (wrap && wrap.classList.contains('upaused')) return;
     document.querySelectorAll('.home-video video, .home-vc video').forEach(o => { if (o !== v && !o.paused) o.pause(); });
     v.muted = !videoSoundOn;
@@ -4712,9 +4728,22 @@
 
   // View-once: record the view, then remove the video for this person only.
   async function vrMarkSeen(postId){
-    if (!currentUser) return;
-    try { await supabaseClient.from('post_seen').insert({ post_id: postId, user_id: currentUser.id }); } catch (_) {}
+    if (!currentUser) return false;
+    for (let i = 0; i < 2; i++){
+      try {
+        const { error } = await supabaseClient.from('post_seen').insert({ post_id: postId, user_id: currentUser.id });
+        if (!error || error.code === '23505') return true;   // 23505 = already recorded
+        console.warn('post_seen insert failed', error);
+      } catch (e) { console.warn('post_seen insert threw', e); }
+      await new Promise(r => setTimeout(r, 700));
+    }
+    return false;
   }
+  // A view-once video never keeps playing in a background tab.
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) return;
+    document.querySelectorAll('.home-video.hv-once video').forEach(o => { try { o.pause(); } catch (_) {} });
+  });
   function vrGoneForMe(wrap, v){
     try { v.pause(); v.removeAttribute('src'); v.load(); } catch (_) {}
     if (vrIO) vrIO.unobserve(v);
@@ -4995,7 +5024,7 @@
       closeIntro();
       rxSetEnabled(true);
       try { posthog.capture('reaction_cam_opt_in', { circle_id: circleId }); } catch (_) {}
-      vrPlay(v);
+      if (v._onceResume) v._onceResume(); else vrPlay(v);
       setTimeout(() => rxMaybeArm(v), 400);
     });
     el.querySelector('.rx-no').addEventListener('click', () => {
@@ -5003,7 +5032,7 @@
       closeIntro();
       rxSetEnabled(false);
       try { posthog.capture('reaction_cam_opt_out', { circle_id: circleId }); } catch (_) {}
-      vrPlay(v);
+      if (v._onceResume) v._onceResume(); else vrPlay(v);
     });
   }
 
@@ -5162,8 +5191,9 @@
       if (!v) return;
       const vcard = wrap.closest('.home-post-card');
       const vid = vcard && vcard.dataset.postId;
-      const vOwn = !vcard || !!vcard.querySelector('.home-post-delete');   // your own videos never vanish for you
+      const vOwn = !vcard || !!(currentUser && vcard.dataset.ownerId === currentUser.id);   // your own videos never vanish for you
       let vSeen = false;
+      let played = 0, lastT = null, started = false;   // seconds REALLY played (never scrubbing, never paused/hidden time)
       if (!vOwn && vcard && vcard.dataset.ownerId && !vcard.classList.contains('whisper') && currentUser && vcard.dataset.ownerId !== currentUser.id){
         const chip = document.createElement('button');
         chip.type = 'button'; chip.className = 'hv-react'; chip.setAttribute('aria-label', 'Reactions on or off');
@@ -5178,21 +5208,64 @@
         wrap.appendChild(chip);
         rxSyncChip(wrap);
       }
-      if (!vOwn && vid) {
+      const once = !vOwn && !!vid;
+      if (once) {
+        wrap.classList.add('hv-once');
+        v.loop = false; v.removeAttribute('loop');
+        const coverB = wrap.querySelector('.hv-cover b');
+        const label = () => { if (coverB) coverB.textContent = played > 0.5 ? 'Tap to continue' : 'Tap to watch'; };
+        // webm clips recorded in the browser can report an infinite duration; fall back to the saved length
+        const getDur = () => (v.duration && isFinite(v.duration)) ? v.duration : (parseFloat(wrap.dataset.dur) || 0);
+        const needed = () => { const d = getDur(); return d > 0 ? d * 0.9 : Infinity; };
+        const markIfDone = () => { if (!vSeen && played >= needed()){ vSeen = true; vrMarkSeen(vid); } };
+        v.addEventListener('play', () => { lastT = v.currentTime; });
+        v.addEventListener('seeking', () => { lastT = null; });
+        v.addEventListener('seeked', () => { lastT = v.currentTime; });
+        v.addEventListener('playing', () => { lastT = v.currentTime; wrap.classList.add('hv-playing'); });
+        ['pause', 'error'].forEach(ev => v.addEventListener(ev, () => { wrap.classList.remove('hv-playing'); label(); }));
         v.addEventListener('timeupdate', () => {
-          if (vSeen || !v.duration || !isFinite(v.duration)) return;
-          if (v.currentTime >= v.duration * 0.9) {   // watched ~90%: let this play finish, no loop, no replay
-            vSeen = true; v.loop = false;
-            vrMarkSeen(vid);
-          }
+          const t = v.currentTime;
+          if (v.paused || v.seeking || document.hidden || !wrap.classList.contains('hv-playing')){ lastT = t; return; }
+          if (lastT !== null){ const d = t - lastT; if (d > 0 && d <= 1.25) played += d; }   // a jump is not watching
+          lastT = t;
+          markIfDone();
         });
-        v.addEventListener('ended', () => { if (vSeen) vrGoneForMe(wrap, v); });
+        v.addEventListener('ended', () => {
+          wrap.classList.remove('hv-playing');
+          const d = getDur() || v.currentTime;
+          if (lastT !== null && d - lastT > 0 && d - lastT <= 1.25) played += d - lastT;
+          if (!vSeen && d > 0 && played >= d * 0.9){ vSeen = true; vrMarkSeen(vid); }
+          if (vSeen){ setTimeout(() => vrGoneForMe(wrap, v), 350); return; }
+          // it ended but it was not really watched: give it back, nothing is marked
+          played = 0; lastT = null; started = false;
+          try { v.currentTime = 0; } catch (_) {}
+          label();
+        });
+        v._onceResume = () => {
+          document.querySelectorAll('.home-video video, .home-vc video').forEach(o => { if (o !== v && !o.paused) o.pause(); });
+          wrap.classList.remove('upaused');
+          videoSoundOn = true; v.muted = false;
+          if (!started){ started = true; try { v.currentTime = 0; } catch (_) {} }
+          const pr = v.play();
+          if (pr && pr.catch) pr.catch(() => { showToast('Could not play that video. Tap to try again', 'error'); });
+        };
+        label();
       }
       v.addEventListener('timeupdate', () => {
         if (bar && v.duration && isFinite(v.duration)) bar.style.width = (v.currentTime / v.duration * 100) + '%';
       });
       wrap.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (once){
+          if (v.paused || v.ended){
+            v._onceResume();
+            if (navigator.vibrate) navigator.vibrate(6);
+            setTimeout(() => rxMaybeArm(v), 400);
+          } else {
+            v.pause();
+          }
+          return;
+        }
         if (v.muted){
           // first tap = sound on, from the very beginning (the start is where the tea is)
           videoSoundOn = true;
@@ -5358,7 +5431,7 @@
     const mode = opts.from === 'comment' ? 'comment' : 'post';
     const isPip = !opts.fullscreen && !!(window.matchMedia && window.matchMedia('(max-width: 899px)').matches);
     let quick = true;
-    quick = true;   // 15s only — the old 60s "long" mode is retired
+    quick = true;   // 30s only — the old 60s "long" mode is retired
     const maxFor = () => mode === 'comment' ? VIDEO_COMMENT_MAX_SECONDS : (quick ? VR_QUICK_SECONDS : VIDEO_MAX_SECONDS);
     let maxSec = maxFor();
 
@@ -5793,7 +5866,7 @@
 
     // Phone's own camera app: full hardware pipeline (ISP, stabilisation, night mode), so it
     // looks far better than in-browser capture on old phones. Returns through the same
-    // file flow as the library picker (15s limit + review screen still apply).
+    // file flow as the library picker (30s limit + review screen still apply).
     let nativeOpen = false;
     const resumeCam = () => {
       if (!nativeOpen) return;
@@ -5897,7 +5970,7 @@
       newPrompt();
       try { posthog.capture('video_prompt_shuffled', { circle_id: circleId, mode }); } catch (_) {}
     });
-    // 15s is the only length now, so the pill is just a label.
+    // 30s is the only length now, so the pill is just a label.
     lenBtn.disabled = true;
     root.querySelectorAll('#vrQuick button').forEach(b => b.addEventListener('click', () => {
       caption.value = (caption.value + ' ' + b.dataset.e).trim();
@@ -7480,7 +7553,7 @@
     return `
       <button class="home-nudge" id="homeNudge" type="button">
         <span class="home-nudge-dot"></span>
-        <span class="home-nudge-copy"><b>${others} friend${others === 1 ? '' : 's'} posted today.</b> Film your 15 seconds.</span>
+        <span class="home-nudge-copy"><b>${others} friend${others === 1 ? '' : 's'} posted today.</b> Film up to 30 seconds.</span>
         <span class="home-nudge-go">Camera</span>
       </button>`;
   }
@@ -7599,7 +7672,7 @@
       <div class="view-panel" id="viewCamera">
         <div class="cam-stage">
           <div class="cam-glow"></div>
-          <div class="cam-badge"><span class="cam-badge-dot"></span>15 seconds</div>
+          <div class="cam-badge"><span class="cam-badge-dot"></span>Up to 30 seconds</div>
           <button class="cam-shutter" id="camShutter" type="button" aria-label="Open the camera">
             <span class="cam-shutter-core"></span>
           </button>
